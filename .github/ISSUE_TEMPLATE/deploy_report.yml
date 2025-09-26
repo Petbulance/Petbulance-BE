@@ -6,7 +6,7 @@ body:
     attributes:
       label: 📄 설명
       description: 배포 목적과 작업 내용을 작성해 주세요.
-      placeholder: 예: v1.2.0 기능 추가 배포
+      placeholder: 예) v1.2.0 기능 추가 배포
     validations:
       required: true
   - type: textarea
