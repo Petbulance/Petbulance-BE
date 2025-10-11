@@ -77,7 +77,7 @@ public class JWTFilter extends OncePerRequestFilter {
         CustomUserDetails customUserDetails = new CustomUserDetails(user);
 
         Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
-        log.info("authToken저장");
+
         SecurityContextHolder.getContext().setAuthentication(authToken);
         log.info("jwt 필터 퇴장");
         filterChain.doFilter(request, response);
@@ -85,4 +85,3 @@ public class JWTFilter extends OncePerRequestFilter {
 
 
 }
-//https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=4487ad4645addc027480b81e7a55a07d&redirect_uri=http://localhost:8080/login/oauth2/code/kakao

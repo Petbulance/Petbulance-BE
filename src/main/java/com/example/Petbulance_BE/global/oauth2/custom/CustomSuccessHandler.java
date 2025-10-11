@@ -49,11 +49,12 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String accessToken = jwtUtil.createJwt(userId,"access", role);
         String refresh = jwtUtil.createJwt(userId,"refresh", role);
 
-        RefreshEntity refreshEntity = new RefreshEntity(userId, refresh, 86400000L);
+        RefreshEntity refreshEntity = new RefreshEntity(userId, refresh, 8640000000L);
         refreshTokenRepository.save(refreshEntity);
 
         Map<String, String> tokenResponse = new HashMap<>();
         tokenResponse.put("accessToken", accessToken);
+        tokenResponse.put("refreshToken", refresh);
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
