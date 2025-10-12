@@ -59,4 +59,9 @@ public class CustomUserDetails implements UserDetails {
     public boolean isEnabled() {
         return !user.getSuspended();
     }
+
+    public Users getUser() {
+        return this.user;
+    }
+
 }
