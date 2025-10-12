@@ -69,7 +69,7 @@ public class PostService {
 
         for (int i = 0; i < imageUrls.size(); i++) {
             boolean isThumbnail = (i == 0); // 첫 번째 이미지를 썸네일로 설정
-            PostImage postImage = PostImage.create(post, imageUrls.get(i), i, isThumbnail);
+            PostImage postImage = PostImage.create(post, imageUrls.get(i), i+1, isThumbnail);
             postImageRepository.save(postImage);
         }
     }
