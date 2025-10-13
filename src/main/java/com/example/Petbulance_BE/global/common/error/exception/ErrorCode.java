@@ -15,7 +15,10 @@ public enum ErrorCode {
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 게시글을 찾을 수 없습니다."),
     ALREADY_LIKED(HttpStatus.BAD_REQUEST, "이미 좋아요를 누른 게시글입니다."),
     NOT_LIKED_YET(HttpStatus.BAD_REQUEST, "아직 좋아요를 누르지 않은 게시글입니다."),
-    LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "좋아요 내역이 존재하지 않습니다.");
+    LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "좋아요 내역이 존재하지 않습니다."),
+    EMPTY_COMMENT_CONTENT(HttpStatus.BAD_REQUEST, "댓글 내용을 입력해주세요." ),
+    INVALID_PARENT_COMMENT(HttpStatus.BAD_REQUEST, "상위 댓글 정보를 찾을 수 없습니다"),
+    INVALID_MENTION_USER(HttpStatus.BAD_REQUEST, "멘션된 사용자 정보를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;

@@ -97,7 +97,6 @@ class PostServiceTest {
                 .imageNum(0)
                 .build();
 
-        // ✅ save() 호출 시 null이 아닌 post 반환하도록 지정
         given(postRepository.save(any(Post.class))).willReturn(post);
 
         // when
@@ -105,7 +104,7 @@ class PostServiceTest {
 
         // then
         verify(postImageRepository, times(0)).save(any(PostImage.class)); // ✅ 0번 호출되어야 정상
-        assertThat(result.getImageNum()).isEqualTo(0); // ✅ imageNum 필드 값 검증
+        assertThat(result.getImageNum()).isEqualTo(0);
     }
 
 
