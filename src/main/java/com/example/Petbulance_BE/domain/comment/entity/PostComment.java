@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.comment.entity;
 
+import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
@@ -52,4 +53,16 @@ public class PostComment extends BaseTimeEntity {
 
     @Column(name = "image_url", length = 500)
     private String imageUrl;
+
+    public void update(UpdatePostCommentReqDto dto, Users mentionedUser) {
+        if (dto.getContent() != null) {
+            this.content = dto.getContent();
+        }
+        this.mentionUser = mentionedUser;
+        if (dto.getImageUrl() != null) {
+            this.imageUrl = dto.getImageUrl();
+        }
+        this.isSecret = dto.isSecret();
+    }
+
 }

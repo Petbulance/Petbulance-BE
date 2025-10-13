@@ -18,7 +18,8 @@ public enum ErrorCode {
     LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "좋아요 내역이 존재하지 않습니다."),
     EMPTY_COMMENT_CONTENT(HttpStatus.BAD_REQUEST, "댓글 내용을 입력해주세요." ),
     INVALID_PARENT_COMMENT(HttpStatus.BAD_REQUEST, "상위 댓글 정보를 찾을 수 없습니다"),
-    INVALID_MENTION_USER(HttpStatus.BAD_REQUEST, "멘션된 사용자 정보를 찾을 수 없습니다.");
+    INVALID_MENTION_USER(HttpStatus.BAD_REQUEST, "멘션된 사용자 정보를 찾을 수 없습니다."),
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 댓글을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;

@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.post.controller;
 
+import com.example.Petbulance_BE.domain.comment.service.PostCommentService;
 import com.example.Petbulance_BE.domain.post.dto.PostLikeDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
@@ -19,6 +20,7 @@ import javax.xml.stream.events.Comment;
 public class PostController {
     private final PostService postService;
     private final PostLikeService postLikeService;
+    private final PostCommentService postCommentService;
 
     @PostMapping
     public Post createPost(@Valid @RequestBody CreatePostReqDto dto) {
@@ -37,6 +39,6 @@ public class PostController {
 
     @PostMapping("/{postId}/comments")
     public PostCommentResDto createPostComment(@PathVariable("postId") Long postId, @Valid @RequestBody CreatePostCommentReqDto dto) {
-        return postService.createPostComment(postId, dto);
+        return postCommentService.createPostComment(postId, dto);
     }
 }

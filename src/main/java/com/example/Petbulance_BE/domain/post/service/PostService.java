@@ -2,17 +2,13 @@ package com.example.Petbulance_BE.domain.post.service;
 
 import com.example.Petbulance_BE.domain.board.entity.Board;
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
-import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
-import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
-import com.example.Petbulance_BE.domain.post.dto.response.PostCommentResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.entity.PostImage;
 import com.example.Petbulance_BE.domain.post.repository.PostImageRepository;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.post.type.Category;
-import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
@@ -31,8 +27,6 @@ public class PostService {
     private final PostRepository postRepository;
     private final BoardRepository boardRepository;
     private final PostImageRepository postImageRepository;
-    private final PostCommentRepository postCommentRepository;
-    private final UsersJpaRepository usersJpaRepository;
 
     @Transactional
     public Post createPost(CreatePostReqDto dto) {
@@ -81,47 +75,4 @@ public class PostService {
             postImageRepository.save(postImage);
         }
     }
-
-    @Transactional
-    public PostCommentResDto createPostComment(Long postId, CreatePostCommentReqDto dto) {
-        if (dto.getContent() == null || dto.getContent().isBlank()) {
-            throw new CustomException(ErrorCode.EMPTY_COMMENT_CONTENT);
-        }
-
-        Post post = findPostById(postId);
-        PostComment parentComment = findParentComment(dto.getParentId());
-        Users mentionedUser = findMentionedUser(dto.getMentionUserNickname());
-
-        PostComment saved = postCommentRepository.save(
-                PostComment.builder()
-                        .post(post)
-                        .user(UserUtil.getCurrentUser())
-                        .content(dto.getContent())
-                        .parent(parentComment)
-                        .mentionUser(mentionedUser)
-                        .isSecret(dto.getIsSecret())
-                        .imageUrl(dto.getImageUrl())
-                        .build()
-        );
-        return PostCommentResDto.of(saved);
-    }
-
-
-    private Post findPostById(Long postId) {
-        return postRepository.findById(postId)
-                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-    }
-
-    private PostComment findParentComment(Long parentId) {
-        if (parentId == null) return null;
-        return postCommentRepository.findById(parentId)
-                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_PARENT_COMMENT));
-    }
-
-    private Users findMentionedUser(String nickname) {
-        if (nickname == null || nickname.isBlank()) return null;
-        return usersJpaRepository.findByNickname(nickname)
-                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_MENTION_USER));
-    }
-
 }
