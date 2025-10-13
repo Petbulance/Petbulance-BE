@@ -1,12 +1,12 @@
 package com.example.Petbulance_BE.domain.comment.service;
 
+import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
-import com.example.Petbulance_BE.domain.post.dto.response.PostCommentResDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
-import com.example.Petbulance_BE.domain.post.service.PostService;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -222,5 +222,4 @@ class PostCommentServiceTest {
         verify(postCommentRepository, times(1)).findById(parentComment.getId());
         verify(usersJpaRepository, times(1)).findByNickname("ghostUser");
     }
-
 }

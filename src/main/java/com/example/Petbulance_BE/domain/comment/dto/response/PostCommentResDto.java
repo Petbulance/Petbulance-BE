@@ -1,4 +1,4 @@
-package com.example.Petbulance_BE.domain.post.dto.response;
+package com.example.Petbulance_BE.domain.comment.dto.response;
 
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import lombok.AllArgsConstructor;
