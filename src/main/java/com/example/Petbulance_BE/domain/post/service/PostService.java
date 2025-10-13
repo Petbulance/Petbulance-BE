@@ -84,23 +84,28 @@ public class PostService {
 
     @Transactional
     public PostCommentResDto createPostComment(Long postId, CreatePostCommentReqDto dto) {
-        validateCommentContent(dto.getContent());
+        if (dto.getContent() == null || dto.getContent().isBlank()) {
+            throw new CustomException(ErrorCode.EMPTY_COMMENT_CONTENT);
+        }
 
         Post post = findPostById(postId);
         PostComment parentComment = findParentComment(dto.getParentId());
         Users mentionedUser = findMentionedUser(dto.getMentionUserNickname());
 
-        PostComment newComment = buildPostComment(post, parentComment, mentionedUser, dto);
-        PostComment saved = postCommentRepository.save(newComment);
-
+        PostComment saved = postCommentRepository.save(
+                PostComment.builder()
+                        .post(post)
+                        .user(UserUtil.getCurrentUser())
+                        .content(dto.getContent())
+                        .parent(parentComment)
+                        .mentionUser(mentionedUser)
+                        .isSecret(dto.isSecret())
+                        .imageUrl(dto.getImageUrl())
+                        .build()
+        );
         return PostCommentResDto.of(saved);
     }
 
-    private void validateCommentContent(String content) {
-        if (content == null || content.isBlank()) {
-            throw new CustomException(ErrorCode.EMPTY_COMMENT_CONTENT);
-        }
-    }
 
     private Post findPostById(Long postId) {
         return postRepository.findById(postId)
@@ -117,18 +122,6 @@ public class PostService {
         if (nickname == null || nickname.isBlank()) return null;
         return usersJpaRepository.findByNickname(nickname)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_MENTION_USER));
-    }
-
-    private PostComment buildPostComment(Post post, PostComment parent, Users mentionedUser, CreatePostCommentReqDto dto) {
-        return PostComment.builder()
-                .post(post)
-                .user(UserUtil.getCurrentUser())
-                .content(dto.getContent())
-                .parent(parent)
-                .mentionUser(mentionedUser)
-                .isSecret(dto.isSecret())
-                .imageUrl(dto.getImageUrl())
-                .build();
     }
 
 }

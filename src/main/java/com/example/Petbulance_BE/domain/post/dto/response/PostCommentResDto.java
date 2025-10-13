@@ -1,7 +1,6 @@
 package com.example.Petbulance_BE.domain.post.dto.response;
 
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
-import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,7 +28,6 @@ public class PostCommentResDto {
         dto.isSecret = postComment.getIsSecret();
         dto.imageUrl = postComment.getImageUrl();
         dto.createdAt = postComment.getCreatedAt();
-
         return dto;
     }
 }
