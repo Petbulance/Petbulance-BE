@@ -23,8 +23,12 @@ public class PostCommentResDto {
         PostCommentResDto dto = new PostCommentResDto();
         dto.commentId = postComment.getId();
         dto.content = postComment.getContent();
-        dto.parentId = postComment.getParent().getId();
-        dto.mentionUserNickname = postComment.getMentionUser().getNickname();
+        dto.parentId = (postComment.getParent() != null)
+                ? postComment.getParent().getId()
+                : null;
+        dto.mentionUserNickname = (postComment.getMentionUser() != null)
+                ? postComment.getMentionUser().getNickname()
+                : null;
         dto.isSecret = postComment.getIsSecret();
         dto.imageUrl = postComment.getImageUrl();
         dto.createdAt = postComment.getCreatedAt();

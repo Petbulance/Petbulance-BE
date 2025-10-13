@@ -99,7 +99,7 @@ public class PostService {
                         .content(dto.getContent())
                         .parent(parentComment)
                         .mentionUser(mentionedUser)
-                        .isSecret(dto.isSecret())
+                        .isSecret(dto.getIsSecret())
                         .imageUrl(dto.getImageUrl())
                         .build()
         );
