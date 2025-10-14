@@ -15,7 +15,10 @@ public enum ErrorCode {
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 게시글을 찾을 수 없습니다."),
     ALREADY_LIKED(HttpStatus.BAD_REQUEST, "이미 좋아요를 누른 게시글입니다."),
     NOT_LIKED_YET(HttpStatus.BAD_REQUEST, "아직 좋아요를 누르지 않은 게시글입니다."),
-    LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "좋아요 내역이 존재하지 않습니다.");
+    LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "좋아요 내역이 존재하지 않습니다."),
+    UNAUTHORIZED_USER(HttpStatus.BAD_REQUEST, "블랙리스트에 등록된 액세스 토큰 접근이 제한되었습니다."),
+    REFRESH_TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "액세스 토큰이 만료되었습니다."),
+    NON_EXIST_REFRESH_TOKEN(HttpStatus.BAD_REQUEST,"리프레시 토큰이 존재하지 않습니다");
 
     private final HttpStatus status;
     private final String message;

@@ -2,6 +2,8 @@ package com.example.Petbulance_BE.global.filter;
 
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
+import com.example.Petbulance_BE.global.common.error.exception.CustomException;
+import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.type.Role;
 import com.example.Petbulance_BE.global.util.CustomUserDetails;
 import com.example.Petbulance_BE.global.util.JWTUtil;
@@ -56,14 +58,14 @@ public class JWTFilter extends OncePerRequestFilter {
                 usersJpaRepository.save(users);
                 log.info("{} 유저 잘못된 접근 계정 정지 처리", userId);
             });
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
+            throw new CustomException(ErrorCode.UNAUTHORIZED_USER);
+
         }
 
         //토큰 만료시(재로그인 로직 추가시 예외 수정 필요)
         if (jwtUtil.isExpired(token)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
+            response.setHeader("X-Token-Expired", "true");
+            throw new CustomException(ErrorCode.REFRESH_TOKEN_EXPIRED);
         }
 
         //접근 검증 완료시

@@ -58,5 +58,7 @@ public class LogoutFilter extends GenericFilterBean {
         long diff = (expTime - now)/1000;
 
         redisTemplate.opsForValue().set("blackList:"+accessToken, "logout", diff, TimeUnit.SECONDS);
+
+        filterChain.doFilter(request, response);
     }
 }

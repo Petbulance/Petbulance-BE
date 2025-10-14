@@ -2,6 +2,7 @@ package com.example.Petbulance_BE.global.oauth2.custom;
 
 import com.example.Petbulance_BE.global.common.redisEntity.RefreshEntity;
 import com.example.Petbulance_BE.global.common.redisRepository.RefreshTokenRepository;
+import com.example.Petbulance_BE.global.common.response.GlobalResponse;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
@@ -56,10 +57,11 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         tokenResponse.put("accessToken", "Bearer " + accessToken);
         tokenResponse.put("refreshToken", refresh);
 
+        GlobalResponse<Map<String, String>> globalResponse = GlobalResponse.success(HttpServletResponse.SC_OK, tokenResponse);
+
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-
-        new ObjectMapper().writeValue(response.getWriter(), tokenResponse);
+        new ObjectMapper().writeValue(response.getWriter(), globalResponse);
     }
 
 
