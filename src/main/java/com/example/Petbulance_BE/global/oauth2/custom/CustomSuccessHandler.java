@@ -53,7 +53,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         refreshTokenRepository.save(refreshEntity);
 
         Map<String, String> tokenResponse = new HashMap<>();
-        tokenResponse.put("accessToken", accessToken);
+        tokenResponse.put("accessToken", "Bearer " + accessToken);
         tokenResponse.put("refreshToken", refresh);
 
         response.setContentType("application/json");

@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.global.security;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.redisRepository.RefreshTokenRepository;
 import com.example.Petbulance_BE.global.filter.JWTFilter;
+import com.example.Petbulance_BE.global.filter.LogoutFilter;
 import com.example.Petbulance_BE.global.oauth2.custom.CustomOAuth2UserService;
 import com.example.Petbulance_BE.global.oauth2.custom.CustomSuccessHandler;
 import com.example.Petbulance_BE.global.util.JWTUtil;
@@ -25,13 +26,17 @@ public class SecurityConfig {
     private final JWTUtil jwtUtil;
     private final RedisTemplate<String, String> redisTemplate;
     private final UsersJpaRepository usersJpaRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final CustomSuccessHandler customSuccessHandler;
+    private final JWTFilter jwtFilter;
+    private final LogoutFilter logoutFilter;
 
-    public SecurityConfig(JWTUtil jwtUtil, RedisTemplate<String, String> redisTemplate, UsersJpaRepository usersJpaRepository, RefreshTokenRepository refreshTokenRepository) {
+    public SecurityConfig(JWTUtil jwtUtil, RedisTemplate<String, String> redisTemplate, UsersJpaRepository usersJpaRepository, RefreshTokenRepository refreshTokenRepository, LogoutFilter logoutFilter, CustomSuccessHandler customSuccessHandler, JWTFilter jwtFilter, LogoutFilter logoutFilter1) {
         this.jwtUtil = jwtUtil;
         this.redisTemplate = redisTemplate;
         this.usersJpaRepository = usersJpaRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
+        this.customSuccessHandler = customSuccessHandler;
+        this.jwtFilter = jwtFilter;
+        this.logoutFilter = logoutFilter1;
     }
 
     @Bean
@@ -42,11 +47,6 @@ public class SecurityConfig {
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public CustomSuccessHandler customSuccessHandler(JWTUtil jwtUtil){
-        return new CustomSuccessHandler(jwtUtil, refreshTokenRepository);
     }
 
     @Bean
@@ -70,13 +70,16 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 );
         http
-                .addFilterBefore(new JWTFilter(jwtUtil, redisTemplate, usersJpaRepository), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         http
                 .oauth2Login((oauth2) -> oauth2
                         .userInfoEndpoint((userInfoEndpointConfig) -> userInfoEndpointConfig
                                 .userService(customOAuth2UserService))
-                        .successHandler(customSuccessHandler(jwtUtil)) // <-- 여기서 직접 생성한 빈을 사용
+                        .successHandler(customSuccessHandler)
                 );
+        http
+                .addFilterBefore(logoutFilter, UsernamePasswordAuthenticationFilter.class);
+
 
 
         return http.build();
