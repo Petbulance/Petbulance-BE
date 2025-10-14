@@ -36,10 +36,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
 
-        log.info("oauth2서비스 진입1");
 
         OAuth2User oAuth2User = super.loadUser(userRequest);
-        log.info("oauth2서비스 진입2");
+
         System.out.println(oAuth2User);
 
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
@@ -56,7 +55,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             return null;
         }
 
-        log.info("registrationId진행성공");
 
         String provider = oAuth2Response.getProvider();
         String email = oAuth2Response.getEmail();
