@@ -20,7 +20,7 @@ public class PostCommentCount {
 
 
     @Column(name = "post_comment_count", nullable = false)
-    private Integer postCommentCount = 0;
+    private Long postCommentCount = 0L;
 
     @Column(name = "updated_at", nullable = false,
             columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")

@@ -2,10 +2,13 @@ package com.example.Petbulance_BE.domain.comment.service;
 
 import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
+import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
+import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
+import com.example.Petbulance_BE.domain.post.entity.PostLikeCount;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
@@ -23,6 +26,7 @@ public class PostCommentService {
     private final PostRepository postRepository;
     private final PostCommentRepository postCommentRepository;
     private final UsersJpaRepository usersJpaRepository;
+    private final PostCommentCountRepository postCommentCountRepository;
 
     @Transactional
     public PostCommentResDto createPostComment(Long postId, CreatePostCommentReqDto dto) {
@@ -45,6 +49,19 @@ public class PostCommentService {
                         .imageUrl(dto.getImageUrl())
                         .build()
         );
+
+        // 댓글 수 증가
+        int result = postCommentCountRepository.increase(postId);
+        if(result == 0) {
+            try {
+                postCommentCountRepository.save(
+                        PostCommentCount.builder()
+                                .postId(postId)
+                                .postCommentCount(1L)
+                                .build()
+                );
+            } catch (Exception ignored) {}
+        }
         return PostCommentResDto.of(saved);
     }
 

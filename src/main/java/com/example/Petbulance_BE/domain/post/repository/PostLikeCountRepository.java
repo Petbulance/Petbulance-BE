@@ -6,12 +6,12 @@ import org.springframework.data.repository.query.Param;
 
 public interface PostLikeCountRepository extends JpaRepository<com.example.Petbulance_BE.domain.post.entity.PostLikeCount, Long> {
 
-    // 좋아요 수 증가
+    // 댓글 수 증가
     @Query(value = "UPDATE post_like_count SET post_like_count = post_like_count + 1 WHERE post_id = :postId", nativeQuery = true)
     @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
     int increase(@Param("postId") Long postId);
 
-    // 좋아요 수 감소
+    // 댓글 수 감소
     @Query(value = "UPDATE post_like_count SET post_like_count = post_like_count - 1 WHERE post_id = :postId", nativeQuery = true)
     @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
     int decrease(@Param("postId") Long postId);
