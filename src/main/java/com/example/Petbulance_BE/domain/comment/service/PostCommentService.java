@@ -76,10 +76,9 @@ public class PostCommentService {
         if (dto.getContent() == null || dto.getContent().isBlank()) {
             throw new CustomException(ErrorCode.EMPTY_COMMENT_CONTENT);
         }
-        PostComment postComment = findPostCommentById(commentId);
-        Users mentionedUser = findMentionedUser(dto.getMentionUserNickname());
+        PostComment postComment = findPostCommentById(commentId); // 수정하고자하는 댓글
 
-        postComment.update(dto, mentionedUser);
+        postComment.update(dto);
         return PostCommentResDto.of(postComment);
     }
 

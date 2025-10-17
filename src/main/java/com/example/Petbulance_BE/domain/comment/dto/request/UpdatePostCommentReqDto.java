@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 public class UpdatePostCommentReqDto {
     @NotBlank(message = "댓글 내용은 필수입니다.")
     private String content;
-    private String mentionUserNickname;
     private String imageUrl;
     @NotNull(message = "비밀댓글 여부(isSecret)는 필수입니다.")
     private boolean isSecret;

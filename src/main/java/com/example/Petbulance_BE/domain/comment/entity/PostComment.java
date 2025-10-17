@@ -54,14 +54,9 @@ public class PostComment extends BaseTimeEntity {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
-    public void update(UpdatePostCommentReqDto dto, Users mentionedUser) {
-        if (dto.getContent() != null) {
-            this.content = dto.getContent();
-        }
-        this.mentionUser = mentionedUser;
-        if (dto.getImageUrl() != null) {
-            this.imageUrl = dto.getImageUrl();
-        }
+    public void update(UpdatePostCommentReqDto dto) {
+        this.content = dto.getContent();
+        this.imageUrl = dto.getImageUrl();
         this.isSecret = dto.isSecret();
     }
 
