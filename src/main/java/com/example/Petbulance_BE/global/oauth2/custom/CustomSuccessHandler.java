@@ -1,10 +1,14 @@
 package com.example.Petbulance_BE.global.oauth2.custom;
 
+import com.example.Petbulance_BE.global.common.error.exception.CustomException;
+import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.redisEntity.RefreshEntity;
 import com.example.Petbulance_BE.global.common.redisRepository.RefreshTokenRepository;
 import com.example.Petbulance_BE.global.common.response.GlobalResponse;
+import com.example.Petbulance_BE.global.firebase.FirebaseTokenService;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.firebase.auth.FirebaseAuthException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,10 +30,12 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     private final JWTUtil jwtUtil;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final FirebaseTokenService firebaseTokenService;
 
-    public CustomSuccessHandler(JWTUtil jwtUtil, RefreshTokenRepository refreshTokenRepository) {
+    public CustomSuccessHandler(JWTUtil jwtUtil, RefreshTokenRepository refreshTokenRepository, FirebaseTokenService firebaseTokenService) {
         this.jwtUtil = jwtUtil;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.firebaseTokenService = firebaseTokenService;
     }
 
     @Override
@@ -47,15 +53,23 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         GrantedAuthority auth = iterator.next();
         String role = auth.getAuthority();
 
-        String accessToken = jwtUtil.createJwt(userId,"access", role);
-        String refresh = jwtUtil.createJwt(userId,"refresh", role);
+        String accessToken = jwtUtil.createJwt(userId, "access", role);
+        String refresh = jwtUtil.createJwt(userId, "refresh", role);
 
         RefreshEntity refreshEntity = new RefreshEntity(userId, refresh, 8640000000L);
         refreshTokenRepository.save(refreshEntity);
 
+        String firebaseCustomToken;
+        try {
+            firebaseCustomToken = firebaseTokenService.createCustomToken(userId);
+        } catch (FirebaseAuthException e) {
+            throw new CustomException(ErrorCode.FirebaseToken_Fail);
+        }
+
         Map<String, String> tokenResponse = new HashMap<>();
         tokenResponse.put("accessToken", "Bearer " + accessToken);
         tokenResponse.put("refreshToken", refresh);
+        tokenResponse.put("firebaseCustomToken", firebaseCustomToken);
 
         GlobalResponse<Map<String, String>> globalResponse = GlobalResponse.success(HttpServletResponse.SC_OK, tokenResponse);
 

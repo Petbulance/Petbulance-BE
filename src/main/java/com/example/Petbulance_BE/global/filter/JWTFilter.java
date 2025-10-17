@@ -65,7 +65,7 @@ public class JWTFilter extends OncePerRequestFilter {
         //토큰 만료시(재로그인 로직 추가시 예외 수정 필요)
         if (jwtUtil.isExpired(token)) {
             response.setHeader("X-Token-Expired", "true");
-            throw new CustomException(ErrorCode.REFRESH_TOKEN_EXPIRED);
+            throw new CustomException(ErrorCode.ACCESS_TOKEN_EXPIRED);
         }
 
         //접근 검증 완료시

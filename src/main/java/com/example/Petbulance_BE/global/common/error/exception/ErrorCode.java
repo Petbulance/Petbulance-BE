@@ -17,8 +17,10 @@ public enum ErrorCode {
     NOT_LIKED_YET(HttpStatus.BAD_REQUEST, "아직 좋아요를 누르지 않은 게시글입니다."),
     LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "좋아요 내역이 존재하지 않습니다."),
     UNAUTHORIZED_USER(HttpStatus.BAD_REQUEST, "블랙리스트에 등록된 액세스 토큰 접근이 제한되었습니다."),
-    REFRESH_TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "액세스 토큰이 만료되었습니다."),
-    NON_EXIST_REFRESH_TOKEN(HttpStatus.BAD_REQUEST,"리프레시 토큰이 존재하지 않습니다");
+    ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "액세스 토큰이 만료되었습니다."),
+    NON_EXIST_REFRESH_TOKEN(HttpStatus.BAD_REQUEST,"리프레시 토큰이 존재하지 않습니다"),
+    INVALID_PROVIDER(HttpStatus.BAD_REQUEST, "프로바이더가 유효하지 않습니다."),
+    FirebaseToken_Fail(HttpStatus.BAD_REQUEST, "파이어베이스 커스텀 토큰 생성에 실패하였습니다.");
 
     private final HttpStatus status;
     private final String message;
