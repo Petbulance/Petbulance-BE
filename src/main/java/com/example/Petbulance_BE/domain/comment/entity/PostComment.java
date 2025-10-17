@@ -41,7 +41,7 @@ public class PostComment extends BaseTimeEntity {
     private Users mentionUser;
 
     @Column(name = "is_secret", nullable = false)
-    private Boolean isSecret = false;
+    private Boolean isSecret;
 
     @Column(nullable = false)
     @Builder.Default
@@ -58,6 +58,16 @@ public class PostComment extends BaseTimeEntity {
         this.content = dto.getContent();
         this.imageUrl = dto.getImageUrl();
         this.isSecret = dto.isSecret();
+    }
+
+    // 상위댓글인지 확인
+    public boolean isRoot() {
+        return parent == null;
+    }
+
+    // 삭제 표시
+    public void delete() {
+        deleted = true;
     }
 
 }

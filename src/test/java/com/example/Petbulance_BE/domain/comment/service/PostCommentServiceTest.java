@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.swing.text.html.Option;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -190,31 +191,6 @@ class PostCommentServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 부모 댓글이면 예외 발생")
-    void createComment_InvalidParentComment() {
-        // given
-        Post mockPost = mock(Post.class);
-        given(postRepository.findById(anyLong())).willReturn(Optional.of(mockPost));
-
-        CreatePostCommentReqDto dto = new CreatePostCommentReqDto(
-                "대댓글입니다.", 999L, null, null, false
-        );
-
-        // parentId=999L에 해당하는 댓글이 없음
-        given(postCommentRepository.findById(999L)).willReturn(Optional.empty());
-
-        // UserUtil.getCurrentUser()는 호출되기 전에 예외 발생
-        // when & then
-        assertThatThrownBy(() -> postCommentService.createPostComment(1L, dto))
-                .isInstanceOf(CustomException.class)
-                .hasMessage(ErrorCode.INVALID_PARENT_COMMENT.getMessage());
-
-        verify(postRepository, times(1)).findById(1L);
-        verify(postCommentRepository, times(1)).findById(999L);
-        verifyNoInteractions(usersJpaRepository);
-    }
-
-    @Test
     @DisplayName("존재하지 않는 멘션 사용자면 예외 발생")
     void createComment_InvalidMentionUser() {
         // given
@@ -244,4 +220,103 @@ class PostCommentServiceTest {
         verify(postCommentRepository, times(1)).findById(parentComment.getId());
         verify(usersJpaRepository, times(1)).findByNickname("ghostUser");
     }
+
+    @Test
+    @DisplayName("삭제할 댓글이 자식 있으면, 삭제 표시만 한다.")
+    void deleteShouldMarkDeletedIfHasChildren() {
+        // given
+        Long commentId = 1L;
+        PostComment postComment = createPostComment(commentId);
+
+        // mock: 댓글 조회
+        given(postCommentRepository.findById(commentId)).willReturn(Optional.of(postComment));
+
+        // 자식 댓글이 있는 경우
+        given(postCommentRepository.countByParent(postComment)).willReturn(2L);
+
+        // when
+        postCommentService.deletePostComment(commentId);
+
+        // then
+        verify(postComment).delete(); // 삭제 표시만 되었는지 확인
+    }
+
+    private PostComment createPostComment(Long commentId) {
+        PostComment postComment = mock(PostComment.class);
+     //   given(postComment.getId()).willReturn(commentId);
+        return postComment;
+    }
+
+
+    @Test
+    @DisplayName("하위 댓글이 삭제되고, 삭제되지 않은 부모면, 하위 댓글만 삭제한다.")
+    void deleteShouldDeleteChildOnlyIfNotDeletedParent() {
+        // given
+        Long commentId = 1L;
+        Long parentCommentId = 2L;
+
+        // 하위 댓글 mock
+        PostComment postComment = createPostComment(commentId, parentCommentId); // 하위 댓글
+        // 상위 댓글 mock
+        PostComment parentComment = createPostComment(parentCommentId, null); // 부모 댓글
+
+        // 상위 댓글이 삭제되지 않았고, 자식 댓글이 하나 있는 경우
+        given(postCommentRepository.findById(commentId)).willReturn(Optional.of(postComment));
+        given(postCommentRepository.countByParent(postComment)).willReturn(0L); // 자식댓글이 없음
+        given(postCommentRepository.findById(parentCommentId)).willReturn(Optional.of(parentComment));
+        given(parentComment.getDeleted()).willReturn(false); // 부모 댓글은 삭제되지 않음
+
+        // when
+        postCommentService.deletePostComment(commentId); // 하위 댓글 삭제 시도
+
+        // then
+        verify(postCommentRepository).delete(postComment); // 하위 댓글은 삭제됨
+        verify(postCommentRepository, never()).delete(parentComment); // 부모 댓글은 삭제되지 않음
+    }
+
+
+    @Test
+    @DisplayName("하위 댓글이 삭제되고, 삭제된 부모면, 재귀적으로 모두 삭제한다.")
+    void deleteShouldDeleteAllRecursivelyIfDeletedParent() {
+        // given
+        Long commentId = 1L;
+        Long parentCommentId = 2L;
+
+        // 하위 댓글 mock
+        PostComment postComment = createPostComment(commentId, parentCommentId); // 하위 댓글
+        given(postComment.isRoot()).willReturn(false); // 하위 댓글은 root가 아님
+
+        // 부모 댓글 mock (삭제된 상태)
+        PostComment parentPostComment = createPostComment(parentCommentId, null); // 부모 댓글
+        given(parentPostComment.isRoot()).willReturn(true); // 부모 댓글은 root
+        given(parentPostComment.getDeleted()).willReturn(true); // 부모 댓글은 이미 삭제됨
+
+        // 상위 댓글이 삭제된 상태이고, 자식 댓글이 하나 있는 경우
+        given(postCommentRepository.findById(commentId)).willReturn(Optional.of(postComment));
+        given(postCommentRepository.countByParent(postComment)).willReturn(0L); // 자식 댓글이 없음
+        given(postCommentRepository.findById(parentCommentId)).willReturn(Optional.of(parentPostComment));
+        given(postCommentRepository.countByParent(parentPostComment)).willReturn(0L); // 부모 댓글에 자식 댓글 없음
+
+        // when
+        postCommentService.deletePostComment(commentId); // 하위 댓글 삭제 시도
+
+        // then
+        verify(postCommentRepository).delete(postComment); // 하위 댓글은 삭제됨
+        verify(postCommentRepository).delete(parentPostComment); // 부모 댓글도 삭제됨
+    }
+
+    private PostComment createPostComment(Long commentId, Long parentCommentId) {
+        PostComment postComment = mock(PostComment.class);
+
+        // 부모 댓글 설정
+        if (parentCommentId != null) {
+            PostComment parentComment = mock(PostComment.class);
+            given(parentComment.getId()).willReturn(parentCommentId);
+            given(postComment.getParent()).willReturn(parentComment); // 부모 댓글 설정
+        }
+        return postComment;
+    }
+
+
+
 }

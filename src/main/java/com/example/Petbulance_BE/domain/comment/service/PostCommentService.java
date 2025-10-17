@@ -16,7 +16,11 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
+import java.util.function.Predicate;
 
 @Service
 @Transactional
@@ -105,4 +109,47 @@ public class PostCommentService {
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_MENTION_USER));
     }
 
+    public ResponseEntity<?> deletePostComment(Long commentId) {
+        /* 상위 댓글을 삭제하려는 경우
+            (1) 자식댓글이 존재하면 -> deleted를 true로
+            (2) 자식댓글이 없는 경우 -> 삭제
+         */
+
+        /* 하위 댓글을 삭제하려는 경우
+            (1) 상위댓글 삭제여부 true인 경우 + 자식댓글 없는 경우 -> 상위댓글도 연쇄적으로 삭제
+            (2) 상위댓글 삭제여부 false인 경우 -> 하위댓글만 삭제
+         */
+        PostComment postComment = findPostCommentById(commentId); // 삭제하고자하는 댓글
+        if(!postComment.getDeleted()) { // 아직 삭제되지 않은 댓글
+            if(hasChildren(postComment)) { // 자식댓글이 존재하는 경우 (상위댓글)
+                // 삭제표시만
+                postComment.delete();
+                return ResponseEntity.ok("댓글이 삭제 표시되었습니다.");
+            } else {
+                delete(postComment); // 삭제 로직
+                return ResponseEntity.ok("댓글이 성공적으로 삭제되었습니다.");
+            }
+        }  else {
+            // 이미 삭제된 댓글인 경우
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("이미 삭제된 댓글입니다.");
+        }
+    }
+
+    private boolean hasChildren(PostComment postComment) {
+        // postComment를 parentComment로 가진 댓글이 하나라도 존재하는지
+        return postCommentRepository.countByParent(postComment) > 0;
+    }
+
+    // 자식이 없는 경우 -> 댓글 자체를 삭제
+    private void delete(PostComment postComment) {
+        postCommentRepository.delete(postComment);
+        // 하위댓글 -> 상위댓글도 삭제된 상태면 연쇄 삭제
+        if(!postComment.isRoot()) {
+            postCommentRepository.findById(postComment.getParent().getId())
+                    .filter(PostComment::getDeleted) // 상위댓글은 삭제된 상태
+                    .filter(Predicate.not(this::hasChildren)) // 상위댓글에 하위댓글도 없는 상태
+                    .ifPresent(this::delete);
+        }
+    }
 }

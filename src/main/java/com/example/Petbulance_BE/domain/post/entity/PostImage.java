@@ -27,10 +27,10 @@ public class PostImage {
     private String imageUrl;
 
     @Column(name = "image_order", nullable = false)
-    private int imageOrder = 0;
+    private int imageOrder;
 
     @Column(name = "is_thumbnail", nullable = false)
-    private boolean thumbnail = false;
+    private boolean thumbnail;
 
     public static PostImage create(Post post, String imageUrl, int order, boolean isThumbnail) {
         return PostImage.builder()
