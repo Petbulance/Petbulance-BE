@@ -2,12 +2,14 @@ package com.example.Petbulance_BE.domain.post.service;
 
 import com.example.Petbulance_BE.domain.board.entity.Board;
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
+import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.entity.PostImage;
 import com.example.Petbulance_BE.domain.post.repository.PostImageRepository;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;

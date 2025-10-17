@@ -15,7 +15,7 @@ public class PostLikeCount {
 
     @Id
     @Column(name = "post_id")
-    private Long postId; // posts.post_id 참조 (PK + FK)
+    private Long postId;
 
     @Column(name = "post_like_count", nullable = false)
     private Long postLikeCount;

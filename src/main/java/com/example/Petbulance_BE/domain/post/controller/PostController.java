@@ -1,10 +1,14 @@
 package com.example.Petbulance_BE.domain.post.controller;
 
+import com.example.Petbulance_BE.domain.comment.service.PostCommentService;
 import com.example.Petbulance_BE.domain.post.dto.PostLikeDto;
+import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.service.PostLikeService;
 import com.example.Petbulance_BE.domain.post.service.PostService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,5 +32,10 @@ public class PostController {
     @DeleteMapping("/{postId}/likes")
     public PostLikeDto postUnlike(@PathVariable("postId") Long postId){
         return postLikeService.postUnlike(postId);
+    }
+
+    @PostMapping("/{postId}/comments")
+    public PostCommentResDto createPostComment(@PathVariable("postId") Long postId, @Valid @RequestBody CreatePostCommentReqDto dto) {
+        return postCommentService.createPostComment(postId, dto);
     }
 }
