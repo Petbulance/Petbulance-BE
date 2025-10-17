@@ -4,6 +4,8 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.userEmail.UserEmails;
 import com.example.Petbulance_BE.domain.userEmail.repository.UserEmailsJpaRepository;
+import com.example.Petbulance_BE.global.common.error.exception.CustomException;
+import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.type.Role;
 import com.example.Petbulance_BE.global.oauth2.dto.UserDto;
 import com.example.Petbulance_BE.global.oauth2.response.GoogleResponse;
@@ -52,7 +54,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }else if(registrationId.equals("kakao")){
             oAuth2Response = new KakaoResponse(oAuth2User.getAttributes());
         }else{
-            return null;
+            throw new CustomException(ErrorCode.INVALID_PROVIDER);
         }
 
 
