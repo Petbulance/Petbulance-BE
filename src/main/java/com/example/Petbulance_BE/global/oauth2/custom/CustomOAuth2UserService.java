@@ -4,6 +4,8 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.userEmail.UserEmails;
 import com.example.Petbulance_BE.domain.userEmail.repository.UserEmailsJpaRepository;
+import com.example.Petbulance_BE.global.common.error.exception.CustomException;
+import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.type.Role;
 import com.example.Petbulance_BE.global.oauth2.dto.UserDto;
 import com.example.Petbulance_BE.global.oauth2.response.GoogleResponse;
@@ -36,10 +38,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
 
-        log.info("oauth2서비스 진입1");
 
         OAuth2User oAuth2User = super.loadUser(userRequest);
-        log.info("oauth2서비스 진입2");
+
         System.out.println(oAuth2User);
 
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
@@ -53,10 +54,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }else if(registrationId.equals("kakao")){
             oAuth2Response = new KakaoResponse(oAuth2User.getAttributes());
         }else{
-            return null;
+            throw new CustomException(ErrorCode.INVALID_PROVIDER);
         }
 
-        log.info("registrationId진행성공");
 
         String provider = oAuth2Response.getProvider();
         String email = oAuth2Response.getEmail();

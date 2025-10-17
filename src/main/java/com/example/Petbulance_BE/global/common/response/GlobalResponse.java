@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class GlobalResponse<T> {
     private int status;
     private boolean success;
-    private Object data;
+    private T data;
 
     public static GlobalResponse success(int status, Object data) {
         return GlobalResponse.builder()

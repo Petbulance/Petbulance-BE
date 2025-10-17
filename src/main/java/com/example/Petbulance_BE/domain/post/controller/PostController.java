@@ -18,10 +18,9 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
     private final PostService postService;
     private final PostLikeService postLikeService;
-    private final PostCommentService postCommentService;
 
     @PostMapping
-    public Post createPost(@Valid @RequestBody CreatePostReqDto dto) {
+    public Post createPost(@RequestBody CreatePostReqDto dto) {
         return postService.createPost(dto);
     }
 
