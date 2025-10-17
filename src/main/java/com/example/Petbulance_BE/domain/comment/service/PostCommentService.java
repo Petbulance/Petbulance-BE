@@ -1,14 +1,13 @@
 package com.example.Petbulance_BE.domain.comment.service;
 
 import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
-import com.example.Petbulance_BE.domain.post.entity.PostLikeCount;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
@@ -32,6 +31,14 @@ public class PostCommentService {
     public PostCommentResDto createPostComment(Long postId, CreatePostCommentReqDto dto) {
         if (dto.getContent() == null || dto.getContent().isBlank()) {
             throw new CustomException(ErrorCode.EMPTY_COMMENT_CONTENT);
+        }
+
+        // parentId와 mentionUserNickname 간의 관계 검증
+        if (dto.getParentId() == null && dto.getMentionUserNickname() != null) {
+            throw new CustomException(ErrorCode.INVALID_MENTION_USER); // parentId가 null인데 mentionUserNickname이 있으면 오류
+        }
+        if (dto.getParentId() != null && dto.getMentionUserNickname() == null) {
+            throw new CustomException(ErrorCode.INVALID_MENTION_USER); // parentId가 있으면 mentionUserNickname도 있어야 함
         }
 
         Post post = findPostById(postId);
