@@ -35,10 +35,10 @@ public class PostCommentService {
 
         // parentId와 mentionUserNickname 간의 관계 검증
         if (dto.getParentId() == null && dto.getMentionUserNickname() != null) {
-            throw new CustomException(ErrorCode.INVALID_MENTION_USER); // parentId가 null인데 mentionUserNickname이 있으면 오류
+            throw new CustomException(ErrorCode.INVALID_MENTION_USER);
         }
         if (dto.getParentId() != null && dto.getMentionUserNickname() == null) {
-            throw new CustomException(ErrorCode.INVALID_MENTION_USER); // parentId가 있으면 mentionUserNickname도 있어야 함
+            throw new CustomException(ErrorCode.INVALID_MENTION_USER);
         }
 
         Post post = findPostById(postId);

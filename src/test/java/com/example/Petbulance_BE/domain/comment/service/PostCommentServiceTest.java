@@ -2,6 +2,7 @@ package com.example.Petbulance_BE.domain.comment.service;
 
 import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
+import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
@@ -14,9 +15,11 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +31,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class PostCommentServiceTest {
 
     @InjectMocks
@@ -42,23 +46,29 @@ class PostCommentServiceTest {
     @Mock
     private UsersJpaRepository usersJpaRepository;
 
-    @Test
-    @DisplayName("상위 댓글 작성 성공")
-    void createParentCommentSuccess() {
-        // given
-        Post mockPost = mock(Post.class);
-        Users mockUser = mock(Users.class);
+    @Mock
+    private PostCommentCountRepository postCommentCountRepository;
 
+    @Test
+    @DisplayName("상위 댓글 작성 후 댓글 수 증가 확인")
+    void createParentCommentAndCheckCount() {
+        // given
+        Post mockPost = mock(Post.class);  // 게시글 mock
+        Users mockUser = mock(Users.class);  // 댓글 작성자 mock
+
+        // 게시글 조회 mock
         given(postRepository.findById(anyLong())).willReturn(Optional.of(mockPost));
 
+        // UserUtil.getCurrentUser() mock
         try (MockedStatic<UserUtil> mockedUserUtil = mockStatic(UserUtil.class)) {
             mockedUserUtil.when(UserUtil::getCurrentUser).thenReturn(mockUser);
 
+            // 상위 댓글 DTO 생성
             CreatePostCommentReqDto dto = new CreatePostCommentReqDto(
-                    "댓글 내용", null, null, "이미지 url", false
+                    "상위 댓글 내용", null, null, "이미지 url", false
             );
 
-            // 저장될 댓글 객체 mock
+            // 상위 댓글 저장되는 객체 mock
             PostComment savedComment = PostComment.builder()
                     .post(mockPost)
                     .user(mockUser)
@@ -69,6 +79,10 @@ class PostCommentServiceTest {
                     .imageUrl(dto.getImageUrl())
                     .build();
 
+            // 댓글 수 증가 mock (1로 증가)
+            given(postCommentCountRepository.increase(anyLong())).willReturn(1);
+
+            // 댓글 저장 mock
             given(postCommentRepository.save(any(PostComment.class))).willReturn(savedComment);
 
             // when
@@ -81,46 +95,46 @@ class PostCommentServiceTest {
             assertThat(resDto.getParentId()).isNull();
             assertThat(resDto.getMentionUserNickname()).isNull();
 
+            // 댓글 수 증가 확인 (1회 호출)
+            verify(postCommentCountRepository, times(1)).increase(anyLong());
             verify(postCommentRepository, times(1)).save(any(PostComment.class));
         }
     }
 
-
     @Test
-    @DisplayName("멘션 포함 하위 댓글 작성 성공")
-    void createCommentWithMentionSuccess() {
+    @DisplayName("하위 댓글 작성 후 댓글 수 증가 확인")
+    void createChildCommentAndCheckCount() {
         // given
-        Post mockPost = mock(Post.class);
-        Users mockWriter = mock(Users.class); // 댓글 작성자
+        Post mockPost = mock(Post.class);  // 게시글 mock
+        Users mockWriter = mock(Users.class);  // 댓글 작성자 mock
         Users mentionedUser = Users.builder()
                 .id(UUID.randomUUID().toString())
                 .nickname("mentionedUser")
-                .build();
+                .build();  // 멘션된 유저 mock
 
+        // 상위 댓글 mock
         PostComment parentComment = PostComment.builder()
                 .id(100L)
                 .post(mockPost)
                 .user(mockWriter)
-                .content("부모 댓글 내용")
+                .content("상위 댓글 내용")
                 .build();
 
+        // 하위 댓글 DTO 생성
         CreatePostCommentReqDto dto = new CreatePostCommentReqDto(
-                "멘션 포함 대댓글입니다.",
-                parentComment.getId(),
-                mentionedUser.getNickname(),
-                "image-url.jpg",
-                false
+                "하위 댓글 내용", parentComment.getId(), mentionedUser.getNickname(), "image-url.jpg", false
         );
 
+        // 게시글, 상위 댓글 조회 mock
         given(postRepository.findById(anyLong())).willReturn(Optional.of(mockPost));
         given(postCommentRepository.findById(parentComment.getId())).willReturn(Optional.of(parentComment));
         given(usersJpaRepository.findByNickname(mentionedUser.getNickname())).willReturn(Optional.of(mentionedUser));
 
-        // UserUtil.getCurrentUser() 정적 메서드 모킹
+        // UserUtil.getCurrentUser() mock
         try (MockedStatic<UserUtil> mockedUserUtil = mockStatic(UserUtil.class)) {
             mockedUserUtil.when(UserUtil::getCurrentUser).thenReturn(mockWriter);
 
-            // 저장되는 댓글 객체
+            // 하위 댓글 저장되는 객체 mock
             PostComment savedComment = PostComment.builder()
                     .post(mockPost)
                     .user(mockWriter)
@@ -131,6 +145,10 @@ class PostCommentServiceTest {
                     .imageUrl(dto.getImageUrl())
                     .build();
 
+            // 댓글 수 증가 mock (2로 증가)
+            given(postCommentCountRepository.increase(anyLong())).willReturn(2);
+
+            // 댓글 저장 mock
             given(postCommentRepository.save(any(PostComment.class))).willReturn(savedComment);
 
             // when
@@ -143,9 +161,13 @@ class PostCommentServiceTest {
             assertThat(resDto.getImageUrl()).isEqualTo(dto.getImageUrl());
             assertThat(resDto.isSecret()).isEqualTo(dto.getIsSecret());
 
+            // 댓글 수 증가 확인 (1회 호출)
+            verify(postCommentCountRepository, times(1)).increase(anyLong());
             verify(postCommentRepository, times(1)).save(any(PostComment.class));
         }
     }
+
+
 
     @Test
     @DisplayName("게시글이 존재하지 않으면 예외 발생")

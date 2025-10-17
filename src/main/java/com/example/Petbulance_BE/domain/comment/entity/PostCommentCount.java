@@ -20,6 +20,7 @@ public class PostCommentCount {
 
 
     @Column(name = "post_comment_count", nullable = false)
+    @Builder.Default
     private Long postCommentCount = 0L;
 
     @Column(name = "updated_at", nullable = false,
