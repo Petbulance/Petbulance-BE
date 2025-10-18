@@ -8,6 +8,7 @@ import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
+import com.example.Petbulance_BE.domain.post.dto.response.PostCommentListResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.user.entity.Users;
@@ -17,6 +18,9 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.User;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -56,12 +60,13 @@ public class PostCommentService {
                         .post(post)
                         .user(UserUtil.getCurrentUser())
                         .content(dto.getContent())
-                        .parent(parentComment)
                         .mentionUser(mentionedUser)
                         .isSecret(dto.getIsSecret())
                         .imageUrl(dto.getImageUrl())
                         .build()
         );
+
+        saved.assignParent(Objects.requireNonNullElse(parentComment, saved));
 
         // 댓글 수 증가
         int result = postCommentCountRepository.increase(postId);
@@ -162,6 +167,20 @@ public class PostCommentService {
         if (!Objects.equals(postComment.getUser().getId(), currentUser.getId())) {
             throw new CustomException(ErrorCode.FORBIDDEN_COMMENT_ACCESS);
         }
+    }
+
+    public Slice<PostCommentListResDto> postCommentList(Long postId, Long lastCommentId, Pageable pageable) {
+        Users currentUser = UserUtil.getCurrentUser(); // 현재 사용자
+        Post post = findPostById(postId); // 작성된 댓글의 게시글
+
+        assert currentUser != null;
+        if(currentUser.equals(post.getUser())) { // 현재 사용자가 게시글 작성자일 때
+
+        } else { // 현재 사용자가 게시글 작성자가 아닐 때
+
+        }
+
+        return null;
     }
 
 }
