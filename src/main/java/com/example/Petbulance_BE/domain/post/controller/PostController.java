@@ -1,10 +1,11 @@
 package com.example.Petbulance_BE.domain.post.controller;
 
+import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
 import com.example.Petbulance_BE.domain.comment.service.PostCommentService;
 import com.example.Petbulance_BE.domain.post.dto.PostLikeDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.CreatePostResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.service.PostLikeService;
 import com.example.Petbulance_BE.domain.post.service.PostService;
@@ -18,9 +19,10 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
     private final PostService postService;
     private final PostLikeService postLikeService;
+    private final PostCommentService postCommentService;
 
     @PostMapping
-    public Post createPost(@RequestBody CreatePostReqDto dto) {
+    public CreatePostResDto createPost(@Valid @RequestBody CreatePostReqDto dto) {
         return postService.createPost(dto);
     }
 
