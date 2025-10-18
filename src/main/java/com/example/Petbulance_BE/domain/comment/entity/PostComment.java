@@ -7,10 +7,11 @@ import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "post_comments")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -62,12 +63,16 @@ public class PostComment extends BaseTimeEntity {
 
     // 상위댓글인지 확인
     public boolean isRoot() {
-        return parent == null;
+        return Objects.equals(this.parent.getId(), id);
     }
 
     // 삭제 표시
     public void delete() {
         deleted = true;
+    }
+
+    public void assignParent(PostComment postComment) {
+        this.parent = postComment;
     }
 
 }

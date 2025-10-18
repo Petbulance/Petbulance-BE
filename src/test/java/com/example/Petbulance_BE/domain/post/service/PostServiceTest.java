@@ -4,6 +4,7 @@ import com.example.Petbulance_BE.domain.board.entity.Board;
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
+import com.example.Petbulance_BE.domain.post.dto.response.CreatePostResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.entity.PostImage;
 import com.example.Petbulance_BE.domain.post.repository.PostImageRepository;
@@ -70,11 +71,11 @@ class PostServiceTest {
         given(postRepository.save(any(Post.class))).willReturn(post);
 
         // when
-        Post result = postService.createPost(dto);
+        CreatePostResDto result = postService.createPost(dto);
 
         // then
         verify(postImageRepository, times(1)).save(any(PostImage.class)); // 1번 호출 검증
-        assertThat(result.getImageNum()).isEqualTo(1);
+        assertThat(result.getImageUrls().size()).isEqualTo(1);
     }
 
 
@@ -102,11 +103,11 @@ class PostServiceTest {
         given(postRepository.save(any(Post.class))).willReturn(post);
 
         // when
-        Post result = postService.createPost(dto);
+        CreatePostResDto result = postService.createPost(dto);
 
         // then
         verify(postImageRepository, times(0)).save(any(PostImage.class)); // ✅ 0번 호출되어야 정상
-        assertThat(result.getImageNum()).isEqualTo(0);
+        assertThat(result.getImageUrls().size()).isEqualTo(0);
     }
 
 

@@ -1,12 +1,14 @@
 package com.example.Petbulance_BE.domain.comment.service;
 
 import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.DelCommentResDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
+import com.example.Petbulance_BE.domain.post.dto.response.PostCommentListResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.user.entity.Users;
@@ -16,10 +18,14 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.User;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.function.Predicate;
 
 @Service
@@ -39,10 +45,10 @@ public class PostCommentService {
 
         // parentId와 mentionUserNickname 간의 관계 검증
         if (dto.getParentId() == null && dto.getMentionUserNickname() != null) {
-            throw new CustomException(ErrorCode.INVALID_MENTION_USER);
+            throw new CustomException(ErrorCode.INVALID_INPUT_RELATION);
         }
         if (dto.getParentId() != null && dto.getMentionUserNickname() == null) {
-            throw new CustomException(ErrorCode.INVALID_MENTION_USER);
+            throw new CustomException(ErrorCode.INVALID_INPUT_RELATION);
         }
 
         Post post = findPostById(postId);
@@ -54,12 +60,13 @@ public class PostCommentService {
                         .post(post)
                         .user(UserUtil.getCurrentUser())
                         .content(dto.getContent())
-                        .parent(parentComment)
                         .mentionUser(mentionedUser)
                         .isSecret(dto.getIsSecret())
                         .imageUrl(dto.getImageUrl())
                         .build()
         );
+
+        saved.assignParent(Objects.requireNonNullElse(parentComment, saved));
 
         // 댓글 수 증가
         int result = postCommentCountRepository.increase(postId);
@@ -81,6 +88,8 @@ public class PostCommentService {
             throw new CustomException(ErrorCode.EMPTY_COMMENT_CONTENT);
         }
         PostComment postComment = findPostCommentById(commentId); // 수정하고자하는 댓글
+
+        verifyPostCommentWriter(postComment, UserUtil.getCurrentUser());
 
         postComment.update(dto);
         return PostCommentResDto.of(postComment);
@@ -109,7 +118,7 @@ public class PostCommentService {
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_MENTION_USER));
     }
 
-    public ResponseEntity<?> deletePostComment(Long commentId) {
+    public DelCommentResDto deletePostComment(Long commentId) {
         /* 상위 댓글을 삭제하려는 경우
             (1) 자식댓글이 존재하면 -> deleted를 true로
             (2) 자식댓글이 없는 경우 -> 삭제
@@ -120,20 +129,21 @@ public class PostCommentService {
             (2) 상위댓글 삭제여부 false인 경우 -> 하위댓글만 삭제
          */
         PostComment postComment = findPostCommentById(commentId); // 삭제하고자하는 댓글
+        verifyPostCommentWriter(postComment, UserUtil.getCurrentUser());
+
         if(!postComment.getDeleted()) { // 아직 삭제되지 않은 댓글
             if(hasChildren(postComment)) { // 자식댓글이 존재하는 경우 (상위댓글)
                 // 삭제표시만
                 postComment.delete();
-                return ResponseEntity.ok("댓글이 삭제 표시되었습니다.");
+                postCommentCountRepository.decrease(postComment.getPost().getId());
+                return new DelCommentResDto("댓글이 삭제 표시되었습니다.");
             } else {
                 delete(postComment); // 삭제 로직
-                return ResponseEntity.ok("댓글이 성공적으로 삭제되었습니다.");
+                postCommentCountRepository.decrease(postComment.getPost().getId());
+                return new DelCommentResDto("댓글이 성공적으로 삭제되었습니다.");
             }
-        }  else {
-            // 이미 삭제된 댓글인 경우
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("이미 삭제된 댓글입니다.");
         }
+        return new DelCommentResDto("댓글이 성공적으로 삭제되었습니다.");
     }
 
     private boolean hasChildren(PostComment postComment) {
@@ -152,4 +162,25 @@ public class PostCommentService {
                     .ifPresent(this::delete);
         }
     }
+
+    private void verifyPostCommentWriter(PostComment postComment, Users currentUser) {
+        if (!Objects.equals(postComment.getUser().getId(), currentUser.getId())) {
+            throw new CustomException(ErrorCode.FORBIDDEN_COMMENT_ACCESS);
+        }
+    }
+
+    public Slice<PostCommentListResDto> postCommentList(Long postId, Long lastCommentId, Pageable pageable) {
+        Users currentUser = UserUtil.getCurrentUser(); // 현재 사용자
+        Post post = findPostById(postId); // 작성된 댓글의 게시글
+
+        assert currentUser != null;
+        if(currentUser.equals(post.getUser())) { // 현재 사용자가 게시글 작성자일 때
+
+        } else { // 현재 사용자가 게시글 작성자가 아닐 때
+
+        }
+
+        return null;
+    }
+
 }
