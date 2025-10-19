@@ -1,6 +1,5 @@
 package com.example.Petbulance_BE.domain.comment.dto.response;
 
-import com.querydsl.core.annotations.QueryProjection;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +20,6 @@ public class PostCommentListSubDto {
     private boolean deleted;
     private boolean hidden;
     private String imageUrl;
-    private String writerId; // 댓글작성자
+    private String writerId;
     private LocalDateTime createdAt;
 }

@@ -1,9 +1,13 @@
 package com.example.Petbulance_BE.domain.comment.repository;
 
+import com.example.Petbulance_BE.domain.board.entity.QBoard;
 import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentListResDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentListSubDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.SearchPostCommentResDto;
 import com.example.Petbulance_BE.domain.comment.entity.QPostComment;
 import com.example.Petbulance_BE.domain.post.entity.Post;
+import com.example.Petbulance_BE.domain.post.entity.QPost;
+import com.example.Petbulance_BE.domain.post.type.Category;
 import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.querydsl.core.types.Projections;
@@ -22,15 +26,14 @@ import java.util.List;
 public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
     private final JPAQueryFactory queryFactory;
 
-
     @Override
-    public Slice<PostCommentListResDto> findPostCommentByPostId(
+    public Slice<PostCommentListResDto> findPostCommentByPost(
             Post post, Long lastParentCommentId, Long lastCommentId, Pageable pageable, boolean isPostAuthor, Users currentUser) {
 
         QPostComment c = QPostComment.postComment;
-        QPostComment p = new QPostComment("parent");     // parent 별칭
-        QUsers author = new QUsers("author");            // 작성자 별칭
-        QUsers mentioned = new QUsers("mentioned");      // 멘션 대상 별칭
+        QPostComment p = new QPostComment("parent");
+        QUsers author = new QUsers("author");
+        QUsers mentioned = new QUsers("mentioned");
 
         BooleanExpression cursorCondition = null;
         if (lastCommentId != null && lastParentCommentId != null) {
@@ -44,23 +47,23 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
         List<PostCommentListSubDto> rows = queryFactory
                 .select(Projections.constructor(
                         PostCommentListSubDto.class,
-                        c.id,                    // Long
-                        c.parent.id,            // Long (nullable)
-                        author.nickname,        // String
-                        author.profileImage,    // String
-                        mentioned.nickname,     // String (nullable)
-                        c.content,              // String
-                        c.isSecret,             // Boolean
-                        c.deleted,              // Boolean
-                        c.hidden,               // Boolean
-                        c.imageUrl,             // String
-                        author.id,              // String  <-- Users.id가 String이면 SubDto도 String이어야 함
-                        c.createdAt             // LocalDateTime
+                        c.id,
+                        c.parent.id,
+                        author.nickname,
+                        author.profileImage,
+                        mentioned.nickname,
+                        c.content,
+                        c.isSecret,
+                        c.deleted,
+                        c.hidden,
+                        c.imageUrl,
+                        author.id,
+                        c.createdAt
                 ))
                 .from(c)
-                .join(c.user, author)               // fetchJoin() 빼기
-                .leftJoin(c.mentionUser, mentioned) // fetchJoin() 빼기
-                .leftJoin(c.parent, p)              // fetchJoin() 빼기
+                .join(c.user, author)
+                .leftJoin(c.mentionUser, mentioned)
+                .leftJoin(c.parent, p)
                 .where(
                         c.post.eq(post),
                        cursorCondition
@@ -79,5 +82,66 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
 
         return new SliceImpl<>(content, pageable, hasNext);
     }
+
+    @Override
+    public Slice<SearchPostCommentResDto> findSearchPostComment(String keyword,String searchScope,Long lastCommentId,Integer pageSize,List<Category> category,Long boardId) {
+        QPostComment c = QPostComment.postComment;
+        QPost p = QPost.post;
+        QBoard b = QBoard.board;
+        QUsers u = QUsers.users;
+
+        BooleanExpression scopeCond = scopeCondition(searchScope, keyword, c, u);
+        BooleanExpression categoryCond = (category != null && !category.isEmpty())
+                ? p.category.in(category)
+                : null;
+        BooleanExpression boardCond = (boardId != null)
+                ? b.id.eq(boardId)
+                : null;
+        BooleanExpression cursorCond = (lastCommentId != null)
+                ? c.id.lt(lastCommentId)
+                : null;
+
+        List<SearchPostCommentResDto> rows = queryFactory
+                .select(Projections.constructor(
+                        SearchPostCommentResDto.class,
+                        c.id,
+                        b.id,
+                        b.nameKr,
+                        p.id,
+                        p.title,
+                        u.nickname,
+                        c.content,
+                        c.createdAt
+                ))
+                .from(c)
+                .join(c.post, p)
+                .join(p.board, b)
+                .join(c.user, u)
+                .where(
+                        scopeCond,
+                        categoryCond,
+                        boardCond,
+                        cursorCond
+                )
+                .orderBy(c.id.desc())
+                .limit(pageSize + 1)
+                .fetch();
+
+        boolean hasNext = rows.size() > pageSize;
+        if (hasNext) rows = rows.subList(0, pageSize);
+
+        return new SliceImpl<>(rows, Pageable.ofSize(pageSize), hasNext);
+    }
+
+    private BooleanExpression scopeCondition(String searchScope,String keyword,QPostComment c,QUsers u) {
+        if (searchScope == null || keyword == null) return null;
+
+        return switch (searchScope.toLowerCase()) {
+            case "content" -> c.content.containsIgnoreCase(keyword);
+            case "writer" -> u.nickname.containsIgnoreCase(keyword);
+            default -> null;
+        };
+    }
+
 
 }

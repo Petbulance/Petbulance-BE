@@ -1,14 +1,12 @@
 package com.example.Petbulance_BE.domain.comment.dto.response;
 
 import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.example.Petbulance_BE.global.util.TimeUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 @Getter
@@ -64,24 +62,9 @@ public class PostCommentListResDto {
         }
 
         // createdAt 포맷팅
-        resDto.createdAt = formatCreatedAt(subDto.getCreatedAt());
+        resDto.createdAt = TimeUtil.formatCreatedAt(subDto.getCreatedAt());
 
         return resDto;
-    }
-
-    private static String formatCreatedAt(LocalDateTime createdAt) {
-        if (createdAt == null) return "";
-        LocalDateTime now = LocalDateTime.now();
-        Duration duration = Duration.between(createdAt, now);
-
-        long minutes = duration.toMinutes();
-        long hours = duration.toHours();
-
-        if (minutes < 1) return "방금 전";
-        if (minutes < 60) return minutes + "분 전";
-        if (hours < 24) return hours + "시간 전";
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
-        return createdAt.format(dateFormatter);
     }
 
     /** 게시글 작성자 시점에서 댓글 표시 여부 결정 */

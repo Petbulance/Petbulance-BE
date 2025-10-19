@@ -1,8 +1,10 @@
 package com.example.Petbulance_BE.domain.comment.service;
 
+import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.DelCommentResDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.SearchPostCommentResDto;
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
@@ -11,6 +13,7 @@ import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto
 import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentListResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
+import com.example.Petbulance_BE.domain.post.type.Category;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -23,6 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
 
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -34,6 +40,7 @@ public class PostCommentService {
     private final PostCommentRepository postCommentRepository;
     private final UsersJpaRepository usersJpaRepository;
     private final PostCommentCountRepository postCommentCountRepository;
+    private final BoardRepository boardRepository;
 
     @Transactional
     public PostCommentResDto createPostComment(Long postId, CreatePostCommentReqDto dto) {
@@ -174,6 +181,56 @@ public class PostCommentService {
         assert currentUser != null;
         boolean isPostAuthor = currentUser.equals(post.getUser());
 
-        return postCommentRepository.findPostCommentByPostId(post, lastParentCommentId, lastCommentId, pageable, isPostAuthor, currentUser);
+        return postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, isPostAuthor, currentUser);
+    }
+
+    public Slice<SearchPostCommentResDto> searchPostComment(String keyword, String searchScope, Long lastCommentId, Integer pageSize, List<String> category, Long boardId) {
+        if(keyword.length() < 2) {
+            throw new CustomException(ErrorCode.INVALID_SEARCH_KEYWORD);
+        }
+        if (!isValidSearchScope(searchScope)) {
+            throw new CustomException(ErrorCode.INVALID_SEARCH_SCOPE);
+        }
+        if (category != null && !category.isEmpty()) {
+            for (String cat : category) {
+                if (!isValidCategory(cat)) {
+                    throw new CustomException(ErrorCode.INVALID_CATEGORY);
+                }
+            }
+        }
+        if (boardId != null && !boardRepository.existsById(boardId)) {
+            throw new CustomException(ErrorCode.BOARD_NOT_FOUND);
+        }
+
+        return postCommentRepository.findSearchPostComment(keyword, searchScope, lastCommentId, pageSize, convertToCategoryList(category), boardId);
+    }
+
+    private boolean isValidSearchScope(String scope) {
+        return "writer".equalsIgnoreCase(scope) || "content".equalsIgnoreCase(scope);
+    }
+
+    private boolean isValidCategory(String category) {
+        try {
+            Category.valueOf(category.toUpperCase());
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private List<Category> convertToCategoryList(List<String> categoryStrings) {
+        if (categoryStrings == null || categoryStrings.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Category> categories = new ArrayList<>();
+        for (String cat : categoryStrings) {
+            try {
+                categories.add(Category.valueOf(cat.toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                throw new CustomException(ErrorCode.INVALID_CATEGORY);
+            }
+        }
+        return categories;
     }
 }
