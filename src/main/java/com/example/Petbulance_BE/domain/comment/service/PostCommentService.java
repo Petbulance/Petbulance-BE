@@ -8,7 +8,7 @@ import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
-import com.example.Petbulance_BE.domain.post.dto.response.PostCommentListResDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentListResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.user.entity.Users;
@@ -18,12 +18,10 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.User;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Pageable;
+
 
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -169,18 +167,13 @@ public class PostCommentService {
         }
     }
 
-    public Slice<PostCommentListResDto> postCommentList(Long postId, Long lastCommentId, Pageable pageable) {
-        Users currentUser = UserUtil.getCurrentUser(); // 현재 사용자
-        Post post = findPostById(postId); // 작성된 댓글의 게시글
+    public Slice<PostCommentListResDto> postCommentList(Long postId,Long lastParentCommentId, Long lastCommentId, Pageable pageable) {
+        Users currentUser = UserUtil.getCurrentUser(); // 현재 댓글을 조회하는 사용자
+        Post post = findPostById(postId); // 현재 조회하는 댓글이 달린 게시글
 
         assert currentUser != null;
-        if(currentUser.equals(post.getUser())) { // 현재 사용자가 게시글 작성자일 때
+        boolean isPostAuthor = currentUser.equals(post.getUser());
 
-        } else { // 현재 사용자가 게시글 작성자가 아닐 때
-
-        }
-
-        return null;
+        return postCommentRepository.findPostCommentByPostId(post, lastParentCommentId, lastCommentId, pageable, isPostAuthor, currentUser);
     }
-
 }
