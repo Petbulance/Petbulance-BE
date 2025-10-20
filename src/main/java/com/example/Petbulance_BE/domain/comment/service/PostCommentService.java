@@ -59,6 +59,7 @@ public class PostCommentService {
         Post post = findPostById(postId);
         PostComment parentComment = findParentComment(dto.getParentId());
         Users mentionedUser = findMentionedUser(dto.getMentionUserNickname());
+        Users currentUser = UserUtil.getCurrentUser();
 
         PostComment saved = postCommentRepository.save(
                 PostComment.builder()
@@ -68,6 +69,7 @@ public class PostCommentService {
                         .mentionUser(mentionedUser)
                         .isSecret(dto.getIsSecret())
                         .imageUrl(dto.getImageUrl())
+                        .isCommentFromPostAuthor(Objects.equals(post.getUser(), currentUser))
                         .build()
         );
 
@@ -134,18 +136,16 @@ public class PostCommentService {
             (2) 상위댓글 삭제여부 false인 경우 -> 하위댓글만 삭제
          */
         PostComment postComment = findPostCommentById(commentId); // 삭제하고자하는 댓글
-        verifyPostCommentWriter(postComment, UserUtil.getCurrentUser());
+        verifyPostCommentWriter(postComment, Objects.requireNonNull(UserUtil.getCurrentUser()));
 
         if(!postComment.getDeleted()) { // 아직 삭제되지 않은 댓글
             if(hasChildren(postComment)) { // 자식댓글이 존재하는 경우 (상위댓글)
                 // 삭제표시만
                 postComment.delete();
                 postCommentCountRepository.decrease(postComment.getPost().getId());
-                return new DelCommentResDto("댓글이 삭제 표시되었습니다.");
             } else {
                 delete(postComment); // 삭제 로직
                 postCommentCountRepository.decrease(postComment.getPost().getId());
-                return new DelCommentResDto("댓글이 성공적으로 삭제되었습니다.");
             }
         }
         return new DelCommentResDto("댓글이 성공적으로 삭제되었습니다.");
@@ -153,7 +153,7 @@ public class PostCommentService {
 
     private boolean hasChildren(PostComment postComment) {
         // postComment를 parentComment로 가진 댓글이 하나라도 존재하는지
-        return postCommentRepository.countByParent(postComment) > 0;
+        return postCommentRepository.countByParent(postComment) > 1;
     }
 
     // 자식이 없는 경우 -> 댓글 자체를 삭제
@@ -179,9 +179,9 @@ public class PostCommentService {
         Post post = findPostById(postId); // 현재 조회하는 댓글이 달린 게시글
 
         assert currentUser != null;
-        boolean isPostAuthor = currentUser.equals(post.getUser());
+        boolean currentUserIsPostAuthor = Objects.equals(currentUser.getId(), post.getUser().getId()); // 현재 사용자가 게시글 작성자인지 -> 이에 따라 조회 가능한 댓글 범위가 달라짐
 
-        return postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, isPostAuthor, currentUser);
+        return postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, currentUserIsPostAuthor, currentUser);
     }
 
     public Slice<SearchPostCommentResDto> searchPostComment(String keyword, String searchScope, Long lastCommentId, Integer pageSize, List<String> category, Long boardId) {

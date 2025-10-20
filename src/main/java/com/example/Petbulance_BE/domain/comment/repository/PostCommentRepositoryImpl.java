@@ -28,7 +28,7 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
 
     @Override
     public Slice<PostCommentListResDto> findPostCommentByPost(
-            Post post, Long lastParentCommentId, Long lastCommentId, Pageable pageable, boolean isPostAuthor, Users currentUser) {
+            Post post, Long lastParentCommentId, Long lastCommentId, Pageable pageable, boolean currentUserIsPostAuthor, Users currentUser) {
 
         QPostComment c = QPostComment.postComment;
         QPostComment p = new QPostComment("parent");
@@ -58,6 +58,7 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                         c.hidden,
                         c.imageUrl,
                         author.id,
+                        c.isCommentFromPostAuthor,
                         c.createdAt
                 ))
                 .from(c)
@@ -77,7 +78,7 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
         if (hasNext) rows = rows.subList(0, pageable.getPageSize());
 
         List<PostCommentListResDto> content = rows.stream()
-                .map(o -> PostCommentListResDto.of(o, isPostAuthor, currentUser))
+                .map(o -> PostCommentListResDto.of(o, currentUserIsPostAuthor, currentUser))
                 .toList();
 
         return new SliceImpl<>(content, pageable, hasNext);

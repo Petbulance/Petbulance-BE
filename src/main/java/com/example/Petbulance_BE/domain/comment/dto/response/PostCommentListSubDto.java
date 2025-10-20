@@ -21,5 +21,6 @@ public class PostCommentListSubDto {
     private boolean hidden;
     private String imageUrl;
     private String writerId;
+    private boolean isCommentFromPostAuthor;
     private LocalDateTime createdAt;
 }
