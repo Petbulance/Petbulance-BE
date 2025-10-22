@@ -1,5 +1,8 @@
-package com.example.Petbulance_BE.global.common.controller;
+package com.example.Petbulance_BE.global.common.auth.controller;
 
+import com.example.Petbulance_BE.global.common.auth.service.AuthService;
+import com.example.Petbulance_BE.global.common.dto.LoginRequestDto;
+import com.example.Petbulance_BE.global.common.dto.LoginResponseDto;
 import com.example.Petbulance_BE.global.common.dto.RefreshRequestDto;
 import com.example.Petbulance_BE.global.common.error.ErrorResponse;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -23,10 +26,12 @@ public class AuthController {
 
     private final JWTUtil jwtUtil;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final AuthService authService;
 
-    public AuthController(JWTUtil jwtUtil, RefreshTokenRepository refreshTokenRepository) {
+    public AuthController(JWTUtil jwtUtil, RefreshTokenRepository refreshTokenRepository, AuthService authService) {
         this.jwtUtil = jwtUtil;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.authService = authService;
     }
 
     @GetMapping("logout")
@@ -60,6 +65,11 @@ public class AuthController {
             throw new CustomException(ErrorCode.NON_EXIST_REFRESH_TOKEN);
         }
 
+    }
+
+    @PostMapping("/social/login")
+    public LoginResponseDto loginProcess(@RequestBody LoginRequestDto loginRequestDto){
+        return authService.loginService(loginRequestDto);
     }
 
 }

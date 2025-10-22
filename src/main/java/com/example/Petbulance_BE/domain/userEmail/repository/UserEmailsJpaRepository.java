@@ -24,4 +24,15 @@ public interface UserEmailsJpaRepository extends JpaRepository<UserEmails, Strin
 
     @Query("SELECT ue.user FROM UserEmails ue WHERE ue.googleEmail = :email")
     Optional<Users> findByGoogleEmail(@Param("email") String email);
+
+    @Query("""
+    SELECT u FROM Users u 
+    JOIN u.userEmails e
+    WHERE 
+        (:provider = 'KAKAO' AND e.kakaoEmail = :email) OR 
+        (:provider = 'NAVER' AND e.naverEmail = :email) OR
+        (:provider = 'GOOGLE' AND e.googleEmail = :email)
+""")
+    Optional<Users> findByEmailByProvider(@Param("provider") String provider, @Param("email") String email);
+
 }

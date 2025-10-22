@@ -20,7 +20,14 @@ public enum ErrorCode {
     ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "액세스 토큰이 만료되었습니다."),
     NON_EXIST_REFRESH_TOKEN(HttpStatus.BAD_REQUEST,"리프레시 토큰이 존재하지 않습니다"),
     INVALID_PROVIDER(HttpStatus.BAD_REQUEST, "프로바이더가 유효하지 않습니다."),
-    FirebaseToken_Fail(HttpStatus.BAD_REQUEST, "파이어베이스 커스텀 토큰 생성에 실패하였습니다.");
+    FirebaseToken_Fail(HttpStatus.BAD_REQUEST, "파이어베이스 커스텀 토큰 생성에 실패하였습니다."),
+    NON_EXIST_USER(HttpStatus.BAD_REQUEST, "존재하지 않는 유저입니다."),
+    SNS_ACCOUNT_ALREADY_LINKED(HttpStatus.BAD_REQUEST, "해당 소셜 계정은 이미 다른 계정과 연결되어 있습니다."),
+    FAIL_KAKAO_LOGIN(HttpStatus.BAD_REQUEST,"카카오 로그인 실패"),
+    FAIL_NAVER_LOGIN(HttpStatus.BAD_REQUEST,"네이버 로그인 실패"),
+    FAIL_GOOGLE_LOGIN(HttpStatus.BAD_REQUEST, "구글 로그인 실패"),
+    CANNOT_DISCONNECT_LAST_LOGIN_METHOD(HttpStatus.BAD_REQUEST,"유일한 로그인 수단은 해제할 수 없습니다."),
+    FAIL_IMAGE_UPLOAD(HttpStatus.BAD_REQUEST,"이미지 업로드에 실패하였습니다.");
 
     private final HttpStatus status;
     private final String message;
