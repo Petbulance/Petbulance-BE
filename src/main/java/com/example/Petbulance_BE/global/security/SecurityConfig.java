@@ -4,8 +4,6 @@ import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.redisRepository.RefreshTokenRepository;
 import com.example.Petbulance_BE.global.filter.JWTFilter;
 import com.example.Petbulance_BE.global.filter.LogoutFilter;
-import com.example.Petbulance_BE.global.oauth2.custom.CustomOAuth2UserService;
-import com.example.Petbulance_BE.global.oauth2.custom.CustomSuccessHandler;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,20 +21,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JWTUtil jwtUtil;
-    private final RedisTemplate<String, String> redisTemplate;
-    private final UsersJpaRepository usersJpaRepository;
-    private final CustomSuccessHandler customSuccessHandler;
     private final JWTFilter jwtFilter;
     private final LogoutFilter logoutFilter;
 
-    public SecurityConfig(JWTUtil jwtUtil, RedisTemplate<String, String> redisTemplate, UsersJpaRepository usersJpaRepository, RefreshTokenRepository refreshTokenRepository, LogoutFilter logoutFilter, CustomSuccessHandler customSuccessHandler, JWTFilter jwtFilter, LogoutFilter logoutFilter1) {
-        this.jwtUtil = jwtUtil;
-        this.redisTemplate = redisTemplate;
-        this.usersJpaRepository = usersJpaRepository;
-        this.customSuccessHandler = customSuccessHandler;
+    public SecurityConfig(LogoutFilter logoutFilter, JWTFilter jwtFilter) {
         this.jwtFilter = jwtFilter;
-        this.logoutFilter = logoutFilter1;
+        this.logoutFilter = logoutFilter;
     }
 
     @Bean
@@ -50,7 +40,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationConfiguration authenticationConfiguration, CustomOAuth2UserService customOAuth2UserService, CustomSuccessHandler customSuccessHandler) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationConfiguration authenticationConfiguration) throws Exception {
 
         http
                 .csrf((auth)->auth.disable());
