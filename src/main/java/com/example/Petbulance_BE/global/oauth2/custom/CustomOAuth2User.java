@@ -4,6 +4,7 @@ import com.example.Petbulance_BE.global.oauth2.dto.UserDto;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -45,5 +46,9 @@ public class CustomOAuth2User implements OAuth2User {
 
     public String getUserId(){
         return userDto.getUserId();
+    }
+
+    public LocalDate getBirth(){
+        return userDto.getBirth();
     }
 }

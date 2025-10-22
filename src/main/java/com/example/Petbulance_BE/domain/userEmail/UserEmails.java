@@ -2,10 +2,7 @@ package com.example.Petbulance_BE.domain.userEmail;
 
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @NoArgsConstructor
@@ -22,9 +19,15 @@ public class UserEmails {
     @JoinColumn(name = "user_id")
     private Users user;
 
+    @Setter
+    @Column(unique = true)
     private String kakaoEmail;
 
+    @Setter
+    @Column(unique = true)
     private String naverEmail;
 
+    @Setter
+    @Column(unique = true)
     private String googleEmail;
 }

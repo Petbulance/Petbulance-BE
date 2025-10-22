@@ -71,12 +71,12 @@ public class SecurityConfig {
                 );
         http
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-        http
-                .oauth2Login((oauth2) -> oauth2
-                        .userInfoEndpoint((userInfoEndpointConfig) -> userInfoEndpointConfig
-                                .userService(customOAuth2UserService))
-                        .successHandler(customSuccessHandler)
-                );
+//        http
+//                .oauth2Login((oauth2) -> oauth2
+//                        .userInfoEndpoint((userInfoEndpointConfig) -> userInfoEndpointConfig
+//                                .userService(customOAuth2UserService))
+//                        .successHandler(customSuccessHandler)
+//                );
         http
                 .addFilterBefore(logoutFilter, UsernamePasswordAuthenticationFilter.class);
 

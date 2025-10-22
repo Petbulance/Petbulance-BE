@@ -5,10 +5,7 @@ import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import com.example.Petbulance_BE.global.common.type.Gender;
 import com.example.Petbulance_BE.global.common.type.Role;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 
@@ -22,8 +19,10 @@ public class Users extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @Setter
     private String nickname;
 
+    @Setter
     private String profileImage;
 
     private String phoneNumber;
@@ -39,12 +38,15 @@ public class Users extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
+    @Setter
     @Builder.Default
     private Boolean kakaoConnected = false;
 
+    @Setter
     @Builder.Default
     private Boolean naverConnected = false;
 
+    @Setter
     @Builder.Default
     private Boolean googleConnected = false;
 
