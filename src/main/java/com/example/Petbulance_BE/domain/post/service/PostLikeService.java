@@ -15,6 +15,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -73,6 +74,8 @@ public class PostLikeService {
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
         Users currentUser = UserUtil.getCurrentUser();
 
+        verifyLikeUser(post, currentUser);
+
         PostLike postLike = postLikeRepository.findByPostAndUser(post, currentUser)
                 .orElseThrow(() -> new CustomException(ErrorCode.LIKE_NOT_FOUND));
 
@@ -101,4 +104,9 @@ public class PostLikeService {
                 .build();
     }
 
+    private void verifyLikeUser(Post post, Users currentUser) {
+        if(!Objects.equals(post.getUser().getId(), currentUser.getId())) {
+            throw new CustomException(ErrorCode.FORBIDDEN_LIKE_ACCESS);
+        }
+    }
 }

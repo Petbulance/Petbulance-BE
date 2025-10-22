@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.post.service;
 import com.example.Petbulance_BE.domain.board.entity.Board;
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
+import com.example.Petbulance_BE.domain.post.dto.response.CreatePostResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.entity.PostImage;
 import com.example.Petbulance_BE.domain.post.repository.PostImageRepository;
@@ -27,7 +28,7 @@ public class PostService {
     private final PostImageRepository postImageRepository;
 
     @Transactional
-    public Post createPost(CreatePostReqDto dto) {
+    public CreatePostResDto createPost(CreatePostReqDto dto) {
 
         if (dto.getTitle().isBlank() || dto.getContent().isBlank()) {
             throw new CustomException(ErrorCode.EMPTY_TITLE_OR_CONTENT);
@@ -61,7 +62,7 @@ public class PostService {
 
         savePostImages(savedPost, dto.getImageUrls());
 
-        return savedPost;
+        return CreatePostResDto.of(savedPost, savedPost.getBoard().getId(), dto.getImageUrls());
     }
 
     private void savePostImages(Post post, List<String> imageUrls) {
