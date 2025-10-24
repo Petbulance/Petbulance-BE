@@ -44,13 +44,14 @@ public class AuthController {
         String refreshToken = refreshRequestDto.getRefreshToken();
         String userId = jwtUtil.getUserId(refreshToken);
         String role = jwtUtil.getRole(refreshToken);
+        String provider = jwtUtil.getProvider(refreshToken);
         Optional<RefreshEntity> optionalEntity = refreshTokenRepository.findByUserId(userId);
         if(optionalEntity.isPresent()) {
 
             refreshTokenRepository.delete(optionalEntity.get());
 
-            String accessToken = jwtUtil.createJwt(userId,"access", role);
-            String refresh = jwtUtil.createJwt(userId,"refresh", role);
+            String accessToken = jwtUtil.createJwt(userId,"access", role, provider);
+            String refresh = jwtUtil.createJwt(userId,"refresh", role, provider);
 
             RefreshEntity refreshEntity = new RefreshEntity(userId, refresh, 8640000000L);
             refreshTokenRepository.save(refreshEntity);

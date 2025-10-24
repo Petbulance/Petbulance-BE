@@ -2,6 +2,7 @@ package com.example.Petbulance_BE.domain.user.controller;
 
 import com.example.Petbulance_BE.domain.user.dto.*;
 import com.example.Petbulance_BE.domain.user.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -48,5 +49,10 @@ public class UserController {
     @GetMapping("/profile/success")
     public Map<String, String> checkImageUpdate (@RequestBody CheckProfileImageRequestDto checkProfileImageRequestDto){
         return userService.profileImageCheckProcess(checkProfileImageRequestDto);
+    }
+
+    @GetMapping("/me")
+    public MeResponseDto myInfo (HttpServletRequest request) {
+        return userService.myInfoProcess(request);
     }
 }
