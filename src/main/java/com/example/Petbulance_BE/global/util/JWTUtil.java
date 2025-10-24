@@ -23,11 +23,12 @@ public class JWTUtil {
         this.SecretKEY = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
     }
     //jwt토큰 생성
-    public String createJwt(String userId, String category, String role) {
+    public String createJwt(String userId, String category, String role, String provider) {
         return Jwts.builder()
                 .claim("userId", userId)
                 .claim("category", category)
                 .claim("role", role)
+                .claim("provider", provider)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration*60*1000L))
                 .signWith(SecretKEY)
@@ -50,6 +51,15 @@ public class JWTUtil {
                 .parseSignedClaims(accessToken)
                 .getPayload()
                 .get("role", String.class);
+    }
+    //provider 추출
+    public String getProvider(String accessToken) {
+        return Jwts.parser()
+                .verifyWith(SecretKEY)
+                .build()
+                .parseSignedClaims(accessToken)
+                .getPayload()
+                .get("provider", String.class);
     }
     //만료 여부 확인
     public Boolean isExpired(String accessToken) {

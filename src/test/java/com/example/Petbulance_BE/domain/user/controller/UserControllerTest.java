@@ -7,6 +7,7 @@ import com.example.Petbulance_BE.domain.user.dto.ProfileImageUpdateReqeustDto;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.user.service.UserService;
+import com.example.Petbulance_BE.global.util.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,9 @@ class UserControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private JWTUtil jwtUtil;
 
     @Test
     void nicknameAvailable() throws Exception {
@@ -134,7 +138,7 @@ class UserControllerTest {
 
     @Test
     @DisplayName("프로필 이미지 저장 완료 검증")
-    void UserProfileImageUpdate() throws Exception {
+    void TestUserProfileImageUpdate() throws Exception {
         String jwtToken = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiIzZDI3NGI5Ni03NWU0LTRkZWItYWE3YS1jMmIxZjgzODk3NzciLCJjYXRlZ29yeSI6ImFjY2VzcyIsInJvbGUiOiJST0xFX0NMSUVOVCIsImlhdCI6MTc2MTExNTg4NCwiZXhwIjoxNzYxMjk1ODg0fQ.IGdJCkYKbZeVUIuya0cwKB10cvkpjm_K-bZZfmpChZI";
         ProfileImageUpdateReqeustDto profileImageUpdateRequestDto = new ProfileImageUpdateReqeustDto("image1","image/jpeg");
         mockMvc.perform(patch("/users/profile")
@@ -147,4 +151,21 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.data.imageUrl").value("pictureUrl"));
 
     }
+
+    @Test
+    @DisplayName("내 정보 조회")
+    void UserInfo() throws Exception {
+
+        String jwt = jwtUtil.createJwt("3a7a6eba-f107-42b5-8e2d-4536a94a17bf", "access", "ROLE_CLIENT", "GOOGLE");
+
+        mockMvc.perform(get("/users/me")
+                        .header("Authorization","Bearer "+jwt))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.nickname").doesNotExist())
+                .andExpect(jsonPath("$.data.provider").value("google"))
+                .andExpect(jsonPath("$.data.email").value("kyw020108@gmail.com"));
+
+    }
+
 }

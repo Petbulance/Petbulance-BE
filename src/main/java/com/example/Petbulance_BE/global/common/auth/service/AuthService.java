@@ -66,7 +66,7 @@ public class AuthService {
                     return createNewUser(provider, email);
                 });
 
-        LoginResponseDto response = createLoginResponse(user);
+        LoginResponseDto response = createLoginResponse(user, provider);
         response.setIsNewUser(isNewUser[0]);
         return response;
     }
@@ -157,12 +157,12 @@ public class AuthService {
         return newUser;
     }
 
-    private LoginResponseDto createLoginResponse(Users user) {
+    private LoginResponseDto createLoginResponse(Users user, String provider) {
         String userId = user.getId();
         String role = user.getRole().name();
 
-        String access = jwtUtil.createJwt(userId, "access", role);
-        String refresh = jwtUtil.createJwt(userId, "refresh", role);
+        String access = jwtUtil.createJwt(userId, "access", role, provider);
+        String refresh = jwtUtil.createJwt(userId, "refresh", role, provider);
 
         refreshTokenRepository.save(new RefreshEntity(userId, refresh, 8640000000L));
 

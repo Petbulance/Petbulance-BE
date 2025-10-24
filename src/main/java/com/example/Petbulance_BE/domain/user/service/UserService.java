@@ -8,9 +8,11 @@ import com.example.Petbulance_BE.domain.userEmail.repository.UserEmailsJpaReposi
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.s3.S3Service;
+import com.example.Petbulance_BE.global.util.JWTUtil;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
@@ -31,6 +33,7 @@ public class UserService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final UserEmailsJpaRepository userEmailsJpaRepository;
     private final S3Service s3Service;
+    private final JWTUtil jwtUtil;
 
     public NicknameResponseDto checkNicknameProcess(String nickname) {
         Boolean exists = usersJpaRepository.existsByNickname(nickname);
@@ -253,5 +256,48 @@ public class UserService {
 
             return Map.of("message", "이미지 저장에 완료하였습니다.");
         }
+    }
+
+    public MeResponseDto myInfoProcess(HttpServletRequest request) {
+
+        String authorization = request.getHeader("Authorization");
+
+        String token = authorization.split(" ")[1];
+
+        String provider = jwtUtil.getProvider(token).toLowerCase();
+
+        Users currentUser = UserUtil.getCurrentUser();
+        Users user = usersJpaRepository.findById(currentUser.getId()).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
+        UserEmails userEmails = user.getUserEmails();
+
+        String email;
+
+        String url = s3Service.getObject(user.getProfileImage());
+
+        switch (provider) {
+            case "kakao" -> {
+                email = userEmails.getKakaoEmail();
+            }
+            case "naver" -> {
+                email = userEmails.getNaverEmail();
+            }
+            case "google" -> {
+                email = userEmails.getGoogleEmail();
+            }
+            default -> {
+                throw new CustomException(ErrorCode.INVALID_PROVIDER);
+            }
+        }
+
+        return MeResponseDto.builder()
+                .provider(provider)
+                .email(email)
+                .nickname(user.getNickname())
+                .profileImageUrl(url)
+                .kakaoEmail(userEmails.getKakaoEmail())
+                .googleEmail(userEmails.getGoogleEmail())
+                .naverEmail(userEmails.getNaverEmail())
+                .build();
+
     }
 }
