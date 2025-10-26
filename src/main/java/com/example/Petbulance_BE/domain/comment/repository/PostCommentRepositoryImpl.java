@@ -122,7 +122,9 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                         scopeCond,
                         categoryCond,
                         boardCond,
-                        cursorCond
+                        cursorCond,
+                        c.deleted.eq(false),
+                        c.hidden.eq(false)
                 )
                 .orderBy(c.id.desc())
                 .limit(pageSize + 1)
@@ -173,7 +175,9 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                 .where(
                         scopeCond,
                         categoryCond,
-                        boardCond
+                        boardCond,
+                        c.deleted.eq(false),
+                        c.hidden.eq(false)
                 )
                 .fetchOne();
     }
