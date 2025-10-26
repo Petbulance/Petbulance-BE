@@ -50,6 +50,6 @@ public class Post extends BaseTimeEntity {
     private boolean deleted = false;
 
     @Column(name = "image_num", nullable = false)
-    private int imageNum = 0;
+    private int imageNum;
 }
 

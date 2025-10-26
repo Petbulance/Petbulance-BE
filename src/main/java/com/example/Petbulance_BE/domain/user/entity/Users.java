@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -58,4 +59,14 @@ public class Users extends BaseTimeEntity {
     public void suspendUser() {
         this.suspended = true;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Users)) return false;
+        Users user = (Users) o;
+        return Objects.equals(id, user.id);
+    }
+
+
 }

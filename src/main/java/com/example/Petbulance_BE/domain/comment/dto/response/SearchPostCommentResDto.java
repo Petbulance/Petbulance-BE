@@ -21,14 +21,14 @@ public class SearchPostCommentResDto {
     private String createdAt;
 
     public SearchPostCommentResDto(Long commentId, Long boardId, String boardName, Long postId, String postTitle, String writerNickname, String commentContent, LocalDateTime createdAt) {
-        SearchPostCommentResDto dto = new SearchPostCommentResDto();
-        dto.commentId = commentId;
-        dto.boardId = boardId;
-        dto.boardName = boardName;
-        dto.postId = postId;
-        dto.postTitle = postTitle;
-        dto.writerNickname = writerNickname;
-        dto.commentContent = commentContent;
-        dto.createdAt = TimeUtil.formatCreatedAt(createdAt);
+        this.commentId = commentId;
+        this.boardId = boardId;
+        this.boardName = boardName;
+        this.postId = postId;
+        this.postTitle = postTitle;
+        this.writerNickname = writerNickname;
+        this.commentContent = commentContent;
+        this.createdAt = TimeUtil.formatCreatedAt(createdAt);
     }
+
 }
