@@ -7,6 +7,7 @@ import com.example.Petbulance_BE.domain.post.dto.PostLikeDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.CreatePostResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.InquiryPostResDto;
 import com.example.Petbulance_BE.domain.post.service.PostLikeService;
 import com.example.Petbulance_BE.domain.post.service.PostService;
 import jakarta.validation.Valid;
@@ -50,5 +51,10 @@ public class PostController {
                                                        @RequestParam(defaultValue = "15") int pageSize) {
         Pageable pageable = PageRequest.of(0, pageSize);
         return postCommentService.postCommentList(postId, lastParentCommentId, lastCommentId, pageable);
+    }
+
+    @GetMapping("/{postId}")
+    public InquiryPostResDto inquiryPost(@PathVariable Long postId) {
+        return postService.inquiryPost(postId);
     }
 }

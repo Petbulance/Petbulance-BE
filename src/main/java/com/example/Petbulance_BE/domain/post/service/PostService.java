@@ -4,11 +4,14 @@ import com.example.Petbulance_BE.domain.board.entity.Board;
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.CreatePostResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.InquiryPostResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.entity.PostImage;
 import com.example.Petbulance_BE.domain.post.repository.PostImageRepository;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
+import com.example.Petbulance_BE.domain.post.repository.PostViewCountRepository;
 import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
@@ -26,6 +29,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final BoardRepository boardRepository;
     private final PostImageRepository postImageRepository;
+    private final PostViewCountRepository postViewCountRepository;
 
     @Transactional
     public CreatePostResDto createPost(CreatePostReqDto dto) {
@@ -73,5 +77,27 @@ public class PostService {
             PostImage postImage = PostImage.create(post, imageUrls.get(i), i+1, isThumbnail);
             postImageRepository.save(postImage);
         }
+    }
+
+    public InquiryPostResDto inquiryPost(Long postId) {
+        Post post = postRepository.findById(postId).orElseThrow(() ->
+                new CustomException(ErrorCode.POST_NOT_FOUND));
+        if(post.isHidden()) {
+            throw new CustomException(ErrorCode.POST_HIDDEN);
+        }
+        if(post.isDeleted()) {
+            throw new CustomException(ErrorCode.POST_DELETED);
+        }
+        Users currentUser = UserUtil.getCurrentUser();
+        boolean currentUserIsPostAuthor = currentUserIsPostAuthor(post.getUser(), currentUser);
+
+        // 조회수 증가 로직 (비회원 로직 나중에 추가)
+        long viewCount = postViewCountRepository.increaseIfNotViewed(postId, currentUser.getId());
+
+        return postRepository.findInquiryPost(post, currentUserIsPostAuthor, currentUser, viewCount);
+    }
+
+    private boolean currentUserIsPostAuthor(Users postAuthor, Users currentUser) {
+        return UserUtil.getCurrentUser() == postAuthor;
     }
 }
