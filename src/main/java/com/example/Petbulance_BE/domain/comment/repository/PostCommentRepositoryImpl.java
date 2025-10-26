@@ -85,6 +85,70 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
     }
 
     @Override
+    public Slice<PostCommentListResDto> findPostCommentByPostForGuest(
+            Post post, Long lastParentCommentId, Long lastCommentId, Pageable pageable) {
+
+        QPostComment c = QPostComment.postComment;
+        QPostComment p = new QPostComment("parent");
+        QUsers author = new QUsers("author");
+        QUsers mentioned = new QUsers("mentioned");
+
+        BooleanExpression cursorCondition = null;
+        if (lastCommentId != null && lastParentCommentId != null) {
+            cursorCondition = c.parent.id.gt(lastParentCommentId)
+                    .or(
+                            c.parent.id.eq(lastParentCommentId)
+                                    .and(c.id.gt(lastCommentId))
+                    );
+        }
+
+        // ✨ 비회원은 deleted/hidden/secret 댓글을 아예 조회하지 않음
+        BooleanExpression visibleCondition = c.deleted.eq(false)
+                .and(c.hidden.eq(false))
+                .and(c.isSecret.eq(false));
+
+        List<PostCommentListSubDto> rows = queryFactory
+                .select(Projections.constructor(
+                        PostCommentListSubDto.class,
+                        c.id,
+                        c.parent.id,
+                        author.nickname,
+                        author.profileImage,
+                        mentioned.nickname,
+                        c.content,
+                        c.isSecret,
+                        c.deleted,
+                        c.hidden,
+                        c.imageUrl,
+                        author.id,
+                        c.isCommentFromPostAuthor,
+                        c.createdAt
+                ))
+                .from(c)
+                .join(c.user, author)
+                .leftJoin(c.mentionUser, mentioned)
+                .leftJoin(c.parent, p)
+                .where(
+                        c.post.eq(post),
+                        visibleCondition,
+                        cursorCondition
+                )
+                .orderBy(c.parent.id.asc(), c.id.asc())
+                .limit(pageable.getPageSize() + 1)
+                .fetch();
+
+        boolean hasNext = rows.size() > pageable.getPageSize();
+        if (hasNext) rows = rows.subList(0, pageable.getPageSize());
+
+        List<PostCommentListResDto> content = rows.stream()
+                .map(PostCommentListResDto::ofForGuest)
+                .toList();
+
+        return new SliceImpl<>(content, pageable, hasNext);
+    }
+
+
+    @Override
     public Slice<SearchPostCommentResDto> findSearchPostComment(String keyword,String searchScope,Long lastCommentId,Integer pageSize,List<Category> category,Long boardId) {
         QPostComment c = QPostComment.postComment;
         QPost p = QPost.post;

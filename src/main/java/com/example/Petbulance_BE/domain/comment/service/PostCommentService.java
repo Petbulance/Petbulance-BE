@@ -176,12 +176,17 @@ public class PostCommentService {
         Users currentUser = UserUtil.getCurrentUser(); // 현재 댓글을 조회하는 사용자
         Post post = findPostById(postId); // 현재 조회하는 댓글이 달린 게시글
 
-        assert currentUser != null;
-        boolean currentUserIsPostAuthor = Objects.equals(currentUser.getId(), post.getUser().getId()); // 현재 사용자가 게시글 작성자인지 -> 이에 따라 조회 가능한 댓글 범위가 달라짐
-
-        return new PagingPostCommentListResDto(
-                postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, currentUserIsPostAuthor, currentUser)
-        );
+        if(currentUser == null) {
+            // 비회원이 게시글 댓글 조회시
+            return new PagingPostCommentListResDto(
+                    postCommentRepository.findPostCommentByPostForGuest(post, null, null, pageable)
+            );
+        } else {
+            boolean currentUserIsPostAuthor = Objects.equals(currentUser.getId(), post.getUser().getId()); // 현재 사용자가 게시글 작성자인지 -> 이에 따라 조회 가능한 댓글 범위가 달라짐
+            return new PagingPostCommentListResDto(
+                    postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, currentUserIsPostAuthor, currentUser)
+            );
+        }
     }
 
     public SearchPostCommentListResDto searchPostComment(String keyword, String searchScope, Long lastCommentId, Integer pageSize, List<String> category, Long boardId) {
