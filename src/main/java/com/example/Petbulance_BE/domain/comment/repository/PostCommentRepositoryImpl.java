@@ -144,5 +144,40 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
         };
     }
 
+    @Override
+    public long countSearchPostComment(
+            String keyword,
+            String searchScope,
+            List<Category> category,
+            Long boardId
+    ) {
+        QPostComment c = QPostComment.postComment;
+        QPost p = QPost.post;
+        QBoard b = QBoard.board;
+        QUsers u = QUsers.users;
+
+        BooleanExpression scopeCond = scopeCondition(searchScope, keyword, c, u);
+        BooleanExpression categoryCond = (category != null && !category.isEmpty())
+                ? p.category.in(category)
+                : null;
+        BooleanExpression boardCond = (boardId != null)
+                ? b.id.eq(boardId)
+                : null;
+
+        return queryFactory
+                .select(c.count())
+                .from(c)
+                .join(c.post, p)
+                .join(p.board, b)
+                .join(c.user, u)
+                .where(
+                        scopeCond,
+                        categoryCond,
+                        boardCond
+                )
+                .fetchOne();
+    }
+
+
 
 }

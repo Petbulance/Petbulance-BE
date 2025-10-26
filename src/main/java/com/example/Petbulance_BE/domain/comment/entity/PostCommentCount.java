@@ -1,8 +1,8 @@
 package com.example.Petbulance_BE.domain.comment.entity;
 
-import com.example.Petbulance_BE.domain.post.entity.Post;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity

@@ -1,19 +1,18 @@
 package com.example.Petbulance_BE.domain.post.controller;
 
+import com.example.Petbulance_BE.domain.comment.dto.response.PagingPostCommentListResDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
 import com.example.Petbulance_BE.domain.comment.service.PostCommentService;
 import com.example.Petbulance_BE.domain.post.dto.PostLikeDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.CreatePostResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentListResDto;
 import com.example.Petbulance_BE.domain.post.service.PostLikeService;
 import com.example.Petbulance_BE.domain.post.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -45,10 +44,10 @@ public class PostController {
     }
 
     @GetMapping("/{postId}/comments")
-    public Slice<PostCommentListResDto> postCommentList(@PathVariable("postId") Long postId,
-                                                        @RequestParam(required = false) Long lastParentCommentId,
-                                                        @RequestParam(required = false) Long lastCommentId,
-                                                        @RequestParam(defaultValue = "15") int pageSize) {
+    public PagingPostCommentListResDto postCommentList(@PathVariable("postId") Long postId,
+                                                       @RequestParam(required = false) Long lastParentCommentId,
+                                                       @RequestParam(required = false) Long lastCommentId,
+                                                       @RequestParam(defaultValue = "15") int pageSize) {
         Pageable pageable = PageRequest.of(0, pageSize);
         return postCommentService.postCommentList(postId, lastParentCommentId, lastCommentId, pageable);
     }

@@ -1,7 +1,5 @@
 package com.example.Petbulance_BE.domain.comment.dto.response;
 
-import com.example.Petbulance_BE.domain.comment.entity.PostComment;
-import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.util.TimeUtil;
 import lombok.AllArgsConstructor;

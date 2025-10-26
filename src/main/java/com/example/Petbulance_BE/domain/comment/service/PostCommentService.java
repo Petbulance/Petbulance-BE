@@ -3,14 +3,14 @@ package com.example.Petbulance_BE.domain.comment.service;
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.DelCommentResDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.PagingPostCommentListResDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.SearchPostCommentResDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.SearchPostCommentListResDto;
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentListResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.post.type.Category;
@@ -21,10 +21,8 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Slice;
-import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
-
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -96,7 +94,7 @@ public class PostCommentService {
         }
         PostComment postComment = findPostCommentById(commentId); // 수정하고자하는 댓글
 
-        verifyPostCommentWriter(postComment, UserUtil.getCurrentUser());
+        verifyPostCommentWriter(postComment, Objects.requireNonNull(UserUtil.getCurrentUser()));
 
         postComment.update(dto);
         return PostCommentResDto.of(postComment);
@@ -174,17 +172,19 @@ public class PostCommentService {
         }
     }
 
-    public Slice<PostCommentListResDto> postCommentList(Long postId,Long lastParentCommentId, Long lastCommentId, Pageable pageable) {
+    public PagingPostCommentListResDto postCommentList(Long postId,Long lastParentCommentId, Long lastCommentId, Pageable pageable) {
         Users currentUser = UserUtil.getCurrentUser(); // 현재 댓글을 조회하는 사용자
         Post post = findPostById(postId); // 현재 조회하는 댓글이 달린 게시글
 
         assert currentUser != null;
         boolean currentUserIsPostAuthor = Objects.equals(currentUser.getId(), post.getUser().getId()); // 현재 사용자가 게시글 작성자인지 -> 이에 따라 조회 가능한 댓글 범위가 달라짐
 
-        return postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, currentUserIsPostAuthor, currentUser);
+        return new PagingPostCommentListResDto(
+                postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, currentUserIsPostAuthor, currentUser)
+        );
     }
 
-    public Slice<SearchPostCommentResDto> searchPostComment(String keyword, String searchScope, Long lastCommentId, Integer pageSize, List<String> category, Long boardId) {
+    public SearchPostCommentListResDto searchPostComment(String keyword, String searchScope, Long lastCommentId, Integer pageSize, List<String> category, Long boardId) {
         if(keyword.length() < 2) {
             throw new CustomException(ErrorCode.INVALID_SEARCH_KEYWORD);
         }
@@ -202,7 +202,10 @@ public class PostCommentService {
             throw new CustomException(ErrorCode.BOARD_NOT_FOUND);
         }
 
-        return postCommentRepository.findSearchPostComment(keyword, searchScope, lastCommentId, pageSize, convertToCategoryList(category), boardId);
+        List<Category> categories = convertToCategoryList(category);
+        return new SearchPostCommentListResDto(
+                postCommentRepository.findSearchPostComment(keyword, searchScope, lastCommentId, pageSize, categories, boardId),
+                postCommentRepository.countSearchPostComment(keyword, searchScope, categories, boardId));
     }
 
     private boolean isValidSearchScope(String scope) {
