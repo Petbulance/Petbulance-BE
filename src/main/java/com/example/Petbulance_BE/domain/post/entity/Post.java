@@ -49,6 +49,7 @@ public class Post extends BaseTimeEntity {
     @Builder.Default
     private boolean deleted = false;
 
+    @Builder.Default
     @Column(name = "image_num", nullable = false)
     private int imageNum;
 }

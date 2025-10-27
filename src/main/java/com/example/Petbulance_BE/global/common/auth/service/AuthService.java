@@ -2,7 +2,7 @@ package com.example.Petbulance_BE.global.common.auth.service;
 
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
-import com.example.Petbulance_BE.domain.userEmail.UserEmails;
+import com.example.Petbulance_BE.domain.userEmail.entity.UserEmails;
 import com.example.Petbulance_BE.domain.userEmail.repository.UserEmailsJpaRepository;
 import com.example.Petbulance_BE.global.common.dto.LoginRequestDto;
 import com.example.Petbulance_BE.global.common.dto.LoginResponseDto;
@@ -24,8 +24,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

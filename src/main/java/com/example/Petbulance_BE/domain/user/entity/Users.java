@@ -1,6 +1,8 @@
 package com.example.Petbulance_BE.domain.user.entity;
 
-import com.example.Petbulance_BE.domain.userEmail.UserEmails;
+import com.example.Petbulance_BE.domain.device.entity.Device;
+import com.example.Petbulance_BE.domain.userEmail.entity.UserEmails;
+import com.example.Petbulance_BE.domain.userSetting.entity.UserSetting;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import com.example.Petbulance_BE.global.common.type.Gender;
 import com.example.Petbulance_BE.global.common.type.Role;
@@ -8,6 +10,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -53,12 +56,18 @@ public class Users extends BaseTimeEntity {
 
     private LocalDate birth;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private UserEmails userEmails;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<UserEmails> userEmails;
 
     public void suspendUser() {
         this.suspended = true;
     }
+    @Setter
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Device> devices;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<UserSetting> userSetting;
 
     @Override
     public boolean equals(Object o) {

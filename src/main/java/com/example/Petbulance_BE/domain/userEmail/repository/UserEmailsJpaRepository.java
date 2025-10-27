@@ -1,7 +1,7 @@
 package com.example.Petbulance_BE.domain.userEmail.repository;
 
 import com.example.Petbulance_BE.domain.user.entity.Users;
-import com.example.Petbulance_BE.domain.userEmail.UserEmails;
+import com.example.Petbulance_BE.domain.userEmail.entity.UserEmails;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

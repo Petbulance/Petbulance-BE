@@ -1,4 +1,4 @@
-package com.example.Petbulance_BE.domain.userEmail;
+package com.example.Petbulance_BE.domain.userEmail.entity;
 
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import jakarta.persistence.*;
@@ -14,7 +14,7 @@ public class UserEmails {
     @Id
     private String userId;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "user_id")
     private Users user;
