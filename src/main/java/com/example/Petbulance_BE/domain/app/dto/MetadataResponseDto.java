@@ -12,10 +12,13 @@ import java.util.List;
 @Builder
 public class MetadataResponseDto {
 
+    @Builder.Default
     private RegionsResponseDto region = new RegionsResponseDto();
 
+    @Builder.Default
     private List<String> species = new ArrayList<>();
 
+    @Builder.Default
     private List<String> communityCategory = new ArrayList<>();
 
 }

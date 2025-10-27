@@ -1,12 +1,11 @@
 package com.example.Petbulance_BE.domain.user.controller;
 
 import com.example.Petbulance_BE.PetbulanceBeApplication;
-import com.example.Petbulance_BE.domain.user.dto.NicknameSaveRequestDto;
-import com.example.Petbulance_BE.domain.user.dto.NicknameUpdateResponseDto;
-import com.example.Petbulance_BE.domain.user.dto.ProfileImageUpdateReqeustDto;
+import com.example.Petbulance_BE.domain.user.dto.request.NicknameSaveRequestDto;
+import com.example.Petbulance_BE.domain.user.dto.request.NotificationSettingReqeustDto;
+import com.example.Petbulance_BE.domain.user.dto.request.ProfileImageUpdateReqeustDto;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
-import com.example.Petbulance_BE.domain.user.service.UserService;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
@@ -14,20 +13,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.junit.jupiter.api.DisplayName;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(classes = PetbulanceBeApplication.class)
+@SpringBootTest
 @AutoConfigureMockMvc
 class UserControllerTest {
 
@@ -166,6 +162,22 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.data.provider").value("google"))
                 .andExpect(jsonPath("$.data.email").value("kyw020108@gmail.com"));
 
+    }
+
+    @Test
+    @DisplayName("알림 설정 변경 테스트 코드")
+    void check() throws Exception{
+    String jwt = jwtUtil.createJwt("3d274b96-75e4-4deb-aa7a-c2b1f8389777", "access", "ROLE_CLIENT", "GOOGLE");
+        NotificationSettingReqeustDto n = new NotificationSettingReqeustDto(true, true, true);
+        mockMvc.perform(patch("/users/settings/notification")
+                        .header("Authorization","Bearer "+jwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(n)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.notificationsEnabled").value(true))
+            .andExpect(jsonPath("$.data.eventNotificationsEnabled").value(true))
+            .andExpect(jsonPath("$.data.marketingNotificationsEnabled").value(true));
     }
 
 }

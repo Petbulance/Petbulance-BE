@@ -1,4 +1,4 @@
-package com.example.Petbulance_BE.domain.user.dto;
+package com.example.Petbulance_BE.domain.user.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

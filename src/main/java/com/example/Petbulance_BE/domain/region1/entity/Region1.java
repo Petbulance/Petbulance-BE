@@ -25,6 +25,7 @@ public class Region1 extends BaseTimeEntity {
 
     private String code;
 
+    @Builder.Default
     @OneToMany(mappedBy = "region1", orphanRemoval = true, cascade = CascadeType.REMOVE)
     private List<Region2> region2 = new ArrayList<>();
 }

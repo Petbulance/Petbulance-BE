@@ -71,7 +71,7 @@ public class JWTFilter extends OncePerRequestFilter {
         //접근 검증 완료시
         String userId = jwtUtil.getUserId(token);
 
-        Users user = usersJpaRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
+        Users user = usersJpaRepository.findByIdForAuth(userId).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
 
         if(user.getSuspended() == Boolean.TRUE){
             throw new CustomException(ErrorCode.ACCOUNT_SUSPENDED);

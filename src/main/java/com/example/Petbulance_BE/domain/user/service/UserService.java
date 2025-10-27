@@ -1,10 +1,16 @@
 package com.example.Petbulance_BE.domain.user.service;
 
-import com.example.Petbulance_BE.domain.user.dto.*;
+import com.example.Petbulance_BE.domain.user.dto.request.CheckProfileImageRequestDto;
+import com.example.Petbulance_BE.domain.user.dto.request.NotificationSettingReqeustDto;
+import com.example.Petbulance_BE.domain.user.dto.request.ProfileImageUpdateReqeustDto;
+import com.example.Petbulance_BE.domain.user.dto.request.SocialConnectRequestDto;
+import com.example.Petbulance_BE.domain.user.dto.response.*;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
-import com.example.Petbulance_BE.domain.userEmail.UserEmails;
+import com.example.Petbulance_BE.domain.userEmail.entity.UserEmails;
 import com.example.Petbulance_BE.domain.userEmail.repository.UserEmailsJpaRepository;
+import com.example.Petbulance_BE.domain.userSetting.entity.UserSetting;
+import com.example.Petbulance_BE.domain.userSetting.repository.UserSettingJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.s3.S3Service;
@@ -15,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -27,6 +34,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UsersJpaRepository usersJpaRepository;
@@ -34,6 +42,8 @@ public class UserService {
     private final UserEmailsJpaRepository userEmailsJpaRepository;
     private final S3Service s3Service;
     private final JWTUtil jwtUtil;
+    private final UserSettingJpaRepository userSettingJpa;
+    private final UserSettingJpaRepository userSettingJpaRepository;
 
     public NicknameResponseDto checkNicknameProcess(String nickname) {
         Boolean exists = usersJpaRepository.existsByNickname(nickname);
@@ -267,8 +277,11 @@ public class UserService {
         String provider = jwtUtil.getProvider(token).toLowerCase();
 
         Users currentUser = UserUtil.getCurrentUser();
-        Users user = usersJpaRepository.findById(currentUser.getId()).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
-        UserEmails userEmails = user.getUserEmails();
+        Users user = usersJpaRepository.findByIdWithUserEmail(currentUser.getId()).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
+        List<UserEmails> userEmails1 = user.getUserEmails();
+
+        UserEmails userEmails = userEmails1.get(0);
+
 
         String email;
 
@@ -298,6 +311,44 @@ public class UserService {
                 .googleEmail(userEmails.getGoogleEmail())
                 .naverEmail(userEmails.getNaverEmail())
                 .build();
+
+    }
+
+    @Transactional
+    public NotificationSettingResponseDto settingNotificationProcess(NotificationSettingReqeustDto notificationSettingReqeustDto) {
+
+        Users currentUser = UserUtil.getCurrentUser();
+
+        Users user = usersJpaRepository.findByIdWithUserSetting(currentUser.getId()).orElseThrow(()-> new CustomException(ErrorCode.NON_EXIST_USER));
+
+        List<UserSetting> userSettings = user.getUserSetting();
+
+        UserSetting userSetting;
+        if (userSettings.isEmpty()) {
+            userSetting = UserSetting.builder()
+                    .totalPush(false)
+                    .eventPush(false)
+                    .marketingPush(false)
+                    .user(user)
+                    .build();
+
+            userSettingJpaRepository.save(userSetting);
+        } else {
+            userSetting = userSettings.get(0);
+        }
+
+        Boolean notificationsEnabled = notificationSettingReqeustDto.getNotificationsEnabled();
+
+        userSetting.setTotalPush(notificationSettingReqeustDto.getNotificationsEnabled());
+        userSetting.setEventPush(notificationSettingReqeustDto.getEventNotificationsEnabled());
+        userSetting.setMarketingPush(notificationSettingReqeustDto.getMarketingNotificationsEnabled());
+
+        NotificationSettingResponseDto notificationSettingResponseDto = new NotificationSettingResponseDto();
+        notificationSettingResponseDto.setNotificationsEnabled(notificationsEnabled);
+        notificationSettingResponseDto.setEventNotificationsEnabled(notificationSettingReqeustDto.getEventNotificationsEnabled());
+        notificationSettingResponseDto.setMarketingNotificationsEnabled(notificationSettingReqeustDto.getMarketingNotificationsEnabled());
+
+        return notificationSettingResponseDto;
 
     }
 }

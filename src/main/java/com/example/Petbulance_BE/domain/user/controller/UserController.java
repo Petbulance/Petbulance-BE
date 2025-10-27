@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.user.controller;
 
-import com.example.Petbulance_BE.domain.user.dto.*;
+import com.example.Petbulance_BE.domain.user.dto.request.*;
+import com.example.Petbulance_BE.domain.user.dto.response.*;
 import com.example.Petbulance_BE.domain.user.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -54,5 +55,10 @@ public class UserController {
     @GetMapping("/me")
     public MeResponseDto myInfo (HttpServletRequest request) {
         return userService.myInfoProcess(request);
+    }
+
+    @PatchMapping("/settings/notification")
+    public NotificationSettingResponseDto settingNotification (@RequestBody NotificationSettingReqeustDto notificationSettingReqeustDto) {
+        return userService.settingNotificationProcess(notificationSettingReqeustDto);
     }
 }
