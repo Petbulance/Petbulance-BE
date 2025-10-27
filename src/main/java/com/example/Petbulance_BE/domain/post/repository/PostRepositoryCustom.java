@@ -8,4 +8,7 @@ import java.util.Optional;
 
 public interface PostRepositoryCustom {
     InquiryPostResDto findInquiryPost(Post post, boolean currentUserIsPostAuthor, Users currentUser, Long viewCount);
+    int fetchLikeCount(Long postId);
+    int fetchCommentCount(Long postId);
+    boolean fetchLikedByUser(Users currentUser, Long postId);
 }

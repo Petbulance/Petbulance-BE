@@ -17,8 +17,10 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +32,8 @@ public class PostService {
     private final BoardRepository boardRepository;
     private final PostImageRepository postImageRepository;
     private final PostViewCountRepository postViewCountRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private static final String CACHE_KEY_FORMAT = "post::inquiry::%d";
 
     @Transactional
     public CreatePostResDto createPost(CreatePostReqDto dto) {
@@ -80,22 +84,52 @@ public class PostService {
     }
 
     public InquiryPostResDto inquiryPost(Long postId) {
-        Post post = postRepository.findById(postId).orElseThrow(() ->
-                new CustomException(ErrorCode.POST_NOT_FOUND));
-        if(post.isHidden()) {
-            throw new CustomException(ErrorCode.POST_HIDDEN);
-        }
-        if(post.isDeleted()) {
-            throw new CustomException(ErrorCode.POST_DELETED);
-        }
-        Users currentUser = UserUtil.getCurrentUser();
-        boolean currentUserIsPostAuthor = currentUserIsPostAuthor(post.getUser(), currentUser);
+        // 게시글 검증
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND)); // 현재 조회하는 게시글
 
-        // 조회수 증가 로직 (비회원 로직 나중에 추가)
+        if (post.isHidden()) throw new CustomException(ErrorCode.POST_HIDDEN); // 숨긴 게시글
+        if (post.isDeleted()) throw new CustomException(ErrorCode.POST_DELETED); // 삭제된 게시글
+
+        // 현재 로그인 유저
+        Users currentUser = UserUtil.getCurrentUser();
+        boolean currentUserIsPostAuthor = currentUserIsPostAuthor(post.getUser(), currentUser); // 현재 유저가 게시글 작성자인지
+
+        // Redis 기반 조회수 증가
+        assert currentUser != null;
         long viewCount = postViewCountRepository.increaseIfNotViewed(postId, currentUser.getId());
 
-        return postRepository.findInquiryPost(post, currentUserIsPostAuthor, currentUser, viewCount);
+        // 정적 데이터 캐싱
+        String key = String.format(CACHE_KEY_FORMAT, postId); // 키 생성
+        InquiryPostResDto cachedDto = (InquiryPostResDto) redisTemplate.opsForValue().get(key); // 캐싱된 데이터 조회
+
+        // 캐시 미스 시 DB 조회 후 캐싱
+        if (cachedDto == null) {
+            cachedDto = postRepository.findInquiryPost(post, currentUserIsPostAuthor, currentUser, viewCount);
+            if (cachedDto != null) {
+                redisTemplate.opsForValue().set(key, cachedDto, Duration.ofMinutes(10)); // TTL 10분
+            }
+        }
+
+        if (cachedDto == null) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+
+        // 실시간 데이터 업데이트 (좋아요, 댓글, 조회수, 좋아요 여부)
+        InquiryPostResDto.PostInfo updated = cachedDto.getPost().toBuilder()
+                .likeCount(postRepository.fetchLikeCount(postId))
+                .commentCount(postRepository.fetchCommentCount(postId))
+                .viewCount((int) viewCount)
+                .likedByUser(postRepository.fetchLikedByUser(currentUser, postId))
+                .isCurrentUserPost(currentUserIsPostAuthor)
+                .build();
+
+        return InquiryPostResDto.builder()
+                .board(cachedDto.getBoard())
+                .post(updated)
+                .build();
     }
+
 
     private boolean currentUserIsPostAuthor(Users postAuthor, Users currentUser) {
         return UserUtil.getCurrentUser() == postAuthor;

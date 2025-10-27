@@ -29,7 +29,7 @@ public class InquiryPostResDto {
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
-    @Builder
+    @Builder(toBuilder = true)
     public static class PostInfo {
         private Long postId;
         private String title;
