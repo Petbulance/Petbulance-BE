@@ -58,6 +58,9 @@ public class PostComment extends BaseTimeEntity {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    @Column(name = "is_comment_from_post_author")
+    private boolean isCommentFromPostAuthor;
+
     public void update(UpdatePostCommentReqDto dto) {
         this.content = dto.getContent();
         this.imageUrl = dto.getImageUrl();

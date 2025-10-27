@@ -51,6 +51,6 @@ public class Post extends BaseTimeEntity {
 
     @Builder.Default
     @Column(name = "image_num", nullable = false)
-    private int imageNum = 0;
+    private int imageNum;
 }
 

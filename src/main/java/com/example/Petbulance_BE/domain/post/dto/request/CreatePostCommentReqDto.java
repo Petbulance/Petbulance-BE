@@ -22,13 +22,4 @@ public class CreatePostCommentReqDto {
 
     @NotNull(message = "비밀댓글 여부(isSecret)는 필수입니다.")
     private Boolean isSecret;
-
-    @AssertTrue(message = "parentId가 null이면 mentionUserNickname도 null이어야 하며, parentId가 null이 아니면 mentionUserNickname도 null이 아니어야 합니다.")
-    public boolean isMentionUserValid() {
-        if (parentId == null) {
-            return mentionUserNickname == null;
-        } else {
-            return mentionUserNickname != null;
-        }
-    }
 }

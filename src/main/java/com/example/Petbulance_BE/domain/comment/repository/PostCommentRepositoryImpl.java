@@ -28,7 +28,7 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
 
     @Override
     public Slice<PostCommentListResDto> findPostCommentByPost(
-            Post post, Long lastParentCommentId, Long lastCommentId, Pageable pageable, boolean isPostAuthor, Users currentUser) {
+            Post post, Long lastParentCommentId, Long lastCommentId, Pageable pageable, boolean currentUserIsPostAuthor, Users currentUser) {
 
         QPostComment c = QPostComment.postComment;
         QPostComment p = new QPostComment("parent");
@@ -58,6 +58,7 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                         c.hidden,
                         c.imageUrl,
                         author.id,
+                        c.isCommentFromPostAuthor,
                         c.createdAt
                 ))
                 .from(c)
@@ -77,7 +78,7 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
         if (hasNext) rows = rows.subList(0, pageable.getPageSize());
 
         List<PostCommentListResDto> content = rows.stream()
-                .map(o -> PostCommentListResDto.of(o, isPostAuthor, currentUser))
+                .map(o -> PostCommentListResDto.of(o, currentUserIsPostAuthor, currentUser))
                 .toList();
 
         return new SliceImpl<>(content, pageable, hasNext);
@@ -121,7 +122,9 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                         scopeCond,
                         categoryCond,
                         boardCond,
-                        cursorCond
+                        cursorCond,
+                        c.deleted.eq(false),
+                        c.hidden.eq(false)
                 )
                 .orderBy(c.id.desc())
                 .limit(pageSize + 1)
@@ -142,6 +145,43 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
             default -> null;
         };
     }
+
+    @Override
+    public long countSearchPostComment(
+            String keyword,
+            String searchScope,
+            List<Category> category,
+            Long boardId
+    ) {
+        QPostComment c = QPostComment.postComment;
+        QPost p = QPost.post;
+        QBoard b = QBoard.board;
+        QUsers u = QUsers.users;
+
+        BooleanExpression scopeCond = scopeCondition(searchScope, keyword, c, u);
+        BooleanExpression categoryCond = (category != null && !category.isEmpty())
+                ? p.category.in(category)
+                : null;
+        BooleanExpression boardCond = (boardId != null)
+                ? b.id.eq(boardId)
+                : null;
+
+        return queryFactory
+                .select(c.count())
+                .from(c)
+                .join(c.post, p)
+                .join(p.board, b)
+                .join(c.user, u)
+                .where(
+                        scopeCond,
+                        categoryCond,
+                        boardCond,
+                        c.deleted.eq(false),
+                        c.hidden.eq(false)
+                )
+                .fetchOne();
+    }
+
 
 
 }
