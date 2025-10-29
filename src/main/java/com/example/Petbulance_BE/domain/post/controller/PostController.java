@@ -9,6 +9,7 @@ import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.CreatePostResDto;
 import com.example.Petbulance_BE.domain.post.dto.response.InquiryPostResDto;
 import com.example.Petbulance_BE.domain.post.dto.response.PagingPostListResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.PagingPostSearchListResDto;
 import com.example.Petbulance_BE.domain.post.service.PostLikeService;
 import com.example.Petbulance_BE.domain.post.service.PostService;
 import jakarta.validation.Valid;
@@ -71,5 +72,19 @@ public class PostController {
     ) {
         return postService.postList(boardId, category, sort, lastPostId, pageSize);
     }
+
+    @GetMapping("/search")
+    public PagingPostSearchListResDto postSearchList(
+            @RequestParam(required = false) Long boardId,
+            @RequestParam(required = false) List<String> category,
+            @RequestParam(defaultValue = "popular") String sort,
+            @RequestParam(required = false) Long lastPostId,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String searchKeyword,
+            @RequestParam(defaultValue = "title_content") String searchScope
+    ) {
+        return postService.postSearchList(boardId, category, sort, lastPostId, pageSize, searchKeyword, searchScope);
+    }
+
 
 }

@@ -4,14 +4,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PostListResDto {
+public class PostSearchListResDto {
     private Long postId;
     private Long boardId;
     private String boardName;
-    private String category;
+    private List<String> category;
     private String writerProfileUrl;
     private String writerNickname;
     private String created;

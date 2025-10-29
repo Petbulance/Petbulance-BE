@@ -3,11 +3,17 @@ package com.example.Petbulance_BE.domain.post.repository;
 import com.example.Petbulance_BE.domain.board.entity.QBoard;
 import com.example.Petbulance_BE.domain.comment.entity.QPostCommentCount;
 import com.example.Petbulance_BE.domain.post.dto.response.InquiryPostResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.PagingPostSearchListResDto;
 import com.example.Petbulance_BE.domain.post.dto.response.PostListResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.PostSearchListResDto;
 import com.example.Petbulance_BE.domain.post.entity.*;
 import com.example.Petbulance_BE.domain.post.type.Category;
 import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.example.Petbulance_BE.global.common.error.exception.CustomException;
+import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.util.TimeUtil;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
@@ -138,7 +144,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         p.category.stringValue(),
                         u.profileImage,
                         u.nickname,
-                        p.createdAt.stringValue(),
+                        Expressions.constant(p.createdAt),
                         img.imageUrl,
                         p.imageNum.longValue(),
                         p.title,
@@ -186,5 +192,109 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         return new SliceImpl<>(results, PageRequest.of(0, pageSize), hasNext);
     }
 
+    @Override
+    public PagingPostSearchListResDto findPostSearchList(Long boardId,
+                                                         List<String> category,
+                                                         String sort,
+                                                         Long lastPostId,
+                                                         Integer pageSize,
+                                                         String searchKeyword,
+                                                         String searchScope) {
+
+        QPost p = QPost.post;
+        QPostLikeCount like = QPostLikeCount.postLikeCount1;
+        QPostCommentCount comment = QPostCommentCount.postCommentCount1;
+        QBoard b = QBoard.board;
+        QUsers u = QUsers.users;
+        QPostImage img = QPostImage.postImage;
+
+        BooleanBuilder condition = new BooleanBuilder();
+        condition.and(p.deleted.isFalse()).and(p.hidden.isFalse());
+
+        if (boardId != null) {
+            condition.and(p.board.id.eq(boardId));
+        }
+
+        if (category != null && !category.isEmpty()) {
+            condition.and(p.category.stringValue().in(category));
+        }
+
+        if (searchKeyword != null && !searchKeyword.isBlank()) {
+            BooleanBuilder searchBuilder = new BooleanBuilder();
+            switch (searchScope.toLowerCase()) {
+                case "title_content":
+                    searchBuilder.or(p.title.containsIgnoreCase(searchKeyword))
+                            .or(p.content.containsIgnoreCase(searchKeyword));
+                    break;
+                case "title":
+                    searchBuilder.or(p.title.containsIgnoreCase(searchKeyword));
+                    break;
+                case "writer":
+                    searchBuilder.or(u.nickname.containsIgnoreCase(searchKeyword));
+                    break;
+                default:
+                    throw new CustomException(ErrorCode.INVALID_SEARCH_SCOPE);
+            }
+            condition.and(searchBuilder);
+        }
+
+        if (lastPostId != null) {
+            condition.and(p.id.lt(lastPostId));
+        }
+
+        JPAQuery<PostSearchListResDto> dataQuery = queryFactory
+                .select(Projections.constructor(
+                        PostSearchListResDto.class,
+                        p.id,
+                        b.id,
+                        b.nameKr,
+                        Expressions.list(p.category.stringValue()),
+                        u.profileImage,
+                        u.nickname,
+                        p.createdAt.stringValue(),
+                        img.imageUrl,
+                        p.imageNum.longValue(),
+                        p.title,
+                        p.content,
+                        like.postLikeCount.coalesce(0L),
+                        comment.postCommentCount.coalesce(0L),
+                        Expressions.constant(0L),
+                        Expressions.constant(false)
+                ))
+                .from(p)
+                .leftJoin(p.board, b)
+                .leftJoin(p.user, u)
+                .leftJoin(like).on(like.postId.eq(p.id))
+                .leftJoin(comment).on(comment.postId.eq(p.id))
+                .leftJoin(img).on(img.post.id.eq(p.id).and(img.thumbnail.isTrue()))
+                .where(condition);
+
+        if ("popular".equalsIgnoreCase(sort)) {
+            dataQuery.orderBy(like.postLikeCount.desc().nullsLast(), p.createdAt.desc());
+        } else if ("comment".equalsIgnoreCase(sort)) {
+            dataQuery.orderBy(comment.postCommentCount.desc().nullsLast(), p.createdAt.desc());
+        } else {
+            dataQuery.orderBy(p.createdAt.desc());
+        }
+
+        List<PostSearchListResDto> results = dataQuery
+                .limit(pageSize + 1)
+                .fetch();
+
+        boolean hasNext = results.size() > pageSize;
+        if (hasNext) results.remove(pageSize);
+
+        Long totalCount = queryFactory
+                .select(p.count())
+                .from(p)
+                .leftJoin(p.user, u)
+                .where(condition)
+                .fetchOne();
+
+        return new PagingPostSearchListResDto(
+                new SliceImpl<>(results, PageRequest.of(0, pageSize), hasNext),
+                totalCount != null ? totalCount : 0L
+        );
+    }
 
 }

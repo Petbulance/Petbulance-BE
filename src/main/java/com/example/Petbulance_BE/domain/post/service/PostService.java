@@ -3,10 +3,7 @@ package com.example.Petbulance_BE.domain.post.service;
 import com.example.Petbulance_BE.domain.board.entity.Board;
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
-import com.example.Petbulance_BE.domain.post.dto.response.CreatePostResDto;
-import com.example.Petbulance_BE.domain.post.dto.response.InquiryPostResDto;
-import com.example.Petbulance_BE.domain.post.dto.response.PagingPostListResDto;
-import com.example.Petbulance_BE.domain.post.dto.response.PostListResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.*;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.entity.PostImage;
 import com.example.Petbulance_BE.domain.post.repository.PostImageRepository;
@@ -17,6 +14,7 @@ import com.example.Petbulance_BE.domain.post.type.Category;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.util.TimeUtil;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +23,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -145,14 +144,8 @@ public class PostService {
         if(!category.isBlank() && Category.isValidCategory(category)) {
             c = Category.valueOf(category);
         }
-
-        if (!isValidSortCondition(sort)) {
-            throw new CustomException(ErrorCode.INVALID_SORT_CONDITION);
-        }
-
-        if (boardId != null && !boardRepository.existsById(boardId)) {
-            throw new CustomException(ErrorCode.BOARD_NOT_FOUND);
-        }
+        validateSortCondition(sort);
+        validationBoardId(boardId);
 
         Slice<PostListResDto> postSlice = postRepository.findPostList(boardId, c, sort, lastPostId, pageSize);
 
@@ -162,12 +155,56 @@ public class PostService {
 
             boolean likedByUser = postLikeRepository.existsByPostIdAndUser(dto.getPostId(), UserUtil.getCurrentUser());
             dto.setLikedByUser(likedByUser);
+
+            dto.setCreated(TimeUtil.formatCreatedAt(LocalDateTime.parse(dto.getCreated())));
         });
 
         return new PagingPostListResDto(postSlice);
     }
 
-    private boolean isValidSortCondition(String sort) {
-        return "popular".equalsIgnoreCase(sort) || "latest".equalsIgnoreCase(sort) || "comment".equalsIgnoreCase(sort);
+    private void validationBoardId(Long boardId) {
+        if (boardId != null && !boardRepository.existsById(boardId)) {
+            throw new CustomException(ErrorCode.BOARD_NOT_FOUND);
+        }
     }
+
+    private void validateSortCondition(String sort) {
+        if (!("popular".equalsIgnoreCase(sort)
+                || "latest".equalsIgnoreCase(sort)
+                || "comment".equalsIgnoreCase(sort))) {
+            throw new CustomException(ErrorCode.INVALID_SORT_CONDITION);
+        }
+    }
+
+
+    public PagingPostSearchListResDto postSearchList(Long boardId, List<String> category, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
+        Category.convertToCategoryList(category);
+        validateSortCondition(sort);
+        validationBoardId(boardId);
+        validateSearchScope(searchScope);
+
+        PagingPostSearchListResDto pagingResult =
+                postRepository.findPostSearchList(boardId, category, sort, lastPostId, pageSize, searchKeyword, searchScope);
+
+        pagingResult.getContent().forEach(dto -> {
+            Long viewCount = postViewCountRepository.read(dto.getPostId());
+            dto.setViewCount(viewCount != null ? viewCount : 0L);
+
+            boolean likedByUser = postLikeRepository.existsByPostIdAndUser(dto.getPostId(), UserUtil.getCurrentUser());
+            dto.setLikedByUser(likedByUser);
+
+            dto.setCreated(TimeUtil.formatCreatedAt(LocalDateTime.parse(dto.getCreated())));
+        });
+
+        return pagingResult;
+    }
+
+    private void validateSearchScope(String searchScope) {
+        if (!("title_content".equalsIgnoreCase(searchScope)
+                || "title".equalsIgnoreCase(searchScope)
+                || "writer".equalsIgnoreCase(searchScope))) {
+            throw new CustomException(ErrorCode.INVALID_SEARCH_SCOPE);
+        }
+    }
+
 }

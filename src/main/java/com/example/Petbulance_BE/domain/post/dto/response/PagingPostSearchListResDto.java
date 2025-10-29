@@ -8,14 +8,16 @@ import org.springframework.data.domain.Slice;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
-public class PagingPostListResDto {
-    private List<PostListResDto> content;
+@NoArgsConstructor
+public class PagingPostSearchListResDto {
+    private List<PostSearchListResDto> content;
     private boolean hasNext;
+    private Long totalPostCount;
 
-    public PagingPostListResDto(Slice<PostListResDto> slice) {
+    public PagingPostSearchListResDto(Slice<PostSearchListResDto> slice, Long totalPostCount) {
         this.content = slice.getContent();
         this.hasNext = slice.hasNext();
+        this.totalPostCount = totalPostCount;
     }
 }
