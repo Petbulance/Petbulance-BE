@@ -102,7 +102,6 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                     );
         }
 
-        // ✨ 비회원은 deleted/hidden/secret 댓글을 아예 조회하지 않음
         BooleanExpression visibleCondition = c.deleted.eq(false)
                 .and(c.hidden.eq(false))
                 .and(c.isSecret.eq(false));

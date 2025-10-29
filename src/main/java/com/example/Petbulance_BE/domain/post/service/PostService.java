@@ -5,9 +5,12 @@ import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.CreatePostResDto;
 import com.example.Petbulance_BE.domain.post.dto.response.InquiryPostResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.PagingPostListResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.PostListResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.entity.PostImage;
 import com.example.Petbulance_BE.domain.post.repository.PostImageRepository;
+import com.example.Petbulance_BE.domain.post.repository.PostLikeRepository;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.post.repository.PostViewCountRepository;
 import com.example.Petbulance_BE.domain.post.type.Category;
@@ -17,6 +20,7 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +37,7 @@ public class PostService {
     private final PostImageRepository postImageRepository;
     private final PostViewCountRepository postViewCountRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final PostLikeRepository postLikeRepository;
     private static final String CACHE_KEY_FORMAT = "post::inquiry::%d";
 
     @Transactional
@@ -133,5 +138,36 @@ public class PostService {
 
     private boolean currentUserIsPostAuthor(Users postAuthor, Users currentUser) {
         return UserUtil.getCurrentUser() == postAuthor;
+    }
+
+    public PagingPostListResDto postList(Long boardId, String category, String sort, Long lastPostId, Integer pageSize) {
+        Category c = null;
+        if(!category.isBlank() && Category.isValidCategory(category)) {
+            c = Category.valueOf(category);
+        }
+
+        if (!isValidSortCondition(sort)) {
+            throw new CustomException(ErrorCode.INVALID_SORT_CONDITION);
+        }
+
+        if (boardId != null && !boardRepository.existsById(boardId)) {
+            throw new CustomException(ErrorCode.BOARD_NOT_FOUND);
+        }
+
+        Slice<PostListResDto> postSlice = postRepository.findPostList(boardId, c, sort, lastPostId, pageSize);
+
+        postSlice.getContent().forEach(dto -> {
+            Long viewCount = postViewCountRepository.read(dto.getPostId());
+            dto.setViewCount(viewCount != null ? viewCount : 0L);
+
+            boolean likedByUser = postLikeRepository.existsByPostIdAndUser(dto.getPostId(), UserUtil.getCurrentUser());
+            dto.setLikedByUser(likedByUser);
+        });
+
+        return new PagingPostListResDto(postSlice);
+    }
+
+    private boolean isValidSortCondition(String sort) {
+        return "popular".equalsIgnoreCase(sort) || "latest".equalsIgnoreCase(sort) || "comment".equalsIgnoreCase(sort);
     }
 }

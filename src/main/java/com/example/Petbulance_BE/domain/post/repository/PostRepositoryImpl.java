@@ -3,14 +3,22 @@ package com.example.Petbulance_BE.domain.post.repository;
 import com.example.Petbulance_BE.domain.board.entity.QBoard;
 import com.example.Petbulance_BE.domain.comment.entity.QPostCommentCount;
 import com.example.Petbulance_BE.domain.post.dto.response.InquiryPostResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.PostListResDto;
 import com.example.Petbulance_BE.domain.post.entity.*;
+import com.example.Petbulance_BE.domain.post.type.Category;
 import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 /**
  * 게시글 상세 조회 (정적 + 실시간 데이터 분리)
@@ -111,4 +119,72 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 .where(pl.post.id.eq(postId), pl.user.eq(currentUser))
                 .fetchFirst() != null;
     }
+
+    @Override
+    public Slice<PostListResDto> findPostList(Long boardId, Category c, String sort, Long lastPostId, Integer pageSize) {
+        QPost p = QPost.post;
+        QPostLikeCount like = QPostLikeCount.postLikeCount1;
+        QPostCommentCount comment = QPostCommentCount.postCommentCount1;
+        QBoard b = QBoard.board;
+        QUsers u = QUsers.users;
+        QPostImage img = QPostImage.postImage;
+
+        JPAQuery<PostListResDto> query = queryFactory
+                .select(Projections.constructor(
+                        PostListResDto.class,
+                        p.id,
+                        b.id,
+                        b.nameKr,
+                        p.category.stringValue(),
+                        u.profileImage,
+                        u.nickname,
+                        p.createdAt.stringValue(),
+                        img.imageUrl,
+                        p.imageNum.longValue(),
+                        p.title,
+                        p.content,
+                        like.postLikeCount.coalesce(0L),
+                        comment.postCommentCount.coalesce(0L),
+                        Expressions.constant(0L),
+                        Expressions.constant(false)
+                ))
+                .from(p)
+                .leftJoin(p.board, b)
+                .leftJoin(p.user, u)
+                .leftJoin(like).on(like.postId.eq(p.id))
+                .leftJoin(comment).on(comment.postId.eq(p.id))
+                .leftJoin(img).on(img.post.id.eq(p.id).and(img.thumbnail.isTrue()))
+                .where(p.deleted.isFalse(), p.hidden.isFalse());
+
+        if (boardId != null) {
+            query.where(p.board.id.eq(boardId));
+        }
+
+        if (c != null) {
+            query.where(p.category.eq(c));
+        }
+
+        if (lastPostId != null) {
+            query.where(p.id.lt(lastPostId));
+        }
+
+        if ("popular".equals(sort)) {
+            query.orderBy(like.postLikeCount.desc().nullsLast(), p.createdAt.desc());
+        } else if ("comment".equals(sort)) {
+            query.orderBy(comment.postCommentCount.desc().nullsLast(), p.createdAt.desc());
+        } else { // default: 최신순
+            query.orderBy(p.createdAt.desc());
+        }
+
+        List<PostListResDto> results = query
+                .limit(pageSize + 1)
+                .fetch();
+
+        boolean hasNext = results.size() > pageSize;
+        if (hasNext) results.remove(pageSize);
+
+        return new SliceImpl<>(results, PageRequest.of(0, pageSize), hasNext);
+    }
+
+
 }

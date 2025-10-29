@@ -198,7 +198,7 @@ public class PostCommentService {
         }
         if (category != null && !category.isEmpty()) {
             for (String cat : category) {
-                if (!isValidCategory(cat)) {
+                if (!Category.isValidCategory(cat)) {
                     throw new CustomException(ErrorCode.INVALID_CATEGORY);
                 }
             }
@@ -207,7 +207,7 @@ public class PostCommentService {
             throw new CustomException(ErrorCode.BOARD_NOT_FOUND);
         }
 
-        List<Category> categories = convertToCategoryList(category);
+        List<Category> categories = Category.convertToCategoryList(category);
         return new SearchPostCommentListResDto(
                 postCommentRepository.findSearchPostComment(keyword, searchScope, lastCommentId, pageSize, categories, boardId),
                 postCommentRepository.countSearchPostComment(keyword, searchScope, categories, boardId));
@@ -217,28 +217,5 @@ public class PostCommentService {
         return "writer".equalsIgnoreCase(scope) || "content".equalsIgnoreCase(scope);
     }
 
-    private boolean isValidCategory(String category) {
-        try {
-            Category.valueOf(category.toUpperCase());
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-    }
 
-    private List<Category> convertToCategoryList(List<String> categoryStrings) {
-        if (categoryStrings == null || categoryStrings.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<Category> categories = new ArrayList<>();
-        for (String cat : categoryStrings) {
-            try {
-                categories.add(Category.valueOf(cat.toUpperCase()));
-            } catch (IllegalArgumentException e) {
-                throw new CustomException(ErrorCode.INVALID_CATEGORY);
-            }
-        }
-        return categories;
-    }
 }
