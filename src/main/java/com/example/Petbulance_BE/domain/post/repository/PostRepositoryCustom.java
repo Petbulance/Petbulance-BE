@@ -3,7 +3,6 @@ package com.example.Petbulance_BE.domain.post.repository;
 import com.example.Petbulance_BE.domain.post.dto.response.InquiryPostResDto;
 import com.example.Petbulance_BE.domain.post.dto.response.PagingPostSearchListResDto;
 import com.example.Petbulance_BE.domain.post.dto.response.PostListResDto;
-import com.example.Petbulance_BE.domain.post.dto.response.PostSearchListResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.type.Category;
 import com.example.Petbulance_BE.domain.user.entity.Users;

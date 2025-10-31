@@ -41,7 +41,7 @@ public enum Category {
             Category.valueOf(category.toUpperCase());
             return true;
         } catch (IllegalArgumentException e) {
-            return false;
+            throw new CustomException(ErrorCode.INVALID_CATEGORY);
         }
     }
 }

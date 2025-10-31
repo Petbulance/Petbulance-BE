@@ -14,7 +14,7 @@ public class PostListResDto {
     private String category;
     private String writerProfileUrl;
     private String writerNickname;
-    private String created;
+    private String createdAt;
     private String thumbnailUrl;
     private Long imageCount;
     private String title;

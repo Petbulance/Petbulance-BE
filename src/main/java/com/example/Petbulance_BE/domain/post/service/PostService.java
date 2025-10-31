@@ -16,18 +16,19 @@ import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.TimeUtil;
 import com.example.Petbulance_BE.global.util.UserUtil;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
-@Transactional
 @Service
 @RequiredArgsConstructor
 public class PostService {
@@ -87,21 +88,22 @@ public class PostService {
         }
     }
 
+    @Transactional
     public InquiryPostResDto inquiryPost(Long postId) {
-        // 게시글 검증
+        // 조회하고자하는 게시글 검증
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND)); // 현재 조회하는 게시글
 
         if (post.isHidden()) throw new CustomException(ErrorCode.POST_HIDDEN); // 숨긴 게시글
         if (post.isDeleted()) throw new CustomException(ErrorCode.POST_DELETED); // 삭제된 게시글
 
-        // 현재 로그인 유저
+        // 현재 로그인 유저 (게시글 작성자인지 확인하기 위함)
         Users currentUser = UserUtil.getCurrentUser();
         boolean currentUserIsPostAuthor = currentUserIsPostAuthor(post.getUser(), currentUser); // 현재 유저가 게시글 작성자인지
 
         // Redis 기반 조회수 증가
         assert currentUser != null;
-        long viewCount = postViewCountRepository.increaseIfNotViewed(postId, currentUser.getId());
+        long viewCount = postViewCountRepository.increaseIfNotViewed(postId, currentUser.getId()); // 해당 게시글을 조회한 적 없는 사용자에 대해서만 카윤트 집계
 
         // 정적 데이터 캐싱
         String key = String.format(CACHE_KEY_FORMAT, postId); // 키 생성
@@ -110,17 +112,18 @@ public class PostService {
         // 캐시 미스 시 DB 조회 후 캐싱
         if (cachedDto == null) {
             cachedDto = postRepository.findInquiryPost(post, currentUserIsPostAuthor, currentUser, viewCount);
-            if (cachedDto != null) {
-                redisTemplate.opsForValue().set(key, cachedDto, Duration.ofMinutes(10)); // TTL 10분
+            if (cachedDto != null) { // DB에서 조회된 상세 정보를 캐시에 저장 TTL
+                redisTemplate.opsForValue().set(key, cachedDto, Duration.ofHours(6)); // TTL 6시간
             }
         }
 
-        if (cachedDto == null) {
+        if (cachedDto == null) { // 정적 데이터 조회 실패시
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
         // 실시간 데이터 업데이트 (좋아요, 댓글, 조회수, 좋아요 여부)
         InquiryPostResDto.PostInfo updated = cachedDto.getPost().toBuilder()
+                .createdAt(TimeUtil.formatCreatedAt(LocalDateTime.parse(cachedDto.getPost().getCreatedAt()))) // 시간 형식 변경
                 .likeCount(postRepository.fetchLikeCount(postId))
                 .commentCount(postRepository.fetchCommentCount(postId))
                 .viewCount((int) viewCount)
@@ -136,31 +139,50 @@ public class PostService {
 
 
     private boolean currentUserIsPostAuthor(Users postAuthor, Users currentUser) {
-        return UserUtil.getCurrentUser() == postAuthor;
+        return currentUser == postAuthor; // 현재 로그인 유저와 게시글 작성자가 동일 유저인지 판별
     }
 
+    @Transactional(readOnly = true)
     public PagingPostListResDto postList(Long boardId, String category, String sort, Long lastPostId, Integer pageSize) {
+
+        // 카테고리/정렬/게시판 검증
         Category c = null;
-        if(!category.isBlank() && Category.isValidCategory(category)) {
+        if (category != null && !category.isBlank() && Category.isValidCategory(category)) {
             c = Category.valueOf(category);
         }
         validateSortCondition(sort);
         validationBoardId(boardId);
 
+        // 게시글 목록 조회
         Slice<PostListResDto> postSlice = postRepository.findPostList(boardId, c, sort, lastPostId, pageSize);
+        List<PostListResDto> posts = postSlice.getContent();
 
-        postSlice.getContent().forEach(dto -> {
-            Long viewCount = postViewCountRepository.read(dto.getPostId());
-            dto.setViewCount(viewCount != null ? viewCount : 0L);
+        if (posts.isEmpty()) {
+            return new PagingPostListResDto(postSlice); // 내용이 없으면 그대로 반환
+        }
 
-            boolean likedByUser = postLikeRepository.existsByPostIdAndUser(dto.getPostId(), UserUtil.getCurrentUser());
-            dto.setLikedByUser(likedByUser);
+        Users currentUser = UserUtil.getCurrentUser();
+        // 게시글 ID 리스트 추출
+        List<Long> postIds = posts.stream()
+                .map(PostListResDto::getPostId)
+                .toList();
 
-            dto.setCreated(TimeUtil.formatCreatedAt(LocalDateTime.parse(dto.getCreated())));
+        // Redis에서 조회수 일괄 조회
+        Map<Long, Long> viewCountMap = postViewCountRepository.readAll(postIds);
+
+        // DB에서 현재 유저의 좋아요 여부 일괄 조회
+        Set<Long> likedPostIds = postLikeRepository.findLikedPostIdsByUserAndPostIds(currentUser, postIds);
+
+        // DTO에 매핑
+        posts.forEach(dto -> {
+            dto.setViewCount(viewCountMap.getOrDefault(dto.getPostId(), 0L));
+            dto.setLikedByUser(likedPostIds.contains(dto.getPostId()));
+            dto.setCreatedAt(TimeUtil.formatCreatedAt(LocalDateTime.parse(dto.getCreatedAt())));
         });
 
         return new PagingPostListResDto(postSlice);
     }
+
 
     private void validationBoardId(Long boardId) {
         if (boardId != null && !boardRepository.existsById(boardId)) {
@@ -177,6 +199,7 @@ public class PostService {
     }
 
 
+    @Transactional(readOnly = true)
     public PagingPostSearchListResDto postSearchList(Long boardId, List<String> category, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
         Category.convertToCategoryList(category);
         validateSortCondition(sort);
@@ -186,13 +209,28 @@ public class PostService {
         PagingPostSearchListResDto pagingResult =
                 postRepository.findPostSearchList(boardId, category, sort, lastPostId, pageSize, searchKeyword, searchScope);
 
-        pagingResult.getContent().forEach(dto -> {
-            Long viewCount = postViewCountRepository.read(dto.getPostId());
-            dto.setViewCount(viewCount != null ? viewCount : 0L);
+        List<PostSearchListResDto> posts = pagingResult.getContent();
+        if (posts.isEmpty()) {
+            return pagingResult;
+        }
 
-            boolean likedByUser = postLikeRepository.existsByPostIdAndUser(dto.getPostId(), UserUtil.getCurrentUser());
-            dto.setLikedByUser(likedByUser);
+        Users currentUser = UserUtil.getCurrentUser();
 
+        // postId 추출
+        List<Long> postIds = posts.stream()
+                .map(PostSearchListResDto::getPostId)
+                .toList();
+
+        // Redis에서 조회수 일괄 조회
+        Map<Long, Long> viewCountMap = postViewCountRepository.readAll(postIds);
+
+        // 좋아요 여부 일괄 조회 (Batch Query)
+        Set<Long> likedPostIds = postLikeRepository.findLikedPostIdsByUserAndPostIds(currentUser, postIds);
+
+        // DTO 매핑
+        posts.forEach(dto -> {
+            dto.setViewCount(viewCountMap.getOrDefault(dto.getPostId(), 0L));
+            dto.setLikedByUser(likedPostIds.contains(dto.getPostId()));
             dto.setCreated(TimeUtil.formatCreatedAt(LocalDateTime.parse(dto.getCreated())));
         });
 

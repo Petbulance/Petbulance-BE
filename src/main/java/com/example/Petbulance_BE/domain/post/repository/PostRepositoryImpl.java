@@ -45,8 +45,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         QUsers u = QUsers.users;
         QPostImage pi = QPostImage.postImage;
 
-        // 정적 데이터 조회 (캐시 대상)
-        InquiryPostResDto cached = queryFactory
+        // 정적 데이터만 조회
+        return queryFactory
                 .select(Projections.constructor(
                         InquiryPostResDto.class,
                         Projections.constructor(
@@ -64,9 +64,10 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                 p.createdAt.stringValue(),
                                 p.content,
                                 Expressions.stringTemplate("GROUP_CONCAT({0} ORDER BY {1} ASC)", pi.imageUrl, pi.imageOrder),
+                                // 동적 데이터는 0이나 기본값으로 처리
                                 Expressions.constant(0),
                                 Expressions.constant(0),
-                                Expressions.constant(viewCount),
+                                Expressions.constant(0),
                                 Expressions.constant(false),
                                 Expressions.constant(currentUserIsPostAuthor)
                         )
@@ -78,24 +79,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 .where(p.eq(post), p.deleted.eq(false))
                 .groupBy(p.id, b.id, u.id)
                 .fetchOne();
-
-        if (cached == null) return null;
-
-        Long postId = post.getId();
-
-        InquiryPostResDto.PostInfo postInfo = cached.getPost().toBuilder()
-                .likeCount(fetchLikeCount(postId))
-                .commentCount(fetchCommentCount(postId))
-                .viewCount(viewCount.intValue())
-                .likedByUser(fetchLikedByUser(currentUser, postId))
-                .isCurrentUserPost(currentUserIsPostAuthor)
-                .build();
-
-        return InquiryPostResDto.builder()
-                .board(cached.getBoard())
-                .post(postInfo)
-                .build();
     }
+
 
     public int fetchLikeCount(Long postId) {
         QPostLikeCount plc = QPostLikeCount.postLikeCount1;
@@ -149,10 +134,10 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         p.imageNum.longValue(),
                         p.title,
                         p.content,
-                        like.postLikeCount.coalesce(0L),
+                        like.postLikeCount.coalesce(0L), // postLikeCount가 null이면 0으로 대체
                         comment.postCommentCount.coalesce(0L),
-                        Expressions.constant(0L),
-                        Expressions.constant(false)
+                        Expressions.constant(0L), // 서비스에서 매핑
+                        Expressions.constant(false) // 서비스에서 매핑
                 ))
                 .from(p)
                 .leftJoin(p.board, b)
@@ -174,9 +159,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             query.where(p.id.lt(lastPostId));
         }
 
-        if ("popular".equals(sort)) {
+        if ("popular".equals(sort)) { // 인기순 - 좋아요순 정렬
             query.orderBy(like.postLikeCount.desc().nullsLast(), p.createdAt.desc());
-        } else if ("comment".equals(sort)) {
+        } else if ("comment".equals(sort)) { // 댓글순 - 댓글수 정렬
             query.orderBy(comment.postCommentCount.desc().nullsLast(), p.createdAt.desc());
         } else { // default: 최신순
             query.orderBy(p.createdAt.desc());
@@ -193,14 +178,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     }
 
     @Override
-    public PagingPostSearchListResDto findPostSearchList(Long boardId,
-                                                         List<String> category,
-                                                         String sort,
-                                                         Long lastPostId,
-                                                         Integer pageSize,
-                                                         String searchKeyword,
-                                                         String searchScope) {
-
+    public PagingPostSearchListResDto findPostSearchList(Long boardId, List<String> category, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
         QPost p = QPost.post;
         QPostLikeCount like = QPostLikeCount.postLikeCount1;
         QPostCommentCount comment = QPostCommentCount.postCommentCount1;
@@ -209,7 +187,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         QPostImage img = QPostImage.postImage;
 
         BooleanBuilder condition = new BooleanBuilder();
-        condition.and(p.deleted.isFalse()).and(p.hidden.isFalse());
+        condition.and(p.deleted.isFalse()).and(p.hidden.isFalse()); // 목록 조회시 삭제되고 숨겨진 게시글은 제외
 
         if (boardId != null) {
             condition.and(p.board.id.eq(boardId));
