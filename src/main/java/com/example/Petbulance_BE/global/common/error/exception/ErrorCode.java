@@ -35,11 +35,15 @@ public enum ErrorCode {
     FORBIDDEN_LIKE_ACCESS(HttpStatus.UNAUTHORIZED, "좋아요에 대한 권한이 존재하지 않습니다."),
     FORBIDDEN_COMMENT_ACCESS(HttpStatus.UNAUTHORIZED, "댓글에 대한 권한이 존재하지 않습니다."),
     INVALID_SEARCH_KEYWORD(HttpStatus.BAD_REQUEST, "검색어는 2글자 이상이어야 합니다."),
-    INVALID_SEARCH_SCOPE(HttpStatus.BAD_REQUEST, "searchScope는 writer 또는 content여야 합니다."),
+    INVALID_SEARCH_SCOPE(HttpStatus.BAD_REQUEST, "유효하지 않은 검색 범위값 입니다."),
     INVALID_CATEGORY(HttpStatus.BAD_REQUEST, "유효하지 않은 category 값입니다."),
     BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 게시판입니다."),
     ACCOUNT_SUSPENDED(HttpStatus.BAD_REQUEST,"이용이 정지된 계정입니다. 고객센터에 문의해 주세요."),
-    NOT_FOUND_APP_VERSION(HttpStatus.BAD_REQUEST, "앱 버전 정보가 존재하지 않습니다.");
+    NOT_FOUND_APP_VERSION(HttpStatus.BAD_REQUEST, "앱 버전 정보가 존재하지 않습니다."),
+    POST_HIDDEN(HttpStatus.FORBIDDEN, "숨겨진 게시글입니다."),
+    POST_DELETED(HttpStatus.GONE, "삭제된 게시글입니다."),
+    INTERNAL_SERVER_ERROR(HttpStatus.BAD_REQUEST, "게시글 조회 중 오류가 발생했습니다."),
+    INVALID_SORT_CONDITION(HttpStatus.BAD_REQUEST, "유효하지 않은 정렬 조건입니다.");
 
     private final HttpStatus status;
     private final String message;

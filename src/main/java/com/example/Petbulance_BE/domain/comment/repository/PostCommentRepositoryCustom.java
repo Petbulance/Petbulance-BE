@@ -14,4 +14,5 @@ public interface PostCommentRepositoryCustom {
     Slice<PostCommentListResDto> findPostCommentByPost(Post post, Long lastParentCommentId, Long lastCommentId, Pageable pageable, boolean currentUserIsPostAuthor, Users currentUser);
     Slice<SearchPostCommentResDto> findSearchPostComment(String keyword, String searchScope, Long lastCommentId, Integer pageSize, List<Category> category, Long boardId);
     long countSearchPostComment(String keyword, String searchScope, List<Category> categories, Long boardId);
+    Slice<PostCommentListResDto> findPostCommentByPostForGuest(Post post, Long lastParentCommentId, Long lastCommentId, Pageable pageable);
 }

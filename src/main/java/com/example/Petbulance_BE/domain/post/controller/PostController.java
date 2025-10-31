@@ -7,6 +7,9 @@ import com.example.Petbulance_BE.domain.post.dto.PostLikeDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.CreatePostResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.InquiryPostResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.PagingPostListResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.PagingPostSearchListResDto;
 import com.example.Petbulance_BE.domain.post.service.PostLikeService;
 import com.example.Petbulance_BE.domain.post.service.PostService;
 import jakarta.validation.Valid;
@@ -14,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -51,4 +56,35 @@ public class PostController {
         Pageable pageable = PageRequest.of(0, pageSize);
         return postCommentService.postCommentList(postId, lastParentCommentId, lastCommentId, pageable);
     }
+
+    @GetMapping("/{postId}")
+    public InquiryPostResDto inquiryPost(@PathVariable Long postId) {
+        return postService.inquiryPost(postId);
+    }
+
+    @GetMapping
+    public PagingPostListResDto postList(
+            @RequestParam(required = false) Long boardId,
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "popular") String sort,
+            @RequestParam(required = false) Long lastPostId,
+            @RequestParam(defaultValue = "10") Integer pageSize
+    ) {
+        return postService.postList(boardId, category, sort, lastPostId, pageSize);
+    }
+
+    @GetMapping("/search")
+    public PagingPostSearchListResDto postSearchList(
+            @RequestParam(required = false) Long boardId,
+            @RequestParam(required = false) List<String> category,
+            @RequestParam(defaultValue = "popular") String sort,
+            @RequestParam(required = false) Long lastPostId,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String searchKeyword,
+            @RequestParam(defaultValue = "title_content") String searchScope
+    ) {
+        return postService.postSearchList(boardId, category, sort, lastPostId, pageSize, searchKeyword, searchScope);
+    }
+
+
 }
