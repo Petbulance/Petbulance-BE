@@ -88,4 +88,9 @@ public class PostController {
     public UpdatePostResDto updatePost(@PathVariable("postId") Long postId, @RequestBody UpdatePostReqDto dto) {
         return postService.updatePost(postId, dto);
     }
+
+    @DeleteMapping("/{postId")
+    public DeletePostResDto deletePost(@PathVariable("postid") Long postId) {
+        return postService.deletePost(postId);
+    }
 }

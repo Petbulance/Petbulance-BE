@@ -11,6 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "posts")
@@ -55,10 +57,15 @@ public class Post extends BaseTimeEntity {
     @Column(name = "image_num", nullable = false)
     private int imageNum;
 
-    public void update(String title, String content, Category category) {
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<PostImage> postImages = new ArrayList<>();
+
+
+    public void update(String title, String content, Category category, int imageNum) {
        this.title = title;
        this.content = content;
        this.category = category;
+       this.imageNum = imageNum;
     }
 
 }

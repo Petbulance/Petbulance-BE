@@ -275,7 +275,7 @@ public class PostService {
         updatePostImages(post, dto);
 
         // 게시글 본문 수정
-        post.update(dto.getTitle(), dto.getContent(), category);
+        post.update(dto.getTitle(), dto.getContent(), category, dto.getImagesToKeepOrAdd().size());
 
         // 캐시 무효화
         String cacheKey = String.format(CACHE_KEY_FORMAT, postId);
@@ -339,4 +339,18 @@ public class PostService {
         return post;
     }
 
+    public DeletePostResDto deletePost(Long postId) {
+        Post post = validateVisiblePost(postId);
+        postRepository.delete(post);
+
+        Users currentUser = UserUtil.getCurrentUser();
+        if (!currentUserIsPostAuthor(post.getUser(), currentUser)) { // 현재 유저가 게시글 작성자인지 -> 삭제권한이 있는지 확인
+            throw new CustomException(ErrorCode.FORBIDDEN_POST_ACCESS);
+        }
+
+        String cacheKey = String.format(CACHE_KEY_FORMAT, postId);
+        redisTemplate.delete(cacheKey);
+
+        return new DeletePostResDto(postId, post.getBoard().getId(), true, post.isHidden(), LocalDateTime.now());
+    }
 }
