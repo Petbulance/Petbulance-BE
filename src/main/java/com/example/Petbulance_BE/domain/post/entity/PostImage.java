@@ -40,5 +40,10 @@ public class PostImage {
                 .thumbnail(isThumbnail)
                 .build();
     }
+
+    public void updateOrderAndThumbnail(int order, boolean isThumbnail) {
+        this.imageOrder = order;
+        this.thumbnail = isThumbnail;
+    }
 }
 

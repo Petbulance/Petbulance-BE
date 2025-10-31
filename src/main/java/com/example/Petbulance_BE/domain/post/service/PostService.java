@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +41,7 @@ public class PostService {
     private final PostViewCountRepository postViewCountRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final PostLikeRepository postLikeRepository;
+
     private static final String CACHE_KEY_FORMAT = "post::inquiry::%d";
 
     @Transactional
@@ -134,9 +137,9 @@ public class PostService {
     }
 
     private Post getPost(Long postId) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND)); // 현재 조회하는 게시글
-        return post;
+        // 현재 조회하는 게시글
+        return postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
     }
 
 
@@ -247,30 +250,82 @@ public class PostService {
         }
     }
 
+    @Transactional
     public UpdatePostResDto updatePost(Long postId, UpdatePostReqDto dto) {
-        Post post = validateVisiblePost(postId);
+        Post post = validateVisiblePost(postId); // postId를 이용하여 게시글을 찾고 숨겨지거나 삭제된 게시글의 경우 예외 발생
 
-        // 현재 로그인 유저 (게시글 작성자인지 확인하기 위함)
         Users currentUser = UserUtil.getCurrentUser();
-        boolean currentUserIsPostAuthor = currentUserIsPostAuthor(post.getUser(), currentUser); // 현재 유저가 게시글 작성자인지
-        if(!currentUserIsPostAuthor) {
+        if (!currentUserIsPostAuthor(post.getUser(), currentUser)) { // 현재 유저가 게시글 작성자인지 -> 수정권한이 있는지 확인
             throw new CustomException(ErrorCode.FORBIDDEN_POST_ACCESS);
         }
 
         if (dto.getTitle().isBlank() || dto.getContent().isBlank()) {
             throw new CustomException(ErrorCode.EMPTY_TITLE_OR_CONTENT);
         }
-        if (dto.getImageUrls() != null && dto.getImageUrls().size() > 10) {
+        if (dto.getImagesToKeepOrAdd() != null && dto.getImagesToKeepOrAdd().size() > 10) {
             throw new CustomException(ErrorCode.EXCEEDED_MAX_IMAGE_COUNT);
         }
 
-        Category c = null;
-        if(Category.isValidCategory(dto.getCategory())) {
-            c = Category.valueOf(dto.getCategory());
+        Category category = null;
+        if (Category.isValidCategory(dto.getCategory())) {
+            category = Category.valueOf(dto.getCategory());
         }
 
-        return null;
+        // 이미지 업데이트
+        updatePostImages(post, dto);
+
+        // 게시글 본문 수정
+        post.update(dto.getTitle(), dto.getContent(), category);
+
+        // 캐시 무효화
+        String cacheKey = String.format(CACHE_KEY_FORMAT, postId);
+        redisTemplate.delete(cacheKey);
+
+        return UpdatePostResDto.from(post, postImageRepository.findByPost(post));
     }
+
+    @Transactional
+    public void updatePostImages(Post post, UpdatePostReqDto dto) {
+        List<PostImage> existingImages = postImageRepository.findByPost(post); // 해당 게시글의 첨부된 이미지 조회
+        /*
+        * 키(key): imageUrl
+          값(value): PostImage 엔티티 자체
+        */
+        Map<String, PostImage> existingMap = existingImages.stream()
+                .collect(Collectors.toMap(PostImage::getImageUrl, Function.identity()));
+
+        // 삭제 처리
+        if (dto.getImageUrlsToDelete() != null) {
+            dto.getImageUrlsToDelete().forEach(url -> {
+                PostImage target = existingMap.remove(url);
+                if (target != null) {
+                    postImageRepository.delete(target);
+                    try {
+                        //s3Service.deleteFile(url);
+                    } catch (Exception e) {
+                      //  log.warn("S3 파일 삭제 실패: {}", url, e);
+                    }
+                }
+            });
+        }
+
+        // 추가/유지/순서/썸네일 갱신
+        for (UpdatePostReqDto.ImageUpdateDto updateDto : dto.getImagesToKeepOrAdd()) {
+            PostImage existing = existingMap.get(updateDto.getImageUrl());
+            if (existing != null) {
+                existing.updateOrderAndThumbnail(updateDto.getImageOrder(), updateDto.isThumbnail());
+            } else {
+                PostImage newImage = PostImage.create(
+                        post,
+                        updateDto.getImageUrl(),
+                        updateDto.getImageOrder(),
+                        updateDto.isThumbnail()
+                );
+                postImageRepository.save(newImage);
+            }
+        }
+    }
+
 
     private Post validateVisiblePost(Long postId) {
         Post post = getPost(postId);

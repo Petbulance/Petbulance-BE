@@ -10,6 +10,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "posts")
 @Getter
@@ -49,8 +51,15 @@ public class Post extends BaseTimeEntity {
     @Builder.Default
     private boolean deleted = false;
 
-    @Builder.Default
+
     @Column(name = "image_num", nullable = false)
     private int imageNum;
+
+    public void update(String title, String content, Category category) {
+       this.title = title;
+       this.content = content;
+       this.category = category;
+    }
+
 }
 
