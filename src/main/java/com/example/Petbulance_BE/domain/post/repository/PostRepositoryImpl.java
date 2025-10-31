@@ -43,10 +43,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         QPost p = QPost.post;
         QBoard b = QBoard.board;
         QUsers u = QUsers.users;
-        QPostImage pi = QPostImage.postImage;
 
-        // 정적 데이터만 조회
-        return queryFactory
+        // 1️⃣ 게시글/작성자/게시판 정보만 가져오기
+        InquiryPostResDto result = queryFactory
                 .select(Projections.constructor(
                         InquiryPostResDto.class,
                         Projections.constructor(
@@ -63,22 +62,49 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                 u.profileImage,
                                 p.createdAt.stringValue(),
                                 p.content,
-                                Expressions.stringTemplate("GROUP_CONCAT({0} ORDER BY {1} ASC)", pi.imageUrl, pi.imageOrder),
-                                // 동적 데이터는 0이나 기본값으로 처리
-                                Expressions.constant(0),
-                                Expressions.constant(0),
-                                Expressions.constant(0),
-                                Expressions.constant(false),
+                                Expressions.constant(null), // 이미지 부분은 나중에 세팅
+                                Expressions.constant(0),     // likeCount
+                                Expressions.constant(0),     // commentCount
+                                Expressions.constant(0),     // viewCount
+                                Expressions.constant(false), // likedByUser
                                 Expressions.constant(currentUserIsPostAuthor)
                         )
                 ))
                 .from(p)
                 .join(p.board, b)
                 .join(p.user, u)
-                .leftJoin(pi).on(pi.post.eq(p))
                 .where(p.eq(post), p.deleted.eq(false))
-                .groupBy(p.id, b.id, u.id)
                 .fetchOne();
+
+        if (result == null) return null;
+
+        List<InquiryPostResDto.ImageInfo> images = fetchImagesByPostId(post.getId());
+
+        InquiryPostResDto.PostInfo updatedPostInfo =
+                result.getPost().toBuilder()
+                        .images(images)
+                        .build();
+
+        return InquiryPostResDto.builder()
+                .board(result.getBoard())
+                .post(updatedPostInfo)
+                .build();
+    }
+
+    private List<InquiryPostResDto.ImageInfo> fetchImagesByPostId(Long postId) {
+        QPostImage pi = QPostImage.postImage;
+
+        return queryFactory
+                .select(Projections.constructor(
+                        InquiryPostResDto.ImageInfo.class,
+                        pi.imageUrl,
+                        pi.imageOrder,
+                        pi.thumbnail
+                ))
+                .from(pi)
+                .where(pi.post.id.eq(postId))
+                .orderBy(pi.imageOrder.asc())
+                .fetch();
     }
 
 

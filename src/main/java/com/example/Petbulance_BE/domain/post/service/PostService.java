@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.post.service;
 import com.example.Petbulance_BE.domain.board.entity.Board;
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
+import com.example.Petbulance_BE.domain.post.dto.request.UpdatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.*;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.entity.PostImage;
@@ -90,12 +91,7 @@ public class PostService {
 
     @Transactional
     public InquiryPostResDto inquiryPost(Long postId) {
-        // 조회하고자하는 게시글 검증
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND)); // 현재 조회하는 게시글
-
-        if (post.isHidden()) throw new CustomException(ErrorCode.POST_HIDDEN); // 숨긴 게시글
-        if (post.isDeleted()) throw new CustomException(ErrorCode.POST_DELETED); // 삭제된 게시글
+        Post post = validateVisiblePost(postId);
 
         // 현재 로그인 유저 (게시글 작성자인지 확인하기 위함)
         Users currentUser = UserUtil.getCurrentUser();
@@ -135,6 +131,12 @@ public class PostService {
                 .board(cachedDto.getBoard())
                 .post(updated)
                 .build();
+    }
+
+    private Post getPost(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND)); // 현재 조회하는 게시글
+        return post;
     }
 
 
@@ -243,6 +245,43 @@ public class PostService {
                 || "writer".equalsIgnoreCase(searchScope))) {
             throw new CustomException(ErrorCode.INVALID_SEARCH_SCOPE);
         }
+    }
+
+    public UpdatePostResDto updatePost(Long postId, UpdatePostReqDto dto) {
+        Post post = validateVisiblePost(postId);
+
+        // 현재 로그인 유저 (게시글 작성자인지 확인하기 위함)
+        Users currentUser = UserUtil.getCurrentUser();
+        boolean currentUserIsPostAuthor = currentUserIsPostAuthor(post.getUser(), currentUser); // 현재 유저가 게시글 작성자인지
+        if(!currentUserIsPostAuthor) {
+            throw new CustomException(ErrorCode.FORBIDDEN_POST_ACCESS);
+        }
+
+        if (dto.getTitle().isBlank() || dto.getContent().isBlank()) {
+            throw new CustomException(ErrorCode.EMPTY_TITLE_OR_CONTENT);
+        }
+        if (dto.getImageUrls() != null && dto.getImageUrls().size() > 10) {
+            throw new CustomException(ErrorCode.EXCEEDED_MAX_IMAGE_COUNT);
+        }
+
+        Category c = null;
+        if(Category.isValidCategory(dto.getCategory())) {
+            c = Category.valueOf(dto.getCategory());
+        }
+
+        return null;
+    }
+
+    private Post validateVisiblePost(Long postId) {
+        Post post = getPost(postId);
+
+        if (post.isHidden()) {
+            throw new CustomException(ErrorCode.POST_HIDDEN); // 숨긴 게시글
+        }
+        if (post.isDeleted()) {
+            throw new CustomException(ErrorCode.POST_DELETED); // 삭제된 게시글
+        }
+        return post;
     }
 
 }

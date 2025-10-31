@@ -37,11 +37,21 @@ public class InquiryPostResDto {
         private String writerProfileUrl;
         private String createdAt;
         private String content;
-        private List<String> imageUrls;
+        private List<ImageInfo> images;
         private Integer likeCount;
         private Integer commentCount;
         private Integer viewCount;
         private Boolean likedByUser;
         private Boolean isCurrentUserPost;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ImageInfo {
+        private String imageUrl;
+        private Integer imageOrder;
+        private Boolean thumbnail;
     }
 }

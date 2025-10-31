@@ -6,10 +6,8 @@ import com.example.Petbulance_BE.domain.comment.service.PostCommentService;
 import com.example.Petbulance_BE.domain.post.dto.PostLikeDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
-import com.example.Petbulance_BE.domain.post.dto.response.CreatePostResDto;
-import com.example.Petbulance_BE.domain.post.dto.response.InquiryPostResDto;
-import com.example.Petbulance_BE.domain.post.dto.response.PagingPostListResDto;
-import com.example.Petbulance_BE.domain.post.dto.response.PagingPostSearchListResDto;
+import com.example.Petbulance_BE.domain.post.dto.request.UpdatePostReqDto;
+import com.example.Petbulance_BE.domain.post.dto.response.*;
 import com.example.Petbulance_BE.domain.post.service.PostLikeService;
 import com.example.Petbulance_BE.domain.post.service.PostService;
 import jakarta.validation.Valid;
@@ -86,5 +84,8 @@ public class PostController {
         return postService.postSearchList(boardId, category, sort, lastPostId, pageSize, searchKeyword, searchScope);
     }
 
-
+    @PutMapping("/{postId}")
+    public UpdatePostResDto updatePost(@PathVariable("postId") Long postId, @RequestBody UpdatePostReqDto dto) {
+        return postService.updatePost(postId, dto);
+    }
 }
