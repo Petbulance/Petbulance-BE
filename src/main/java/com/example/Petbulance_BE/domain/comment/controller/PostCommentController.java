@@ -2,11 +2,14 @@ package com.example.Petbulance_BE.domain.comment.controller;
 
 import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.DelCommentResDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.PagingMyCommentListResDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.SearchPostCommentListResDto;
 import com.example.Petbulance_BE.domain.comment.service.PostCommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,5 +38,11 @@ public class PostCommentController {
                                                          @RequestParam(name = "category", required = false) List<String> category,
                                                          @RequestParam(name = "boardId", required = false) Long boardId) {
         return postCommentService.searchPostComment(keyword, searchScope, lastCommentId, pageSize, category, boardId);
+    }
+
+    @GetMapping("/me")
+    public PagingMyCommentListResDto myCommentList(@RequestParam(required = false) String keyword, @RequestParam(required = false) Long lastCommentId, @RequestParam(defaultValue = "10") Integer pageSize) {
+        Pageable pageable = PageRequest.of(0, pageSize);
+        return postCommentService.myCommentList(keyword, lastCommentId, pageable);
     }
 }
