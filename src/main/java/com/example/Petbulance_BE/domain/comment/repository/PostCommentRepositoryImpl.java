@@ -1,15 +1,15 @@
 package com.example.Petbulance_BE.domain.comment.repository;
 
 import com.example.Petbulance_BE.domain.board.entity.QBoard;
-import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentListResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentListSubDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.SearchPostCommentResDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.*;
 import com.example.Petbulance_BE.domain.comment.entity.QPostComment;
+import com.example.Petbulance_BE.domain.post.dto.response.PagingMyPostListResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.entity.QPost;
 import com.example.Petbulance_BE.domain.post.type.Category;
 import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -146,7 +146,6 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
         return new SliceImpl<>(content, pageable, hasNext);
     }
 
-
     @Override
     public Slice<SearchPostCommentResDto> findSearchPostComment(String keyword,String searchScope,Long lastCommentId,Integer pageSize,List<Category> category,Long boardId) {
         QPostComment c = QPostComment.postComment;
@@ -245,6 +244,51 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                 .fetchOne();
     }
 
+    @Override
+    public PagingMyCommentListResDto findMyCommentList(Users currentUser, String keyword, Long lastCommentId, Pageable pageable) {
+        QPostComment pc = QPostComment.postComment;
+        QPost p = QPost.post;
+        QBoard b = QBoard.board;
 
+        BooleanBuilder whereBuilder = new BooleanBuilder();
+        whereBuilder.and(pc.user.eq(currentUser))
+                .and(pc.deleted.eq(false)); // 삭제되지 않은 것만
+
+        if(lastCommentId != null) {
+            whereBuilder.and(pc.id.lt(lastCommentId));
+        }
+
+        if(keyword != null && !keyword.isBlank()) {
+            whereBuilder.and(
+                    pc.content.containsIgnoreCase(keyword)
+            );
+        }
+
+        List<MyCommentListResDto> results = queryFactory
+                .select(Projections.constructor(
+                        MyCommentListResDto.class,
+                        pc.id,
+                        b.id,
+                        p.id,
+                        p.title,
+                        pc.content,
+                        pc.createdAt,
+                        pc.hidden
+                ))
+                .from(pc)
+                .leftJoin(pc.post, p)
+                .leftJoin(pc.post.board, b)
+                .where(whereBuilder)
+                .orderBy(pc.createdAt.desc(), pc.id.desc())
+                .limit(pageable.getPageSize() + 1)
+                .fetch();
+
+        boolean hasNext = results.size() > pageable.getPageSize();
+        if (hasNext) {
+            results.remove(results.size() - 1);
+        }
+
+        return new PagingMyCommentListResDto(results, hasNext);
+    }
 
 }

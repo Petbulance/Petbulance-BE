@@ -2,10 +2,7 @@ package com.example.Petbulance_BE.domain.comment.service;
 
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.DelCommentResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.PagingPostCommentListResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.SearchPostCommentListResDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.*;
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
@@ -218,4 +215,8 @@ public class PostCommentService {
     }
 
 
+    public PagingMyCommentListResDto myCommentList(String keyword, Long lastCommentId, Pageable pageable) {
+        Users currentUser = UserUtil.getCurrentUser();
+        return postCommentRepository.findMyCommentList(currentUser, keyword, lastCommentId, pageable);
+    }
 }
