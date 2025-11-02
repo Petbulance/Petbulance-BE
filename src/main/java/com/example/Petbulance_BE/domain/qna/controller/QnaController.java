@@ -2,6 +2,7 @@ package com.example.Petbulance_BE.domain.qna.controller;
 
 import com.example.Petbulance_BE.domain.qna.dto.request.CreateQnaReqDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.CreateQnaResDto;
+import com.example.Petbulance_BE.domain.qna.dto.response.InquiryQnaResDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.PagingQnaListResDto;
 import com.example.Petbulance_BE.domain.qna.service.QnaService;
 import jakarta.validation.Valid;
@@ -25,5 +26,10 @@ public class QnaController {
     public PagingQnaListResDto qnaList(@RequestParam(required = false) Long lastQnaId, @RequestParam(defaultValue = "10") Integer pageSize) {
         Pageable pageable = PageRequest.of(0, pageSize);
         return qnaService.qnaList(lastQnaId, pageable);
+    }
+
+    @GetMapping("/{qnaId}")
+    public InquiryQnaResDto inquiryQna(@PathVariable("qnaId") Long qnaId, @RequestParam String password) {
+        return qnaService.inquiryQna(qnaId, password);
     }
 }

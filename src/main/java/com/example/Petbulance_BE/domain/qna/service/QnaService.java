@@ -2,6 +2,7 @@ package com.example.Petbulance_BE.domain.qna.service;
 
 import com.example.Petbulance_BE.domain.qna.dto.request.CreateQnaReqDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.CreateQnaResDto;
+import com.example.Petbulance_BE.domain.qna.dto.response.InquiryQnaResDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.PagingQnaListResDto;
 import com.example.Petbulance_BE.domain.qna.entity.Qna;
 import com.example.Petbulance_BE.domain.qna.repository.QnaRepository;
@@ -42,5 +43,19 @@ public class QnaService {
     public PagingQnaListResDto qnaList(Long lastQnaId, Pageable pageable) {
         Users currentUser = UserUtil.getCurrentUser();
         return qnaRepository.findQnaList(currentUser, lastQnaId, pageable);
+    }
+
+    public InquiryQnaResDto inquiryQna(Long qnaId, String password) {
+        Qna qna = qnaRepository.findById(qnaId).orElseThrow(() ->
+                new CustomException(ErrorCode.QNA_NOT_FOUND));
+        verifyQnaUer(qna, UserUtil.getCurrentUser(), password); // 비밀번호 암호화 필요
+
+        return InquiryQnaResDto.from(qna);
+    }
+
+    private void verifyQnaUer(Qna qna, Users currentUser, String password) {
+        if(!qna.getUser().equals(currentUser) || !qna.getPassword().equals(password)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_QNA_ACCESS);
+        }
     }
 }
