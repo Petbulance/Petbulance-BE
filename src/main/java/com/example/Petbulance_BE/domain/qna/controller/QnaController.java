@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.qna.controller;
 
+import com.example.Petbulance_BE.domain.qna.dto.response.DeleteQnaResDto;
 import com.example.Petbulance_BE.domain.qna.dto.request.CreateQnaReqDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.CreateQnaResDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.InquiryQnaResDto;
@@ -31,5 +32,10 @@ public class QnaController {
     @GetMapping("/{qnaId}")
     public InquiryQnaResDto inquiryQna(@PathVariable("qnaId") Long qnaId, @RequestParam String password) {
         return qnaService.inquiryQna(qnaId, password);
+    }
+
+    @DeleteMapping("/{qnaId}")
+    public DeleteQnaResDto deleteQna(@PathVariable("qnaId") Long qnaId) {
+        return qnaService.deleteQna(qnaId);
     }
 }
