@@ -2,10 +2,7 @@ package com.example.Petbulance_BE.domain.post.repository;
 
 import com.example.Petbulance_BE.domain.board.entity.QBoard;
 import com.example.Petbulance_BE.domain.comment.entity.QPostCommentCount;
-import com.example.Petbulance_BE.domain.post.dto.response.InquiryPostResDto;
-import com.example.Petbulance_BE.domain.post.dto.response.PagingPostSearchListResDto;
-import com.example.Petbulance_BE.domain.post.dto.response.PostListResDto;
-import com.example.Petbulance_BE.domain.post.dto.response.PostSearchListResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.*;
 import com.example.Petbulance_BE.domain.post.entity.*;
 import com.example.Petbulance_BE.domain.post.type.Category;
 import com.example.Petbulance_BE.domain.user.entity.QUsers;
@@ -20,6 +17,7 @@ import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Repository;
@@ -300,5 +298,53 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 totalCount != null ? totalCount : 0L
         );
     }
+
+    @Override
+    public PagingMyPostListResDto findMyPostList(Users currentUser, String keyword, Long lastPostId, Pageable pageable) {
+        QPost p = QPost.post;
+        QBoard b = QBoard.board;
+
+        BooleanBuilder whereBuilder = new BooleanBuilder();
+        whereBuilder.and(p.user.eq(currentUser))
+                .and(p.deleted.eq(false)); // 삭제되지 않은 것만
+
+        if (lastPostId != null) {
+            whereBuilder.and(p.id.lt(lastPostId));
+        }
+
+        if (keyword != null && !keyword.isBlank()) {
+            whereBuilder.and(
+                    p.title.containsIgnoreCase(keyword)
+                            .or(p.content.containsIgnoreCase(keyword))
+            );
+        }
+
+        List<MyPostListResDto> results = queryFactory
+                .select(Projections.constructor(
+                        MyPostListResDto.class,
+                        p.id,
+                        b.id,
+                        p.title,
+                        p.content,
+                        p.createdAt,
+                        Expressions.constant(0L),
+                        p.hidden
+                ))
+                .from(p)
+                .leftJoin(p.board, b)
+                .where(whereBuilder)
+                .orderBy(p.id.desc())
+                .limit(pageable.getPageSize() + 1) // 무한스크롤 다음 페이지 존재 여부 확인용
+                .fetch();
+
+        // 다음 페이지 여부 판별
+        boolean hasNext = results.size() > pageable.getPageSize();
+        if (hasNext) {
+            results.remove(results.size() - 1);
+        }
+
+        return new PagingMyPostListResDto(results, hasNext);
+    }
+
 
 }

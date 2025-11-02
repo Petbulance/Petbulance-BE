@@ -18,6 +18,7 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.TimeUtil;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -352,5 +353,31 @@ public class PostService {
         redisTemplate.delete(cacheKey);
 
         return new DeletePostResDto(postId, post.getBoard().getId(), true, post.isHidden(), LocalDateTime.now());
+    }
+
+
+    public PagingMyPostListResDto myPostList(String keyword, Long lastPostId, Pageable pageable) {
+        Users currentUser = UserUtil.getCurrentUser();
+
+        PagingMyPostListResDto postListResDto = postRepository.findMyPostList(currentUser, keyword, lastPostId, pageable);
+        List<MyPostListResDto> posts = postListResDto.getContent();
+
+        if (posts.isEmpty()) {
+            return postListResDto;
+        }
+
+        List<Long> postIds = posts.stream()
+                .map(MyPostListResDto::getPostId)
+                .toList();
+
+        // Redis에서 조회수 일괄 조회
+        Map<Long, Long> viewCountMap = postViewCountRepository.readAll(postIds);
+
+        // DTO 매핑
+        posts.forEach(dto -> {
+            dto.setViewCount(viewCountMap.getOrDefault(dto.getPostId(), 0L));
+        });
+
+        return new PagingMyPostListResDto(posts, postListResDto.isHasNext());
     }
 }

@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.post.controller;
 import com.example.Petbulance_BE.domain.comment.dto.response.PagingPostCommentListResDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
 import com.example.Petbulance_BE.domain.comment.service.PostCommentService;
+import com.example.Petbulance_BE.domain.post.dto.response.PagingMyPostListResDto;
 import com.example.Petbulance_BE.domain.post.dto.PostLikeDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
@@ -90,7 +91,13 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId")
-    public DeletePostResDto deletePost(@PathVariable("postid") Long postId) {
+    public DeletePostResDto deletePost(@PathVariable("postId") Long postId) {
         return postService.deletePost(postId);
+    }
+
+    @GetMapping("/me")
+    public PagingMyPostListResDto myPostList(@RequestParam(required = false) String keyword, @RequestParam(required = false) Long lastPostId, @RequestParam(defaultValue = "10") Integer pageSize) {
+        Pageable pageable = PageRequest.of(0, pageSize);
+        return postService.myPostList(keyword, lastPostId, pageable);
     }
 }
