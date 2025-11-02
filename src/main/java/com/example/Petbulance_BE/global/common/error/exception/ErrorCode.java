@@ -34,6 +34,7 @@ public enum ErrorCode {
     INVALID_INPUT_RELATION(HttpStatus.BAD_REQUEST, "입력 관계가 잘못되었습니다."),
     FORBIDDEN_LIKE_ACCESS(HttpStatus.UNAUTHORIZED, "좋아요에 대한 권한이 존재하지 않습니다."),
     FORBIDDEN_COMMENT_ACCESS(HttpStatus.UNAUTHORIZED, "댓글에 대한 권한이 존재하지 않습니다."),
+    FORBIDDEN_POST_ACCESS(HttpStatus.UNAUTHORIZED, "게시글에 대한 권한이 존재하지 않습니다."),
     INVALID_SEARCH_KEYWORD(HttpStatus.BAD_REQUEST, "검색어는 2글자 이상이어야 합니다."),
     INVALID_SEARCH_SCOPE(HttpStatus.BAD_REQUEST, "유효하지 않은 검색 범위값 입니다."),
     INVALID_CATEGORY(HttpStatus.BAD_REQUEST, "유효하지 않은 category 값입니다."),
