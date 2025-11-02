@@ -42,7 +42,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         QBoard b = QBoard.board;
         QUsers u = QUsers.users;
 
-        // 1️⃣ 게시글/작성자/게시판 정보만 가져오기
+        // 게시글/작성자/게시판 정보만 가져오기
         InquiryPostResDto result = queryFactory
                 .select(Projections.constructor(
                         InquiryPostResDto.class,
