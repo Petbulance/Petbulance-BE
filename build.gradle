@@ -75,6 +75,12 @@ dependencies {
 	implementation 'software.amazon.awssdk:s3:2.27.3'
 	implementation 'software.amazon.awssdk:s3control:2.27.3'
 	implementation 'software.amazon.awssdk:s3outposts:2.27.3'
+
+	// Hibernate Spatial
+	implementation 'org.hibernate:hibernate-spatial:6.2.0.Final'
+
+	// JTS Core (Geometry 처리)
+	implementation 'org.locationtech.jts:jts-core:1.19.0'
 }
 
 tasks.named('test') {
