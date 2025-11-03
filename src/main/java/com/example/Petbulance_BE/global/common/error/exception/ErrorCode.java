@@ -39,7 +39,8 @@ public enum ErrorCode {
     INVALID_CATEGORY(HttpStatus.BAD_REQUEST, "유효하지 않은 category 값입니다."),
     BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 게시판입니다."),
     ACCOUNT_SUSPENDED(HttpStatus.BAD_REQUEST,"이용이 정지된 계정입니다. 고객센터에 문의해 주세요."),
-    NOT_FOUND_APP_VERSION(HttpStatus.BAD_REQUEST, "앱 버전 정보가 존재하지 않습니다.");
+    NOT_FOUND_APP_VERSION(HttpStatus.BAD_REQUEST, "앱 버전 정보가 존재하지 않습니다."),
+    NOT_FOUND_HOSPITAL(HttpStatus.BAD_REQUEST, "요청하신 병원을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;
