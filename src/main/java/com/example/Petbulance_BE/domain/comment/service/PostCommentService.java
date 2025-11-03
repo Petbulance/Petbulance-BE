@@ -2,10 +2,7 @@ package com.example.Petbulance_BE.domain.comment.service;
 
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.DelCommentResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.PagingPostCommentListResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.SearchPostCommentListResDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.*;
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
@@ -24,8 +21,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -176,12 +171,17 @@ public class PostCommentService {
         Users currentUser = UserUtil.getCurrentUser(); // 현재 댓글을 조회하는 사용자
         Post post = findPostById(postId); // 현재 조회하는 댓글이 달린 게시글
 
-        assert currentUser != null;
-        boolean currentUserIsPostAuthor = Objects.equals(currentUser.getId(), post.getUser().getId()); // 현재 사용자가 게시글 작성자인지 -> 이에 따라 조회 가능한 댓글 범위가 달라짐
-
-        return new PagingPostCommentListResDto(
-                postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, currentUserIsPostAuthor, currentUser)
-        );
+        if(currentUser == null) {
+            // 비회원이 게시글 댓글 조회시
+            return new PagingPostCommentListResDto(
+                    postCommentRepository.findPostCommentByPostForGuest(post, null, null, pageable)
+            );
+        } else {
+            boolean currentUserIsPostAuthor = Objects.equals(currentUser.getId(), post.getUser().getId()); // 현재 사용자가 게시글 작성자인지 -> 이에 따라 조회 가능한 댓글 범위가 달라짐
+            return new PagingPostCommentListResDto(
+                    postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, currentUserIsPostAuthor, currentUser)
+            );
+        }
     }
 
     public SearchPostCommentListResDto searchPostComment(String keyword, String searchScope, Long lastCommentId, Integer pageSize, List<String> category, Long boardId) {
@@ -193,7 +193,7 @@ public class PostCommentService {
         }
         if (category != null && !category.isEmpty()) {
             for (String cat : category) {
-                if (!isValidCategory(cat)) {
+                if (!Category.isValidCategory(cat)) {
                     throw new CustomException(ErrorCode.INVALID_CATEGORY);
                 }
             }
@@ -202,7 +202,7 @@ public class PostCommentService {
             throw new CustomException(ErrorCode.BOARD_NOT_FOUND);
         }
 
-        List<Category> categories = convertToCategoryList(category);
+        List<Category> categories = Category.convertToCategoryList(category);
         return new SearchPostCommentListResDto(
                 postCommentRepository.findSearchPostComment(keyword, searchScope, lastCommentId, pageSize, categories, boardId),
                 postCommentRepository.countSearchPostComment(keyword, searchScope, categories, boardId));
@@ -212,28 +212,9 @@ public class PostCommentService {
         return "writer".equalsIgnoreCase(scope) || "content".equalsIgnoreCase(scope);
     }
 
-    private boolean isValidCategory(String category) {
-        try {
-            Category.valueOf(category.toUpperCase());
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-    }
 
-    private List<Category> convertToCategoryList(List<String> categoryStrings) {
-        if (categoryStrings == null || categoryStrings.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<Category> categories = new ArrayList<>();
-        for (String cat : categoryStrings) {
-            try {
-                categories.add(Category.valueOf(cat.toUpperCase()));
-            } catch (IllegalArgumentException e) {
-                throw new CustomException(ErrorCode.INVALID_CATEGORY);
-            }
-        }
-        return categories;
+    public PagingMyCommentListResDto myCommentList(String keyword, Long lastCommentId, Pageable pageable) {
+        Users currentUser = UserUtil.getCurrentUser();
+        return postCommentRepository.findMyCommentList(currentUser, keyword, lastCommentId, pageable);
     }
 }

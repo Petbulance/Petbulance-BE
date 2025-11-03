@@ -1,15 +1,15 @@
 package com.example.Petbulance_BE.domain.comment.repository;
 
 import com.example.Petbulance_BE.domain.board.entity.QBoard;
-import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentListResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentListSubDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.SearchPostCommentResDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.*;
 import com.example.Petbulance_BE.domain.comment.entity.QPostComment;
+import com.example.Petbulance_BE.domain.post.dto.response.PagingMyPostListResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.entity.QPost;
 import com.example.Petbulance_BE.domain.post.type.Category;
 import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -79,6 +79,68 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
 
         List<PostCommentListResDto> content = rows.stream()
                 .map(o -> PostCommentListResDto.of(o, currentUserIsPostAuthor, currentUser))
+                .toList();
+
+        return new SliceImpl<>(content, pageable, hasNext);
+    }
+
+    @Override
+    public Slice<PostCommentListResDto> findPostCommentByPostForGuest(
+            Post post, Long lastParentCommentId, Long lastCommentId, Pageable pageable) {
+
+        QPostComment c = QPostComment.postComment;
+        QPostComment p = new QPostComment("parent");
+        QUsers author = new QUsers("author");
+        QUsers mentioned = new QUsers("mentioned");
+
+        BooleanExpression cursorCondition = null;
+        if (lastCommentId != null && lastParentCommentId != null) {
+            cursorCondition = c.parent.id.gt(lastParentCommentId)
+                    .or(
+                            c.parent.id.eq(lastParentCommentId)
+                                    .and(c.id.gt(lastCommentId))
+                    );
+        }
+
+        BooleanExpression visibleCondition = c.deleted.eq(false)
+                .and(c.hidden.eq(false))
+                .and(c.isSecret.eq(false));
+
+        List<PostCommentListSubDto> rows = queryFactory
+                .select(Projections.constructor(
+                        PostCommentListSubDto.class,
+                        c.id,
+                        c.parent.id,
+                        author.nickname,
+                        author.profileImage,
+                        mentioned.nickname,
+                        c.content,
+                        c.isSecret,
+                        c.deleted,
+                        c.hidden,
+                        c.imageUrl,
+                        author.id,
+                        c.isCommentFromPostAuthor,
+                        c.createdAt
+                ))
+                .from(c)
+                .join(c.user, author)
+                .leftJoin(c.mentionUser, mentioned)
+                .leftJoin(c.parent, p)
+                .where(
+                        c.post.eq(post),
+                        visibleCondition,
+                        cursorCondition
+                )
+                .orderBy(c.parent.id.asc(), c.id.asc())
+                .limit(pageable.getPageSize() + 1)
+                .fetch();
+
+        boolean hasNext = rows.size() > pageable.getPageSize();
+        if (hasNext) rows = rows.subList(0, pageable.getPageSize());
+
+        List<PostCommentListResDto> content = rows.stream()
+                .map(PostCommentListResDto::ofForGuest)
                 .toList();
 
         return new SliceImpl<>(content, pageable, hasNext);
@@ -182,6 +244,51 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                 .fetchOne();
     }
 
+    @Override
+    public PagingMyCommentListResDto findMyCommentList(Users currentUser, String keyword, Long lastCommentId, Pageable pageable) {
+        QPostComment pc = QPostComment.postComment;
+        QPost p = QPost.post;
+        QBoard b = QBoard.board;
 
+        BooleanBuilder whereBuilder = new BooleanBuilder();
+        whereBuilder.and(pc.user.eq(currentUser))
+                .and(pc.deleted.eq(false)); // 삭제되지 않은 것만
+
+        if(lastCommentId != null) {
+            whereBuilder.and(pc.id.lt(lastCommentId));
+        }
+
+        if(keyword != null && !keyword.isBlank()) {
+            whereBuilder.and(
+                    pc.content.containsIgnoreCase(keyword)
+            );
+        }
+
+        List<MyCommentListResDto> results = queryFactory
+                .select(Projections.constructor(
+                        MyCommentListResDto.class,
+                        pc.id,
+                        b.id,
+                        p.id,
+                        p.title,
+                        pc.content,
+                        pc.createdAt,
+                        pc.hidden
+                ))
+                .from(pc)
+                .leftJoin(pc.post, p)
+                .leftJoin(pc.post.board, b)
+                .where(whereBuilder)
+                .orderBy(pc.createdAt.desc(), pc.id.desc())
+                .limit(pageable.getPageSize() + 1)
+                .fetch();
+
+        boolean hasNext = results.size() > pageable.getPageSize();
+        if (hasNext) {
+            results.remove(results.size() - 1);
+        }
+
+        return new PagingMyCommentListResDto(results, hasNext);
+    }
 
 }
