@@ -19,7 +19,7 @@ public class QnaController {
     private final QnaService qnaService;
 
     @PostMapping
-    public CreateQnaResDto createQna(@Valid @RequestBody CreateQnaReqDto dto) {
+    public CreateQnaResDto createQna(@RequestBody @Valid CreateQnaReqDto dto) {
         return qnaService.createQna(dto);
     }
 

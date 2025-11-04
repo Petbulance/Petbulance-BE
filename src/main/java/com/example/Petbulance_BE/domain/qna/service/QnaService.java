@@ -13,6 +13,8 @@ import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,11 +27,8 @@ public class QnaService {
     private final QnaRepository qnaRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @CacheEvict(value = {"qnaList", "qnaDetail"}, allEntries = true)
     public CreateQnaResDto createQna(CreateQnaReqDto dto) {
-        if (dto.getContent() == null || dto.getContent().isBlank() || dto.getTitle() == null || dto.getTitle().isBlank()) {
-            throw new CustomException(ErrorCode.EMPTY_QNA_CONTENT);
-        }
-
         String encodedPassword = dto.getPassword() != null
                 ? passwordEncoder.encode(dto.getPassword())
                 : null;
@@ -48,11 +47,13 @@ public class QnaService {
         return CreateQnaResDto.from(qna);
     }
 
+    @Cacheable(value = "qnaList", key = "#currentUser.id + '-' + #lastQnaId + '-' + #pageable.pageNumber")
     public PagingQnaListResDto qnaList(Long lastQnaId, Pageable pageable) {
         Users currentUser = UserUtil.getCurrentUser();
         return qnaRepository.findQnaList(currentUser, lastQnaId, pageable);
     }
 
+    @Cacheable(value = "qnaDetail", key = "#qnaId")
     public DetailQnaResDto detailQna(Long qnaId, String password) {
         Qna qna = getQna(qnaId);
         verifyQnaUer(qna, UserUtil.getCurrentUser(), password); // 비밀번호 암호화 필요
@@ -65,6 +66,7 @@ public class QnaService {
                 new CustomException(ErrorCode.QNA_NOT_FOUND));
     }
 
+    @CacheEvict(value = {"qnaList", "qnaDetail"}, allEntries = true)
     public DeleteQnaResDto deleteQna(Long qnaId) {
         Qna qna = getQna(qnaId);
         verifyQnaUer(qna, UserUtil.getCurrentUser());
@@ -73,7 +75,10 @@ public class QnaService {
     }
 
     private void verifyQnaUer(Qna qna, Users currentUser, String password) {
-        if(!qna.getUser().equals(currentUser) || !qna.getPassword().equals(passwordEncoder.encode(password))) {
+        boolean isOwner = qna.getUser().equals(currentUser);
+        boolean passwordMatch = (password == null) || passwordEncoder.matches(password, qna.getPassword());
+
+        if (!isOwner || !passwordMatch) {
             throw new CustomException(ErrorCode.FORBIDDEN_QNA_ACCESS);
         }
     }
