@@ -7,6 +7,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "notices")
 @Getter
@@ -26,4 +29,22 @@ public class Notice extends BaseTimeEntity {
 
     @Column(columnDefinition = "TEXT")
     private String content;
+
+    @OneToMany(
+            mappedBy = "notice",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    private List<NoticeFile> files = new ArrayList<>();
+
+    public void addFile(NoticeFile file) {
+        files.add(file);
+        file.setNotice(this);
+    }
+
+    public void removeFile(NoticeFile file) {
+        files.remove(file);
+        file.setNotice(null);
+    }
 }
