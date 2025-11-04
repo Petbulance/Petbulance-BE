@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class InquiryQnaResDto {
+public class DetailQnaResDto {
     private Long qnaId;
     private String title;
     private String content;
@@ -19,8 +19,8 @@ public class InquiryQnaResDto {
     private QnaStatus status;
     private Answer answer;
 
-    public static InquiryQnaResDto from(Qna qna) {
-        InquiryQnaResDto dto = new InquiryQnaResDto();
+    public static DetailQnaResDto from(Qna qna) {
+        DetailQnaResDto dto = new DetailQnaResDto();
         dto.qnaId = qna.getId();
         dto.title = qna.getTitle();
         dto.content = qna.getContent();

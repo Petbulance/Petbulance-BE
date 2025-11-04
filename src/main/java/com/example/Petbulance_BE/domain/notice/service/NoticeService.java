@@ -1,6 +1,6 @@
 package com.example.Petbulance_BE.domain.notice.service;
 
-import com.example.Petbulance_BE.domain.notice.dto.response.InquiryNoticeResDto;
+import com.example.Petbulance_BE.domain.notice.dto.response.DetailNoticeResDto;
 import com.example.Petbulance_BE.domain.notice.dto.response.PagingNoticeListResDto;
 import com.example.Petbulance_BE.domain.notice.entity.Notice;
 import com.example.Petbulance_BE.domain.notice.entity.NoticeFile;
@@ -13,8 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -24,10 +24,21 @@ public class NoticeService {
     private final NoticeFileRepository noticeFileRepository;
 
     public PagingNoticeListResDto noticeList(Long lastNoticeId, Pageable pageable) {
-        return noticeRepository.findNoticeList(lastNoticeId, pageable);
+        Notice notice = null;
+        LocalDateTime lastCreatedAt = null;
+        Boolean lastIsImportant = null;
+
+        if (lastNoticeId != null) {
+            notice = noticeRepository.findById(lastNoticeId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
+            lastCreatedAt = notice.getCreatedAt();
+            lastIsImportant = notice.isImportant();
+        }
+
+        return noticeRepository.findNoticeList(lastNoticeId, lastCreatedAt, lastIsImportant, pageable);
     }
 
-    public InquiryNoticeResDto inquiryNotice(Long noticeId) {
+    public DetailNoticeResDto detailNotice(Long noticeId) {
         Notice n = noticeRepository.findById(noticeId).orElseThrow(
                 () -> new CustomException(ErrorCode.NOTICE_NOT_FOUND)
         );
@@ -37,6 +48,6 @@ public class NoticeService {
         Notice prev = noticeRepository.findPreviousNotice(noticeId);
         Notice next = noticeRepository.findNextNotice(noticeId);
 
-        return InquiryNoticeResDto.from(n, files, prev, next);
+        return DetailNoticeResDto.from(n, files, prev, next);
     }
 }

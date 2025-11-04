@@ -1,6 +1,6 @@
 package com.example.Petbulance_BE.domain.notice.controller;
 
-import com.example.Petbulance_BE.domain.notice.dto.response.InquiryNoticeResDto;
+import com.example.Petbulance_BE.domain.notice.dto.response.DetailNoticeResDto;
 import com.example.Petbulance_BE.domain.notice.dto.response.PagingNoticeListResDto;
 import com.example.Petbulance_BE.domain.notice.service.NoticeService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class NoticeController {
     }
 
     @GetMapping("/{noticeId}")
-    public InquiryNoticeResDto inquiryNotice(@PathVariable("noticeId") Long noticeId) {
-        return noticeService.inquiryNotice(noticeId);
+    public DetailNoticeResDto detailNotice(@PathVariable("noticeId") Long noticeId) {
+        return noticeService.detailNotice(noticeId);
     }
 }
