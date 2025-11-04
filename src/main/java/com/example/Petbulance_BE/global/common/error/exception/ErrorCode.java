@@ -49,7 +49,10 @@ public enum ErrorCode {
     NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 공지사항을 찾을 수 없습니다."),
     EMPTY_QNA_CONTENT(HttpStatus.BAD_REQUEST, "문의 제목 또는 내용을 입력해주세요."),
     FORBIDDEN_QNA_ACCESS(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않거나 접근 권한이 없습니다."),
-    QNA_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 qnaId의 문의글을 찾을 수 없습니다.");
+    QNA_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 qnaId의 문의글을 찾을 수 없습니다."),
+    PRIVACY_CONSENT_REQUIRED(HttpStatus.BAD_REQUEST, "개인정보 수집 및 이용 동의가 필요합니다."),
+    INVALID_CONTACT_INFO(HttpStatus.BAD_REQUEST, "연락처는 최소 1개 이상 입력해야 합니다."),
+    INVALID_TYPE(HttpStatus.BAD_REQUEST,"올바르지 않은 type값입니다.");
 
     private final HttpStatus status;
     private final String message;

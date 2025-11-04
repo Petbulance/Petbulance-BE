@@ -23,6 +23,10 @@ public class Qna {
     @Column(name = "qna_id")
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private Users user;
+
     private String title;
 
     @Column(columnDefinition = "TEXT")
@@ -41,10 +45,6 @@ public class Qna {
 
     @Builder.Default
     private LocalDateTime answeredAt = null;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private Users user;
 
     public void answer(String answerContent) {
         this.answerContent = answerContent;

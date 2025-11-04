@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class InquiryNoticeResDto {
+public class DetailNoticeResDto {
 
     private Long noticeId;
     private boolean isImportant;
@@ -26,8 +26,8 @@ public class InquiryNoticeResDto {
     private AdjacentNoticeDto previousNotice;
     private AdjacentNoticeDto nextNotice;
 
-    public static InquiryNoticeResDto from(Notice n, List<NoticeFile> files, Notice prev, Notice next) {
-        return InquiryNoticeResDto.builder()
+    public static DetailNoticeResDto from(Notice n, List<NoticeFile> files, Notice prev, Notice next) {
+        return DetailNoticeResDto.builder()
                 .noticeId(n.getId())
                 .isImportant(n.isImportant())
                 .title(n.getTitle())

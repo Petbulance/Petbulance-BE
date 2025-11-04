@@ -9,7 +9,6 @@ import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
-import com.example.Petbulance_BE.global.util.TimeUtil;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
@@ -36,24 +35,24 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public InquiryPostResDto findInquiryPost(Post post, boolean currentUserIsPostAuthor,
-                                             Users currentUser, Long viewCount) {
+    public DetailPostResDto findInquiryPost(Post post, boolean currentUserIsPostAuthor,
+                                            Users currentUser, Long viewCount) {
         QPost p = QPost.post;
         QBoard b = QBoard.board;
         QUsers u = QUsers.users;
 
         // 게시글/작성자/게시판 정보만 가져오기
-        InquiryPostResDto result = queryFactory
+        DetailPostResDto result = queryFactory
                 .select(Projections.constructor(
-                        InquiryPostResDto.class,
+                        DetailPostResDto.class,
                         Projections.constructor(
-                                InquiryPostResDto.BoardInfo.class,
+                                DetailPostResDto.BoardInfo.class,
                                 b.id,
                                 b.nameKr,
                                 p.category.stringValue()
                         ),
                         Projections.constructor(
-                                InquiryPostResDto.PostInfo.class,
+                                DetailPostResDto.PostInfo.class,
                                 p.id,
                                 p.title,
                                 u.nickname,
@@ -76,25 +75,25 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
         if (result == null) return null;
 
-        List<InquiryPostResDto.ImageInfo> images = fetchImagesByPostId(post.getId());
+        List<DetailPostResDto.ImageInfo> images = fetchImagesByPostId(post.getId());
 
-        InquiryPostResDto.PostInfo updatedPostInfo =
+        DetailPostResDto.PostInfo updatedPostInfo =
                 result.getPost().toBuilder()
                         .images(images)
                         .build();
 
-        return InquiryPostResDto.builder()
+        return DetailPostResDto.builder()
                 .board(result.getBoard())
                 .post(updatedPostInfo)
                 .build();
     }
 
-    private List<InquiryPostResDto.ImageInfo> fetchImagesByPostId(Long postId) {
+    private List<DetailPostResDto.ImageInfo> fetchImagesByPostId(Long postId) {
         QPostImage pi = QPostImage.postImage;
 
         return queryFactory
                 .select(Projections.constructor(
-                        InquiryPostResDto.ImageInfo.class,
+                        DetailPostResDto.ImageInfo.class,
                         pi.imageUrl,
                         pi.imageOrder,
                         pi.thumbnail

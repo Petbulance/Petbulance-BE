@@ -1,6 +1,6 @@
 package com.example.Petbulance_BE.domain.post.repository;
 
-import com.example.Petbulance_BE.domain.post.dto.response.InquiryPostResDto;
+import com.example.Petbulance_BE.domain.post.dto.response.DetailPostResDto;
 import com.example.Petbulance_BE.domain.post.dto.response.PagingMyPostListResDto;
 import com.example.Petbulance_BE.domain.post.dto.response.PagingPostSearchListResDto;
 import com.example.Petbulance_BE.domain.post.dto.response.PostListResDto;
@@ -13,7 +13,7 @@ import org.springframework.data.domain.Slice;
 import java.util.List;
 
 public interface PostRepositoryCustom {
-    InquiryPostResDto findInquiryPost(Post post, boolean currentUserIsPostAuthor, Users currentUser, Long viewCount);
+    DetailPostResDto findInquiryPost(Post post, boolean currentUserIsPostAuthor, Users currentUser, Long viewCount);
     int fetchLikeCount(Long postId);
     int fetchCommentCount(Long postId);
     boolean fetchLikedByUser(Users currentUser, Long postId);

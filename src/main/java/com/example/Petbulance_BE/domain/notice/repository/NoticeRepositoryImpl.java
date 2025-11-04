@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -20,11 +21,26 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
     QNotice n = QNotice.notice;
 
     @Override
-    public PagingNoticeListResDto findNoticeList(Long lastNoticeId, Pageable pageable) {
-
+    public PagingNoticeListResDto findNoticeList(
+            Long lastNoticeId,
+            LocalDateTime lastCreatedAt,
+            Boolean lastIsImportant,
+            Pageable pageable
+    ) {
         BooleanBuilder whereBuilder = new BooleanBuilder();
-        if (lastNoticeId != null) {
-            whereBuilder.and(n.id.lt(lastNoticeId));
+
+        // 커서 조건 (isImportant → createdAt → id)
+        if (lastNoticeId != null && lastCreatedAt != null && lastIsImportant != null) {
+            whereBuilder.and(
+                    n.isImportant.lt(lastIsImportant)
+                            .or(n.isImportant.eq(lastIsImportant)
+                                    .and(n.createdAt.lt(lastCreatedAt))
+                            )
+                            .or(n.isImportant.eq(lastIsImportant)
+                                    .and(n.createdAt.eq(lastCreatedAt))
+                                    .and(n.id.lt(lastNoticeId))
+                            )
+            );
         }
 
         List<NoticeListResDto> results = queryFactory
@@ -38,8 +54,12 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
                 ))
                 .from(n)
                 .where(whereBuilder)
-                .orderBy(n.isImportant.desc(), n.createdAt.desc())
-                .limit(pageable.getPageSize() + 1)
+                .orderBy(
+                        n.isImportant.desc(),   // 중요공지 먼저
+                        n.createdAt.desc(),     // 최신순
+                        n.id.desc()             // 동일 시간대는 ID 순
+                )
+                .limit(pageable.getPageSize() + 1) // 다음 페이지 여부 확인용
                 .fetch();
 
         boolean hasNext = results.size() > pageable.getPageSize();

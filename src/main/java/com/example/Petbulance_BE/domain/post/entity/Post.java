@@ -57,9 +57,9 @@ public class Post extends BaseTimeEntity {
     @Column(name = "image_num", nullable = false)
     private int imageNum;
 
+    // 양방향 연관관계
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<PostImage> postImages = new ArrayList<>();
-
 
     public void update(String title, String content, Category category, int imageNum) {
        this.title = title;

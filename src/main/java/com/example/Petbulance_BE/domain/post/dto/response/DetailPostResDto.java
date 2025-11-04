@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class InquiryPostResDto {
+public class DetailPostResDto {
 
     private BoardInfo board;
     private PostInfo post;

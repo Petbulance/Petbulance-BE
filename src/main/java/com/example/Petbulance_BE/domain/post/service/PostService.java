@@ -94,7 +94,7 @@ public class PostService {
     }
 
     @Transactional
-    public InquiryPostResDto inquiryPost(Long postId) {
+    public DetailPostResDto detailPost(Long postId) {
         Post post = validateVisiblePost(postId);
 
         // 현재 로그인 유저 (게시글 작성자인지 확인하기 위함)
@@ -107,7 +107,7 @@ public class PostService {
 
         // 정적 데이터 캐싱
         String key = String.format(CACHE_KEY_FORMAT, postId); // 키 생성
-        InquiryPostResDto cachedDto = (InquiryPostResDto) redisTemplate.opsForValue().get(key); // 캐싱된 데이터 조회
+        DetailPostResDto cachedDto = (DetailPostResDto) redisTemplate.opsForValue().get(key); // 캐싱된 데이터 조회
 
         // 캐시 미스 시 DB 조회 후 캐싱
         if (cachedDto == null) {
@@ -122,7 +122,7 @@ public class PostService {
         }
 
         // 실시간 데이터 업데이트 (좋아요, 댓글, 조회수, 좋아요 여부)
-        InquiryPostResDto.PostInfo updated = cachedDto.getPost().toBuilder()
+        DetailPostResDto.PostInfo updated = cachedDto.getPost().toBuilder()
                 .createdAt(TimeUtil.formatCreatedAt(LocalDateTime.parse(cachedDto.getPost().getCreatedAt()))) // 시간 형식 변경
                 .likeCount(postRepository.fetchLikeCount(postId))
                 .commentCount(postRepository.fetchCommentCount(postId))
@@ -131,7 +131,7 @@ public class PostService {
                 .isCurrentUserPost(currentUserIsPostAuthor)
                 .build();
 
-        return InquiryPostResDto.builder()
+        return DetailPostResDto.builder()
                 .board(cachedDto.getBoard())
                 .post(updated)
                 .build();

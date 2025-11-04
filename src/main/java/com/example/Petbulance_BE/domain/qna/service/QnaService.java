@@ -3,7 +3,7 @@ package com.example.Petbulance_BE.domain.qna.service;
 import com.example.Petbulance_BE.domain.qna.dto.request.CreateQnaReqDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.CreateQnaResDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.DeleteQnaResDto;
-import com.example.Petbulance_BE.domain.qna.dto.response.InquiryQnaResDto;
+import com.example.Petbulance_BE.domain.qna.dto.response.DetailQnaResDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.PagingQnaListResDto;
 import com.example.Petbulance_BE.domain.qna.entity.Qna;
 import com.example.Petbulance_BE.domain.qna.repository.QnaRepository;
@@ -53,11 +53,11 @@ public class QnaService {
         return qnaRepository.findQnaList(currentUser, lastQnaId, pageable);
     }
 
-    public InquiryQnaResDto inquiryQna(Long qnaId, String password) {
+    public DetailQnaResDto detailQna(Long qnaId, String password) {
         Qna qna = getQna(qnaId);
         verifyQnaUer(qna, UserUtil.getCurrentUser(), password); // 비밀번호 암호화 필요
 
-        return InquiryQnaResDto.from(qna);
+        return DetailQnaResDto.from(qna);
     }
 
     private Qna getQna(Long qnaId) {

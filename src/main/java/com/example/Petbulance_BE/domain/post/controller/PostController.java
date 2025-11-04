@@ -57,8 +57,8 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public InquiryPostResDto inquiryPost(@PathVariable Long postId) {
-        return postService.inquiryPost(postId);
+    public DetailPostResDto detailPost(@PathVariable Long postId) {
+        return postService.detailPost(postId);
     }
 
     @GetMapping
@@ -90,7 +90,7 @@ public class PostController {
         return postService.updatePost(postId, dto);
     }
 
-    @DeleteMapping("/{postId")
+    @DeleteMapping("/{postId}")
     public DeletePostResDto deletePost(@PathVariable("postId") Long postId) {
         return postService.deletePost(postId);
     }
