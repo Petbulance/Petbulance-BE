@@ -161,7 +161,7 @@ public class HospitalService {
                             .lng(hs.getLng())
                             .distanceMeters(hs.getDistanceMeters())
                             .phone(hs.getPhoneNumber())
-                            .types(hs.getTreatedAnimalTypes().split(","))
+                            .types(hs.getTreatedAnimalTypes()!=null?hs.getTreatedAnimalTypes().split(","):null)
                             .isOpenNow(isOpenNow)
                             .openHours(openHours)
                             .thumbnailUrl(hs.getUrl())
