@@ -28,7 +28,7 @@ public class PostController {
     private final PostCommentService postCommentService;
 
     @PostMapping
-    public CreatePostResDto createPost(@Valid @RequestBody CreatePostReqDto dto) {
+    public CreatePostResDto createPost(@RequestBody @Valid CreatePostReqDto dto) {
         return postService.createPost(dto);
     }
 
@@ -43,7 +43,8 @@ public class PostController {
     }
 
     @PostMapping("/{postId}/comments")
-    public PostCommentResDto createPostComment(@PathVariable("postId") Long postId, @Valid @RequestBody CreatePostCommentReqDto dto) {
+    public PostCommentResDto createPostComment(@PathVariable("postId") Long postId,
+                                               @RequestBody @Valid CreatePostCommentReqDto dto) {
         return postCommentService.createPostComment(postId, dto);
     }
 
@@ -62,31 +63,28 @@ public class PostController {
     }
 
     @GetMapping
-    public PagingPostListResDto postList(
-            @RequestParam(required = false) Long boardId,
-            @RequestParam(required = false) String category,
-            @RequestParam(defaultValue = "popular") String sort,
-            @RequestParam(required = false) Long lastPostId,
-            @RequestParam(defaultValue = "10") Integer pageSize
-    ) {
+    public PagingPostListResDto postList(@RequestParam(required = false) Long boardId,
+                                         @RequestParam(required = false) String category,
+                                         @RequestParam(defaultValue = "popular") String sort,
+                                         @RequestParam(required = false) Long lastPostId,
+                                         @RequestParam(defaultValue = "10") Integer pageSize) {
         return postService.postList(boardId, category, sort, lastPostId, pageSize);
     }
 
     @GetMapping("/search")
-    public PagingPostSearchListResDto postSearchList(
-            @RequestParam(required = false) Long boardId,
-            @RequestParam(required = false) List<String> category,
-            @RequestParam(defaultValue = "popular") String sort,
-            @RequestParam(required = false) Long lastPostId,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String searchKeyword,
-            @RequestParam(defaultValue = "title_content") String searchScope
-    ) {
+    public PagingPostSearchListResDto postSearchList(@RequestParam(required = false) Long boardId,
+                                                     @RequestParam(required = false) List<String> category,
+                                                     @RequestParam(defaultValue = "popular") String sort,
+                                                     @RequestParam(required = false) Long lastPostId,
+                                                     @RequestParam(defaultValue = "10") Integer pageSize,
+                                                     @RequestParam(required = false) String searchKeyword,
+                                                     @RequestParam(defaultValue = "title_content") String searchScope) {
         return postService.postSearchList(boardId, category, sort, lastPostId, pageSize, searchKeyword, searchScope);
     }
 
     @PutMapping("/{postId}")
-    public UpdatePostResDto updatePost(@PathVariable("postId") Long postId, @RequestBody UpdatePostReqDto dto) {
+    public UpdatePostResDto updatePost(@PathVariable("postId") Long postId,
+                                       @RequestBody UpdatePostReqDto dto) {
         return postService.updatePost(postId, dto);
     }
 
@@ -96,7 +94,9 @@ public class PostController {
     }
 
     @GetMapping("/me")
-    public PagingMyPostListResDto myPostList(@RequestParam(required = false) String keyword, @RequestParam(required = false) Long lastPostId, @RequestParam(defaultValue = "10") Integer pageSize) {
+    public PagingMyPostListResDto myPostList(@RequestParam(required = false) String keyword,
+                                             @RequestParam(required = false) Long lastPostId,
+                                             @RequestParam(defaultValue = "10") Integer pageSize) {
         Pageable pageable = PageRequest.of(0, pageSize);
         return postService.myPostList(keyword, lastPostId, pageable);
     }

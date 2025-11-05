@@ -18,6 +18,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -27,6 +28,7 @@ public class QnaService {
     private final QnaRepository qnaRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Transactional
     @CacheEvict(value = {"qnaList", "qnaDetail"}, allEntries = true)
     public CreateQnaResDto createQna(CreateQnaReqDto dto) {
         String encodedPassword = dto.getPassword() != null
@@ -47,12 +49,14 @@ public class QnaService {
         return CreateQnaResDto.from(qna);
     }
 
+    @Transactional(readOnly = true)
     @Cacheable(value = "qnaList", key = "#currentUser.id + '-' + #lastQnaId + '-' + #pageable.pageNumber")
     public PagingQnaListResDto qnaList(Long lastQnaId, Pageable pageable) {
         Users currentUser = UserUtil.getCurrentUser();
         return qnaRepository.findQnaList(currentUser, lastQnaId, pageable);
     }
 
+    @Transactional(readOnly = true)
     @Cacheable(value = "qnaDetail", key = "#qnaId")
     public DetailQnaResDto detailQna(Long qnaId, String password) {
         Qna qna = getQna(qnaId);
@@ -66,6 +70,7 @@ public class QnaService {
                 new CustomException(ErrorCode.QNA_NOT_FOUND));
     }
 
+    @Transactional
     @CacheEvict(value = {"qnaList", "qnaDetail"}, allEntries = true)
     public DeleteQnaResDto deleteQna(Long qnaId) {
         Qna qna = getQna(qnaId);

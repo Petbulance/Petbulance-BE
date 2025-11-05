@@ -24,13 +24,15 @@ public class QnaController {
     }
 
     @GetMapping
-    public PagingQnaListResDto qnaList(@RequestParam(required = false) Long lastQnaId, @RequestParam(defaultValue = "10") Integer pageSize) {
+    public PagingQnaListResDto qnaList(@RequestParam(required = false) Long lastQnaId,
+                                       @RequestParam(defaultValue = "10") Integer pageSize) {
         Pageable pageable = PageRequest.of(0, pageSize);
         return qnaService.qnaList(lastQnaId, pageable);
     }
 
     @GetMapping("/{qnaId}")
-    public DetailQnaResDto detailQna(@PathVariable("qnaId") Long qnaId, @RequestParam String password) {
+    public DetailQnaResDto detailQna(@PathVariable("qnaId") Long qnaId,
+                                     @RequestParam String password) {
         return qnaService.detailQna(qnaId, password);
     }
 

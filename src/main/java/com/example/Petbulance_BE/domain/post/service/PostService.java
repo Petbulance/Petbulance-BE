@@ -18,6 +18,8 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.TimeUtil;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -45,6 +47,11 @@ public class PostService {
 
     private static final String CACHE_KEY_FORMAT = "post::inquiry::%d";
 
+    @CacheEvict(
+            value = "myPosts",
+            key = "#currentUser.id + '_0'",
+            condition = "#keyword == null"
+    )
     @Transactional
     public CreatePostResDto createPost(CreatePostReqDto dto) {
 
@@ -93,7 +100,7 @@ public class PostService {
         }
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public DetailPostResDto detailPost(Long postId) {
         Post post = validateVisiblePost(postId);
 
@@ -251,6 +258,11 @@ public class PostService {
         }
     }
 
+    @CacheEvict(
+            value = "myPosts",
+            key = "#currentUser.id + '_0'",
+            condition = "#keyword == null"
+    )
     @Transactional
     public UpdatePostResDto updatePost(Long postId, UpdatePostReqDto dto) {
         Post post = validateVisiblePost(postId); // postId를 이용하여 게시글을 찾고 숨겨지거나 삭제된 게시글의 경우 예외 발생
@@ -340,6 +352,12 @@ public class PostService {
         return post;
     }
 
+    @CacheEvict(
+            value = "myPosts",
+            key = "#currentUser.id + '_0'",
+            condition = "#keyword == null"
+    )
+    @Transactional
     public DeletePostResDto deletePost(Long postId) {
         Post post = validateVisiblePost(postId);
         postRepository.delete(post);
@@ -355,7 +373,12 @@ public class PostService {
         return new DeletePostResDto(postId, post.getBoard().getId(), true, post.isHidden(), LocalDateTime.now());
     }
 
-
+    @Cacheable(
+            value = "myPosts",
+            key = "#currentUser.id + '_0'",
+            condition = "#keyword == null"
+    )
+    @Transactional(readOnly = true)
     public PagingMyPostListResDto myPostList(String keyword, Long lastPostId, Pageable pageable) {
         Users currentUser = UserUtil.getCurrentUser();
 
