@@ -54,7 +54,6 @@ public class PostService {
     )
     @Transactional
     public CreatePostResDto createPost(CreatePostReqDto dto) {
-
         if (dto.getTitle().isBlank() || dto.getContent().isBlank()) {
             throw new CustomException(ErrorCode.EMPTY_TITLE_OR_CONTENT);
         }
@@ -65,14 +64,10 @@ public class PostService {
         Board board = boardRepository.findById(dto.getBoardId())
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_BOARD_OR_CATEGORY));
 
-        Category category;
-        try {
-            category = Category.valueOf(dto.getCategory());
-        } catch (IllegalArgumentException e) {
-            throw new CustomException(ErrorCode.INVALID_BOARD_OR_CATEGORY);
-        }
+        Category category = Category.fromString(dto.getCategory()); // string -> Category
 
-        Post post = Post.builder()
+        Post savedPost = postRepository.save(
+                Post.builder()
                 .board(board)
                 .user(UserUtil.getCurrentUser())
                 .category(category)
@@ -81,11 +76,9 @@ public class PostService {
                 .hidden(false)
                 .deleted(false)
                 .imageNum(Optional.ofNullable(dto.getImageUrls()).orElse(List.of()).size())
-                .build();
+                .build()); // 게시글 저장
 
-        Post savedPost = postRepository.save(post);
-
-        savePostImages(savedPost, dto.getImageUrls());
+        savePostImages(savedPost, dto.getImageUrls()); // 게시글 첨부 이미지 저장
 
         return CreatePostResDto.of(savedPost, savedPost.getBoard().getId(), dto.getImageUrls());
     }
@@ -95,14 +88,113 @@ public class PostService {
 
         for (int i = 0; i < imageUrls.size(); i++) {
             boolean isThumbnail = (i == 0); // 첫 번째 이미지를 썸네일로 설정
-            PostImage postImage = PostImage.create(post, imageUrls.get(i), i+1, isThumbnail);
-            postImageRepository.save(postImage);
+            postImageRepository.save(PostImage.create(post, imageUrls.get(i), i+1, isThumbnail));
         }
+    }
+
+    @CacheEvict(
+            value = "myPosts",
+            key = "#currentUser.id + '_0'",
+            condition = "#keyword == null"
+    )
+    @Transactional
+    public UpdatePostResDto updatePost(Long postId, UpdatePostReqDto dto) {
+        Post post = validateVisiblePost(postId); // postId를 이용하여 게시글을 찾고 숨겨지거나 삭제된 게시글의 경우 예외 발생
+
+        Users currentUser = UserUtil.getCurrentUser();
+        if (!currentUserIsPostAuthor(post.getUser(), currentUser)) { // 현재 유저가 게시글 작성자인지 -> 수정권한이 있는지 확인
+            throw new CustomException(ErrorCode.FORBIDDEN_POST_ACCESS);
+        }
+
+        if (dto.getTitle().isBlank() || dto.getContent().isBlank()) {
+            throw new CustomException(ErrorCode.EMPTY_TITLE_OR_CONTENT);
+        }
+        if (dto.getImagesToKeepOrAdd() != null && dto.getImagesToKeepOrAdd().size() > 10) {
+            throw new CustomException(ErrorCode.EXCEEDED_MAX_IMAGE_COUNT);
+        }
+
+        Category category = Category.fromString(dto.getCategory());
+
+        // 이미지 업데이트
+        updatePostImages(post, dto);
+
+        // 게시글 본문 수정
+        post.update(dto.getTitle(), dto.getContent(), category, dto.getImagesToKeepOrAdd().size());
+
+        // 상세 조회 캐시 무효화
+        String cacheKey = String.format(CACHE_KEY_FORMAT, postId);
+        redisTemplate.delete(cacheKey);
+
+        return UpdatePostResDto.from(post, postImageRepository.findByPost(post));
+    }
+
+    @Transactional
+    public void updatePostImages(Post post, UpdatePostReqDto dto) {
+        List<PostImage> existingImages = postImageRepository.findByPost(post); // 해당 게시글의 첨부된 이미지 조회
+        /*
+        * 키(key): imageUrl
+          값(value): PostImage 엔티티 자체
+        */
+        Map<String, PostImage> existingMap = existingImages.stream()
+                .collect(Collectors.toMap(PostImage::getImageUrl, Function.identity()));
+
+        // 삭제 처리
+        if (dto.getImageUrlsToDelete() != null) {
+            dto.getImageUrlsToDelete().forEach(url -> {
+                PostImage target = existingMap.remove(url);
+                if (target != null) {
+                    postImageRepository.delete(target);
+                    try {
+                        //s3Service.deleteFile(url);
+                    } catch (Exception e) {
+                        //  log.warn("S3 파일 삭제 실패: {}", url, e);
+                    }
+                }
+            });
+        }
+
+        // 추가/유지/순서/썸네일 갱신
+        for (UpdatePostReqDto.ImageUpdateDto updateDto : dto.getImagesToKeepOrAdd()) {
+            PostImage existing = existingMap.get(updateDto.getImageUrl());
+            if (existing != null) {
+                existing.updateOrderAndThumbnail(updateDto.getImageOrder(), updateDto.isThumbnail());
+            } else {
+                PostImage newImage = PostImage.create(
+                        post,
+                        updateDto.getImageUrl(),
+                        updateDto.getImageOrder(),
+                        updateDto.isThumbnail()
+                );
+                postImageRepository.save(newImage);
+            }
+        }
+    }
+
+    @CacheEvict(
+            value = "myPosts",
+            key = "#currentUser.id + '_0'",
+            condition = "#keyword == null"
+    )
+    @Transactional
+    public DeletePostResDto deletePost(Long postId) {
+        Post post = validateVisiblePost(postId);
+
+        Users currentUser = UserUtil.getCurrentUser();
+        if (!currentUserIsPostAuthor(post.getUser(), currentUser)) { // 현재 유저가 게시글 작성자인지 -> 삭제권한이 있는지 확인
+            throw new CustomException(ErrorCode.FORBIDDEN_POST_ACCESS);
+        }
+
+        postRepository.delete(post);
+
+        String cacheKey = String.format(CACHE_KEY_FORMAT, postId);
+        redisTemplate.delete(cacheKey);
+
+        return new DeletePostResDto(postId, post.getBoard().getId(), true, post.isHidden(), LocalDateTime.now());
     }
 
     @Transactional(readOnly = true)
     public DetailPostResDto detailPost(Long postId) {
-        Post post = validateVisiblePost(postId);
+        Post post = validateVisiblePost(postId); // 숨김 게시글이나 삭제된 게시글 볼 수 없음
 
         // 현재 로그인 유저 (게시글 작성자인지 확인하기 위함)
         Users currentUser = UserUtil.getCurrentUser();
@@ -144,25 +236,12 @@ public class PostService {
                 .build();
     }
 
-    private Post getPost(Long postId) {
-        // 현재 조회하는 게시글
-        return postRepository.findById(postId)
-                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-    }
-
-
-    private boolean currentUserIsPostAuthor(Users postAuthor, Users currentUser) {
-        return currentUser == postAuthor; // 현재 로그인 유저와 게시글 작성자가 동일 유저인지 판별
-    }
-
     @Transactional(readOnly = true)
     public PagingPostListResDto postList(Long boardId, String category, String sort, Long lastPostId, Integer pageSize) {
 
         // 카테고리/정렬/게시판 검증
-        Category c = null;
-        if (category != null && !category.isBlank() && Category.isValidCategory(category)) {
-            c = Category.valueOf(category);
-        }
+        Category c = Category.fromString(category);
+
         validateSortCondition(sort);
         validationBoardId(boardId);
 
@@ -211,7 +290,6 @@ public class PostService {
         }
     }
 
-
     @Transactional(readOnly = true)
     public PagingPostSearchListResDto postSearchList(Long boardId, List<String> category, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
         Category.convertToCategoryList(category);
@@ -258,121 +336,6 @@ public class PostService {
         }
     }
 
-    @CacheEvict(
-            value = "myPosts",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
-    @Transactional
-    public UpdatePostResDto updatePost(Long postId, UpdatePostReqDto dto) {
-        Post post = validateVisiblePost(postId); // postId를 이용하여 게시글을 찾고 숨겨지거나 삭제된 게시글의 경우 예외 발생
-
-        Users currentUser = UserUtil.getCurrentUser();
-        if (!currentUserIsPostAuthor(post.getUser(), currentUser)) { // 현재 유저가 게시글 작성자인지 -> 수정권한이 있는지 확인
-            throw new CustomException(ErrorCode.FORBIDDEN_POST_ACCESS);
-        }
-
-        if (dto.getTitle().isBlank() || dto.getContent().isBlank()) {
-            throw new CustomException(ErrorCode.EMPTY_TITLE_OR_CONTENT);
-        }
-        if (dto.getImagesToKeepOrAdd() != null && dto.getImagesToKeepOrAdd().size() > 10) {
-            throw new CustomException(ErrorCode.EXCEEDED_MAX_IMAGE_COUNT);
-        }
-
-        Category category = null;
-        if (Category.isValidCategory(dto.getCategory())) {
-            category = Category.valueOf(dto.getCategory());
-        }
-
-        // 이미지 업데이트
-        updatePostImages(post, dto);
-
-        // 게시글 본문 수정
-        post.update(dto.getTitle(), dto.getContent(), category, dto.getImagesToKeepOrAdd().size());
-
-        // 캐시 무효화
-        String cacheKey = String.format(CACHE_KEY_FORMAT, postId);
-        redisTemplate.delete(cacheKey);
-
-        return UpdatePostResDto.from(post, postImageRepository.findByPost(post));
-    }
-
-    @Transactional
-    public void updatePostImages(Post post, UpdatePostReqDto dto) {
-        List<PostImage> existingImages = postImageRepository.findByPost(post); // 해당 게시글의 첨부된 이미지 조회
-        /*
-        * 키(key): imageUrl
-          값(value): PostImage 엔티티 자체
-        */
-        Map<String, PostImage> existingMap = existingImages.stream()
-                .collect(Collectors.toMap(PostImage::getImageUrl, Function.identity()));
-
-        // 삭제 처리
-        if (dto.getImageUrlsToDelete() != null) {
-            dto.getImageUrlsToDelete().forEach(url -> {
-                PostImage target = existingMap.remove(url);
-                if (target != null) {
-                    postImageRepository.delete(target);
-                    try {
-                        //s3Service.deleteFile(url);
-                    } catch (Exception e) {
-                      //  log.warn("S3 파일 삭제 실패: {}", url, e);
-                    }
-                }
-            });
-        }
-
-        // 추가/유지/순서/썸네일 갱신
-        for (UpdatePostReqDto.ImageUpdateDto updateDto : dto.getImagesToKeepOrAdd()) {
-            PostImage existing = existingMap.get(updateDto.getImageUrl());
-            if (existing != null) {
-                existing.updateOrderAndThumbnail(updateDto.getImageOrder(), updateDto.isThumbnail());
-            } else {
-                PostImage newImage = PostImage.create(
-                        post,
-                        updateDto.getImageUrl(),
-                        updateDto.getImageOrder(),
-                        updateDto.isThumbnail()
-                );
-                postImageRepository.save(newImage);
-            }
-        }
-    }
-
-
-    private Post validateVisiblePost(Long postId) {
-        Post post = getPost(postId);
-
-        if (post.isHidden()) {
-            throw new CustomException(ErrorCode.POST_HIDDEN); // 숨긴 게시글
-        }
-        if (post.isDeleted()) {
-            throw new CustomException(ErrorCode.POST_DELETED); // 삭제된 게시글
-        }
-        return post;
-    }
-
-    @CacheEvict(
-            value = "myPosts",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
-    @Transactional
-    public DeletePostResDto deletePost(Long postId) {
-        Post post = validateVisiblePost(postId);
-        postRepository.delete(post);
-
-        Users currentUser = UserUtil.getCurrentUser();
-        if (!currentUserIsPostAuthor(post.getUser(), currentUser)) { // 현재 유저가 게시글 작성자인지 -> 삭제권한이 있는지 확인
-            throw new CustomException(ErrorCode.FORBIDDEN_POST_ACCESS);
-        }
-
-        String cacheKey = String.format(CACHE_KEY_FORMAT, postId);
-        redisTemplate.delete(cacheKey);
-
-        return new DeletePostResDto(postId, post.getBoard().getId(), true, post.isHidden(), LocalDateTime.now());
-    }
-
     @Cacheable(
             value = "myPosts",
             key = "#currentUser.id + '_0'",
@@ -402,5 +365,27 @@ public class PostService {
         });
 
         return new PagingMyPostListResDto(posts, postListResDto.isHasNext());
+    }
+
+    private Post getPost(Long postId) {
+        // 현재 조회하는 게시글
+        return postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+    }
+
+    private boolean currentUserIsPostAuthor(Users postAuthor, Users currentUser) {
+        return currentUser == postAuthor; // 현재 로그인 유저와 게시글 작성자가 동일 유저인지 판별
+    }
+
+    private Post validateVisiblePost(Long postId) {
+        Post post = getPost(postId);
+
+        if (post.isHidden()) {
+            throw new CustomException(ErrorCode.POST_HIDDEN); // 숨긴 게시글
+        }
+        if (post.isDeleted()) {
+            throw new CustomException(ErrorCode.POST_DELETED); // 삭제된 게시글
+        }
+        return post;
     }
 }

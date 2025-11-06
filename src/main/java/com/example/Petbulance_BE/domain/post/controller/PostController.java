@@ -32,29 +32,15 @@ public class PostController {
         return postService.createPost(dto);
     }
 
-    @PostMapping("/{postId}/likes")
-    public PostLikeDto postLike(@PathVariable("postId") Long postId){
-        return postLikeService.postLike(postId);
+    @PutMapping("/{postId}")
+    public UpdatePostResDto updatePost(@PathVariable("postId") Long postId,
+                                       @RequestBody UpdatePostReqDto dto) {
+        return postService.updatePost(postId, dto);
     }
 
-    @DeleteMapping("/{postId}/likes")
-    public PostLikeDto postUnlike(@PathVariable("postId") Long postId){
-        return postLikeService.postUnlike(postId);
-    }
-
-    @PostMapping("/{postId}/comments")
-    public PostCommentResDto createPostComment(@PathVariable("postId") Long postId,
-                                               @RequestBody @Valid CreatePostCommentReqDto dto) {
-        return postCommentService.createPostComment(postId, dto);
-    }
-
-    @GetMapping("/{postId}/comments")
-    public PagingPostCommentListResDto postCommentList(@PathVariable("postId") Long postId,
-                                                       @RequestParam(required = false) Long lastParentCommentId,
-                                                       @RequestParam(required = false) Long lastCommentId,
-                                                       @RequestParam(defaultValue = "15") int pageSize) {
-        Pageable pageable = PageRequest.of(0, pageSize);
-        return postCommentService.postCommentList(postId, lastParentCommentId, lastCommentId, pageable);
+    @DeleteMapping("/{postId}")
+    public DeletePostResDto deletePost(@PathVariable("postId") Long postId) {
+        return postService.deletePost(postId);
     }
 
     @GetMapping("/{postId}")
@@ -82,22 +68,36 @@ public class PostController {
         return postService.postSearchList(boardId, category, sort, lastPostId, pageSize, searchKeyword, searchScope);
     }
 
-    @PutMapping("/{postId}")
-    public UpdatePostResDto updatePost(@PathVariable("postId") Long postId,
-                                       @RequestBody UpdatePostReqDto dto) {
-        return postService.updatePost(postId, dto);
-    }
-
-    @DeleteMapping("/{postId}")
-    public DeletePostResDto deletePost(@PathVariable("postId") Long postId) {
-        return postService.deletePost(postId);
-    }
-
     @GetMapping("/me")
     public PagingMyPostListResDto myPostList(@RequestParam(required = false) String keyword,
                                              @RequestParam(required = false) Long lastPostId,
                                              @RequestParam(defaultValue = "10") Integer pageSize) {
         Pageable pageable = PageRequest.of(0, pageSize);
         return postService.myPostList(keyword, lastPostId, pageable);
+    }
+
+    @PostMapping("/{postId}/likes")
+    public PostLikeDto postLike(@PathVariable("postId") Long postId){
+        return postLikeService.postLike(postId);
+    }
+
+    @DeleteMapping("/{postId}/likes")
+    public PostLikeDto postUnlike(@PathVariable("postId") Long postId){
+        return postLikeService.postUnlike(postId);
+    }
+
+    @PostMapping("/{postId}/comments")
+    public PostCommentResDto createPostComment(@PathVariable("postId") Long postId,
+                                               @RequestBody @Valid CreatePostCommentReqDto dto) {
+        return postCommentService.createPostComment(postId, dto);
+    }
+
+    @GetMapping("/{postId}/comments")
+    public PagingPostCommentListResDto postCommentList(@PathVariable("postId") Long postId,
+                                                       @RequestParam(required = false) Long lastParentCommentId,
+                                                       @RequestParam(required = false) Long lastCommentId,
+                                                       @RequestParam(defaultValue = "15") int pageSize) {
+        Pageable pageable = PageRequest.of(0, pageSize);
+        return postCommentService.postCommentList(postId, lastParentCommentId, lastCommentId, pageable);
     }
 }
