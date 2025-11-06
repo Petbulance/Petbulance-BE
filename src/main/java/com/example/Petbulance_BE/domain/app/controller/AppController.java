@@ -4,10 +4,7 @@ import com.example.Petbulance_BE.domain.app.dto.MetadataRequestDto;
 import com.example.Petbulance_BE.domain.app.dto.MetadataResponseDto;
 import com.example.Petbulance_BE.domain.app.service.AppService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -24,7 +21,7 @@ public class AppController {
     }
 
     @GetMapping("/metadata")
-    public MetadataResponseDto getMetadata(@RequestBody MetadataRequestDto metadataRequestDto) {
+    public MetadataResponseDto getMetadata(@ModelAttribute MetadataRequestDto metadataRequestDto) {
         return appService.getMetadataProcess(metadataRequestDto);
     }
 }

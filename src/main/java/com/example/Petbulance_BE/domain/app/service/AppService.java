@@ -5,7 +5,7 @@ import com.example.Petbulance_BE.domain.app.dto.MetadataResponseDto;
 import com.example.Petbulance_BE.domain.app.dto.RegionsResponseDto;
 import com.example.Petbulance_BE.domain.app.entity.App;
 import com.example.Petbulance_BE.domain.app.repository.AppsJpaRepository;
-import com.example.Petbulance_BE.domain.category.repository.CategoryJpaRepository;
+import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.region1.repository.Region1JpaRepository;
 import com.example.Petbulance_BE.domain.region2.repository.Region2JpaRepository;
 import com.example.Petbulance_BE.domain.species.repository.SpeciesJpaRepository;
@@ -26,7 +26,7 @@ public class AppService {
     private final Region1JpaRepository region1JpaRepository;
     private final Region2JpaRepository region2JpaRepository;
     private final SpeciesJpaRepository speciesJpaRepository;
-    private final CategoryJpaRepository categoryJpaRepository;
+    private final BoardRepository boardRepository;
     private final AppsJpaRepository appsJpaRepository;
 
     public Map<String, String> getVersionProcess() {
@@ -55,7 +55,7 @@ public class AppService {
         }
 
         if(!app.getCommunityCategoryVersion().equals(requestVersion.getCommunityCategory())){
-            List<String> allName = categoryJpaRepository.findAllName();
+            List<String> allName = boardRepository.findAllNameKr();
 
             metadataResponseDto.setCommunityCategory(allName);
         }
