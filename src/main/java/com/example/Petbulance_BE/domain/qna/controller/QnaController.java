@@ -19,18 +19,20 @@ public class QnaController {
     private final QnaService qnaService;
 
     @PostMapping
-    public CreateQnaResDto createQna(@Valid @RequestBody CreateQnaReqDto dto) {
+    public CreateQnaResDto createQna(@RequestBody @Valid CreateQnaReqDto dto) {
         return qnaService.createQna(dto);
     }
 
     @GetMapping
-    public PagingQnaListResDto qnaList(@RequestParam(required = false) Long lastQnaId, @RequestParam(defaultValue = "10") Integer pageSize) {
+    public PagingQnaListResDto qnaList(@RequestParam(required = false) Long lastQnaId,
+                                       @RequestParam(defaultValue = "10") Integer pageSize) {
         Pageable pageable = PageRequest.of(0, pageSize);
         return qnaService.qnaList(lastQnaId, pageable);
     }
 
     @GetMapping("/{qnaId}")
-    public DetailQnaResDto detailQna(@PathVariable("qnaId") Long qnaId, @RequestParam String password) {
+    public DetailQnaResDto detailQna(@PathVariable("qnaId") Long qnaId,
+                                     @RequestParam String password) {
         return qnaService.detailQna(qnaId, password);
     }
 

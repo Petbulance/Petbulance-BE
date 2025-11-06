@@ -44,4 +44,16 @@ public enum Category {
             throw new CustomException(ErrorCode.INVALID_CATEGORY);
         }
     }
+
+    public static Category fromString(String categoryString) {
+        if (categoryString == null || categoryString.isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_BOARD_OR_CATEGORY);
+        }
+        try {
+            return Category.valueOf(categoryString.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new CustomException(ErrorCode.INVALID_BOARD_OR_CATEGORY);
+        }
+    }
+
 }
