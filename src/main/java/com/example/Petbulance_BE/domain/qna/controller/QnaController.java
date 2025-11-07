@@ -31,9 +31,8 @@ public class QnaController {
     }
 
     @GetMapping("/{qnaId}")
-    public DetailQnaResDto detailQna(@PathVariable("qnaId") Long qnaId,
-                                     @RequestParam String password) {
-        return qnaService.detailQna(qnaId, password);
+    public DetailQnaResDto detailQna(@PathVariable("qnaId") Long qnaId) {
+        return qnaService.detailQna(qnaId);
     }
 
     @DeleteMapping("/{qnaId}")

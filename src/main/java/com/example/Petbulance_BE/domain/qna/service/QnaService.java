@@ -31,15 +31,11 @@ public class QnaService {
     @Transactional
     @CacheEvict(value = {"qnaList", "qnaDetail"}, allEntries = true)
     public CreateQnaResDto createQna(CreateQnaReqDto dto) {
-        String encodedPassword = dto.getPassword() != null
-                ? passwordEncoder.encode(dto.getPassword())
-                : null;
 
         Users currentUser = UserUtil.getCurrentUser();
         Qna qna = Qna.builder()
                 .title(dto.getTitle())
                 .content(dto.getContent())
-                .password(encodedPassword) // 암호화
                 .status(QnaStatus.ANSWER_WAITING)
                 .createdAt(LocalDateTime.now())
                 .user(currentUser)
@@ -58,9 +54,9 @@ public class QnaService {
 
     @Transactional(readOnly = true)
     @Cacheable(value = "qnaDetail", key = "#qnaId")
-    public DetailQnaResDto detailQna(Long qnaId, String password) {
+    public DetailQnaResDto detailQna(Long qnaId) {
         Qna qna = getQna(qnaId);
-        verifyQnaUer(qna, UserUtil.getCurrentUser(), password); // 비밀번호 암호화 필요
+        verifyQnaUer(qna, UserUtil.getCurrentUser());
 
         return DetailQnaResDto.from(qna);
     }
@@ -81,9 +77,7 @@ public class QnaService {
 
     private void verifyQnaUer(Qna qna, Users currentUser, String password) {
         boolean isOwner = qna.getUser().equals(currentUser);
-        boolean passwordMatch = (password == null) || passwordEncoder.matches(password, qna.getPassword());
-
-        if (!isOwner || !passwordMatch) {
+        if (!isOwner) {
             throw new CustomException(ErrorCode.FORBIDDEN_QNA_ACCESS);
         }
     }

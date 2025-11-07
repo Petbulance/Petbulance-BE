@@ -32,8 +32,6 @@ public class Qna {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    private String password; // 4자리 비밀번호 (확정?)
-
     @Enumerated(EnumType.STRING)
     private QnaStatus status;
 
