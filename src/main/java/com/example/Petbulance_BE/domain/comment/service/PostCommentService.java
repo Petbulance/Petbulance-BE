@@ -189,14 +189,22 @@ public class PostCommentService {
         if(currentUser == null) {
             // 비회원이 게시글 댓글 조회시
             return new PagingPostCommentListResDto(
-                    postCommentRepository.findPostCommentByPostForGuest(post, null, null, pageable)
+                    postCommentRepository.findPostCommentByPostForGuest(post, null, null, pageable),
+                    getTotalPostCommentCount(post)
             );
         } else {
             boolean currentUserIsPostAuthor = Objects.equals(currentUser.getId(), post.getUser().getId()); // 현재 사용자가 게시글 작성자인지 -> 이에 따라 조회 가능한 댓글 범위가 달라짐
             return new PagingPostCommentListResDto(
-                    postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, currentUserIsPostAuthor, currentUser)
+                    postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, currentUserIsPostAuthor, currentUser),
+                    getTotalPostCommentCount(post)
             );
         }
+    }
+
+    private Long getTotalPostCommentCount(Post post) {
+        return postCommentCountRepository.findByPost(post)
+                .map(PostCommentCount::getPostCommentCount)
+                .orElse(0L);
     }
 
     @Transactional(readOnly = true)
