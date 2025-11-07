@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ public class RecentCommunitySearchRepository {
 
         redisTemplate.opsForList().leftPush(key, keywordDto);
         redisTemplate.opsForList().trim(key, 0, MAX_KEYWORDS - 1);
+        redisTemplate.expire(key, Duration.ofDays(30));
     }
 
     public List<RecentCommunityResDto> getRecentKeywords(String userId) {
