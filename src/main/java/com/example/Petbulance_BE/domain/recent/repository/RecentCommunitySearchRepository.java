@@ -1,43 +1,54 @@
 package com.example.Petbulance_BE.domain.recent.repository;
 
+import com.example.Petbulance_BE.domain.recent.dto.response.RecentCommunityResDto;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
 public class RecentCommunitySearchRepository {
-    private final StringRedisTemplate redisTemplate;
-    private static final String PREFIX = "recent_search:";
-    private static final long TTL_DAYS = 30;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private static final int MAX_KEYWORDS = 5;
 
     public void saveKeyword(String userId, String keyword) {
-        String key = PREFIX + userId;
-        double score = System.currentTimeMillis();
-        redisTemplate.opsForZSet().add(key, keyword, score);
-        redisTemplate.expire(key, Duration.ofDays(TTL_DAYS));
+        String key = "recent_keywords:" + userId;
+
+        RecentCommunityResDto keywordDto = RecentCommunityResDto.builder()
+                .keywordId(UUID.randomUUID().toString())
+                .keyword(keyword)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        redisTemplate.opsForList().leftPush(key, keywordDto);
+        redisTemplate.opsForList().trim(key, 0, MAX_KEYWORDS - 1);
     }
 
-    public List<String> findRecentKeywords(String userId, int limit) {
-        String key = PREFIX + userId;
-        Set<String> results = redisTemplate.opsForZSet()
-                .reverseRange(key, 0, limit - 1);
-        return new ArrayList<>(Objects.requireNonNullElse(results, Set.of()));
+    public List<RecentCommunityResDto> getRecentKeywords(String userId) {
+        String key = "recent_keywords:" + userId;
+        List<Object> objects = redisTemplate.opsForList().range(key, 0, -1);
+        if (objects == null) return List.of();
+        return objects.stream()
+                .map(o -> (RecentCommunityResDto) o)
+                .collect(Collectors.toList());
     }
 
-    public void deleteKeyword(String userId, String keyword) {
-        String key = PREFIX + userId;
-        redisTemplate.opsForZSet().remove(key, keyword);
+    public void deleteKeyword(String userId, String keywordId) {
+        String key = "recent_keywords:" + userId;
+        List<Object> objects = redisTemplate.opsForList().range(key, 0, -1);
+        if (objects == null || objects.isEmpty()) return;
+
+        for (Object o : objects) {
+            RecentCommunityResDto dto = (RecentCommunityResDto) o;
+            if (dto.getKeywordId().equals(keywordId)) {
+                redisTemplate.opsForList().remove(key, 1, dto);
+                break;
+            }
+        }
     }
 
-    public void deleteAll(String userId) {
-        String key = PREFIX + userId;
-        redisTemplate.delete(key);
-    }
 }
