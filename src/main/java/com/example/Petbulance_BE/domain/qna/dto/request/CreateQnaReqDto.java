@@ -15,7 +15,4 @@ public class CreateQnaReqDto {
 
     @NotBlank(message = "내용(content)은 비워둘 수 없습니다.")
     private String content;
-
-    @Pattern(regexp = "^[0-9]{4}$", message = "비밀번호(password)는 4자리 숫자여야 합니다.")
-    private String password;
 }

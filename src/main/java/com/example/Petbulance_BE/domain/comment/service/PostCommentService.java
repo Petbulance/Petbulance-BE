@@ -190,19 +190,19 @@ public class PostCommentService {
             // 비회원이 게시글 댓글 조회시
             return new PagingPostCommentListResDto(
                     postCommentRepository.findPostCommentByPostForGuest(post, null, null, pageable),
-                    getTotalPostCommentCount(post)
+                    getTotalPostCommentCount(postId)
             );
         } else {
             boolean currentUserIsPostAuthor = Objects.equals(currentUser.getId(), post.getUser().getId()); // 현재 사용자가 게시글 작성자인지 -> 이에 따라 조회 가능한 댓글 범위가 달라짐
             return new PagingPostCommentListResDto(
                     postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, currentUserIsPostAuthor, currentUser),
-                    getTotalPostCommentCount(post)
+                    getTotalPostCommentCount(postId)
             );
         }
     }
 
-    private Long getTotalPostCommentCount(Post post) {
-        return postCommentCountRepository.findByPost(post)
+    private Long getTotalPostCommentCount(Long postId) {
+        return postCommentCountRepository.findByPostId(postId)
                 .map(PostCommentCount::getPostCommentCount)
                 .orElse(0L);
     }

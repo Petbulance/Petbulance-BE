@@ -20,5 +20,5 @@ public interface PostCommentCountRepository extends JpaRepository<PostCommentCou
     @Modifying(clearAutomatically = true)
     int decrease(@Param("postId") Long postId);
 
-    Optional<PostCommentCount> findByPost(Post post);
+    Optional<PostCommentCount> findByPostId(Long postId);
 }

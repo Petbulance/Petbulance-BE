@@ -2,6 +2,7 @@ package com.example.Petbulance_BE.domain.notice.dto.response;
 
 import com.example.Petbulance_BE.domain.notice.entity.Notice;
 import com.example.Petbulance_BE.domain.notice.entity.NoticeFile;
+import com.example.Petbulance_BE.global.util.TimeUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +21,7 @@ public class DetailNoticeResDto {
     private Long noticeId;
     private boolean isImportant;
     private String title;
-    private LocalDateTime createdAt;
+    private String createdAt;
     private String content;
     private List<AttachmentDto> attachments;
     private AdjacentNoticeDto previousNotice;
@@ -31,7 +32,7 @@ public class DetailNoticeResDto {
                 .noticeId(n.getId())
                 .isImportant(n.isImportant())
                 .title(n.getTitle())
-                .createdAt(n.getCreatedAt())
+                .createdAt(TimeUtil.formatCreatedAt(n.getCreatedAt()))
                 .content(n.getContent())
                 .attachments(files.stream()
                         .map(AttachmentDto::from)
