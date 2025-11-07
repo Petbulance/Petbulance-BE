@@ -2,6 +2,7 @@ package com.example.Petbulance_BE.domain.qna.dto.response;
 
 import com.example.Petbulance_BE.domain.qna.entity.Qna;
 import com.example.Petbulance_BE.domain.qna.type.QnaStatus;
+import com.example.Petbulance_BE.global.util.TimeUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,7 +16,7 @@ public class DetailQnaResDto {
     private Long qnaId;
     private String title;
     private String content;
-    private LocalDateTime createdAt;
+    private String createdAt;
     private QnaStatus status;
     private Answer answer;
 
@@ -24,7 +25,7 @@ public class DetailQnaResDto {
         dto.qnaId = qna.getId();
         dto.title = qna.getTitle();
         dto.content = qna.getContent();
-        dto.createdAt = qna.getCreatedAt();
+        dto.createdAt = TimeUtil.formatCreatedAt(qna.getCreatedAt());
         dto.status = qna.getStatus();
         dto.answer = Answer.from(qna.getAnswerContent(), qna.getAnsweredAt());
         return dto;
@@ -35,13 +36,13 @@ public class DetailQnaResDto {
     @AllArgsConstructor
     private static class Answer {
         private String content;
-        private LocalDateTime answeredAt;
+        private String answeredAt;
 
 
         public static Answer from(String answerContent, LocalDateTime answeredAt) {
             Answer a = new Answer();
             a.content = answerContent;
-            a.answeredAt = answeredAt;
+            a.answeredAt = TimeUtil.formatCreatedAt(answeredAt);
             return a;
         }
     }

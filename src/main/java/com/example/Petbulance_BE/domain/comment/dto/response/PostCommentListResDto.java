@@ -122,7 +122,7 @@ public class PostCommentListResDto {
         resDto.isCommentFromPostAuthor = subDto.isCommentFromPostAuthor();
         resDto.isCommentAuthor = false; // 비회원은 자기 댓글이 아님
 
-        // 🧩 비회원은 deleted, hidden, secret 댓글 모두 볼 수 없음
+        // 비회원은 deleted, hidden, secret 댓글 모두 볼 수 없음
         if (Boolean.TRUE.equals(resDto.deleted) ||
                 Boolean.TRUE.equals(resDto.hidden) ||
                 Boolean.TRUE.equals(resDto.isSecret)) {

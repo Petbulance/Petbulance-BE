@@ -9,6 +9,7 @@ import com.example.Petbulance_BE.domain.post.entity.QPost;
 import com.example.Petbulance_BE.domain.post.type.Category;
 import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.example.Petbulance_BE.global.util.TimeUtil;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
