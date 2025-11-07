@@ -12,6 +12,7 @@ import com.example.Petbulance_BE.domain.post.repository.PostLikeRepository;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.post.repository.PostViewCountRepository;
 import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.recent.service.RecentService;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
@@ -44,6 +45,7 @@ public class PostService {
     private final PostViewCountRepository postViewCountRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final PostLikeRepository postLikeRepository;
+    private final RecentService recentService;
 
     private static final String CACHE_KEY_FORMAT = "post::inquiry::%d";
 
@@ -296,6 +298,15 @@ public class PostService {
         validateSortCondition(sort);
         validationBoardId(boardId);
         validateSearchScope(searchScope);
+        Users currentUser = UserUtil.getCurrentUser();
+
+        if (searchKeyword.length() < 2) {
+            throw new CustomException(ErrorCode.INVALID_SEARCH_KEYWORD);
+        }
+
+        if(currentUser != null) {
+            recentService.saveRecentCommunitySearch(searchKeyword, currentUser);
+        }
 
         PagingPostSearchListResDto pagingResult =
                 postRepository.findPostSearchList(boardId, category, sort, lastPostId, pageSize, searchKeyword, searchScope);
@@ -304,8 +315,6 @@ public class PostService {
         if (posts.isEmpty()) {
             return pagingResult;
         }
-
-        Users currentUser = UserUtil.getCurrentUser();
 
         // postId 추출
         List<Long> postIds = posts.stream()
