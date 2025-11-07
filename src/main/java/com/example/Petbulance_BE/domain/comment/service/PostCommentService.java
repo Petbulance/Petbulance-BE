@@ -11,6 +11,7 @@ import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.recent.service.RecentService;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -35,6 +36,7 @@ public class PostCommentService {
     private final UsersJpaRepository usersJpaRepository;
     private final PostCommentCountRepository postCommentCountRepository;
     private final BoardRepository boardRepository;
+    private final RecentService recentService;
 
     @Transactional
     @CacheEvict(
@@ -224,6 +226,11 @@ public class PostCommentService {
         }
         if (boardId != null && !boardRepository.existsById(boardId)) {
             throw new CustomException(ErrorCode.BOARD_NOT_FOUND);
+        }
+        Users currentUser = UserUtil.getCurrentUser();
+
+        if(currentUser != null) {
+            recentService.saveRecentCommunitySearch(keyword, currentUser);
         }
 
         List<Category> categories = Category.convertToCategoryList(category);
