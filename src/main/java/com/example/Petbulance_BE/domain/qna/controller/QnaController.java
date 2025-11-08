@@ -1,10 +1,8 @@
 package com.example.Petbulance_BE.domain.qna.controller;
 
-import com.example.Petbulance_BE.domain.qna.dto.response.DeleteQnaResDto;
+import com.example.Petbulance_BE.domain.qna.dto.request.UpdateQnaReqDto;
+import com.example.Petbulance_BE.domain.qna.dto.response.*;
 import com.example.Petbulance_BE.domain.qna.dto.request.CreateQnaReqDto;
-import com.example.Petbulance_BE.domain.qna.dto.response.CreateQnaResDto;
-import com.example.Petbulance_BE.domain.qna.dto.response.DetailQnaResDto;
-import com.example.Petbulance_BE.domain.qna.dto.response.PagingQnaListResDto;
 import com.example.Petbulance_BE.domain.qna.service.QnaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +21,16 @@ public class QnaController {
         return qnaService.createQna(dto);
     }
 
+    @PutMapping("/{qnaId}")
+    public UpdateQnaResDto updateQna(@PathVariable("qnaId") Long qnaId, @RequestBody @Valid UpdateQnaReqDto dto) {
+        return qnaService.updateQna(dto, qnaId);
+    }
+
+    @DeleteMapping("/{qnaId}")
+    public DeleteQnaResDto deleteQna(@PathVariable("qnaId") Long qnaId) {
+        return qnaService.deleteQna(qnaId);
+    }
+
     @GetMapping
     public PagingQnaListResDto qnaList(@RequestParam(required = false) Long lastQnaId,
                                        @RequestParam(defaultValue = "10") Integer pageSize) {
@@ -33,10 +41,5 @@ public class QnaController {
     @GetMapping("/{qnaId}")
     public DetailQnaResDto detailQna(@PathVariable("qnaId") Long qnaId) {
         return qnaService.detailQna(qnaId);
-    }
-
-    @DeleteMapping("/{qnaId}")
-    public DeleteQnaResDto deleteQna(@PathVariable("qnaId") Long qnaId) {
-        return qnaService.deleteQna(qnaId);
     }
 }
