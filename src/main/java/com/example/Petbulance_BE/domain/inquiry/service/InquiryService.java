@@ -106,6 +106,13 @@ public class InquiryService {
     }
 
     public DetailInquiryResDto detailInquiry(Long inquiryId) {
-        return null;
+        Inquiry inquiry = getInquiry(inquiryId);
+
+        Users currentUser = UserUtil.getCurrentUser();
+        if(currentUser != null) {
+            verifyInquiryUser(inquiry, currentUser);
+        }
+
+        return DetailInquiryResDto.from(inquiry);
     }
 }
