@@ -52,7 +52,9 @@ public enum ErrorCode {
     QNA_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 qnaId의 문의글을 찾을 수 없습니다."),
     PRIVACY_CONSENT_REQUIRED(HttpStatus.BAD_REQUEST, "개인정보 수집 및 이용 동의가 필요합니다."),
     INVALID_CONTACT_INFO(HttpStatus.BAD_REQUEST, "연락처는 최소 1개 이상 입력해야 합니다."),
-    INVALID_TYPE(HttpStatus.BAD_REQUEST,"올바르지 않은 type값입니다.");
+    INVALID_TYPE(HttpStatus.BAD_REQUEST,"올바르지 않은 type값입니다."),
+    INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 문의내역을 찾을 수 없습니다."),
+    FORBIDDEN_INQUIRY_ACCESS(HttpStatus.UNAUTHORIZED, "문의내역에 대한 권한이 존재하지 않습니다.");
 
     private final HttpStatus status;
     private final String message;

@@ -1,10 +1,12 @@
 package com.example.Petbulance_BE.domain.inquiry.entity;
 
+import com.example.Petbulance_BE.domain.inquiry.dto.request.UpdateInquiryReqDto;
 import com.example.Petbulance_BE.domain.inquiry.type.InquiryType;
 import com.example.Petbulance_BE.domain.inquiry.type.InterestType;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -54,4 +56,15 @@ public class Inquiry extends BaseTimeEntity {
 
     @Column(nullable = false)
     private Boolean privacyConsent;
+
+    public void update(@Valid UpdateInquiryReqDto dto, InquiryType inquiryType, InterestType interestType) {
+        this.type = inquiryType;
+        this.companyName = dto.getCompanyName();
+        this.managerName = dto.getManagerName();
+        this.managerPosition = dto.getManagerPosition();
+        this.phone = dto.getPhone();
+        this.email = dto.getEmail();
+        this.interestType = interestType;
+        this.content = dto.getContent();
+    }
 }

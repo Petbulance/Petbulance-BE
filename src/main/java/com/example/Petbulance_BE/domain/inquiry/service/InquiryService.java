@@ -1,7 +1,8 @@
 package com.example.Petbulance_BE.domain.inquiry.service;
 
 import com.example.Petbulance_BE.domain.inquiry.dto.request.CreateInquiryReqDto;
-import com.example.Petbulance_BE.domain.inquiry.dto.response.CreateInquiryResDto;
+import com.example.Petbulance_BE.domain.inquiry.dto.request.UpdateInquiryReqDto;
+import com.example.Petbulance_BE.domain.inquiry.dto.response.*;
 import com.example.Petbulance_BE.domain.inquiry.entity.Inquiry;
 import com.example.Petbulance_BE.domain.inquiry.repository.InquiryRepository;
 import com.example.Petbulance_BE.domain.inquiry.type.InquiryType;
@@ -10,9 +11,13 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,18 +30,9 @@ public class InquiryService {
         InquiryType inquiryType = InquiryType.fromString(dto.getType());
         InterestType interestType = InterestType.fromString(dto.getInterestType());
 
-        if(inquiryType == null || interestType == null) {
-            throw new CustomException(ErrorCode.INVALID_TYPE);
-        }
-
         // 연락처 한개 이상 입력되었는지
         if(dto.getEmail().isEmpty() && dto.getPhone().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_CONTACT_INFO);
-        }
-
-        // 동의했는지
-        if(!dto.isPrivacyConsent()) {
-            throw new CustomException(ErrorCode.PRIVACY_CONSENT_REQUIRED);
         }
 
         Users currentUser = UserUtil.getCurrentUser();
@@ -56,5 +52,49 @@ public class InquiryService {
         );
 
         return new CreateInquiryResDto("광고/병원 제휴 문의가 정상적으로 접수되었습니다.");
+    }
+
+    public UpdateInquiryResDto updateInquiry(@Valid UpdateInquiryReqDto dto, Long inquiryId) {
+        // enum타입 올바른지 확인
+        InquiryType inquiryType = InquiryType.fromString(dto.getType());
+        InterestType interestType = InterestType.fromString(dto.getInterestType());
+
+        // 연락처 한개 이상 입력되었는지
+        if(dto.getEmail().isEmpty() && dto.getPhone().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_CONTACT_INFO);
+        }
+
+        Inquiry inquiry = getInquiry(inquiryId);
+
+        Users currentUser = UserUtil.getCurrentUser();
+        if(currentUser != null) {
+            verifyInquiryUser(inquiry, currentUser);
+        }
+        inquiry.update(dto, inquiryType, interestType);
+
+        return new UpdateInquiryResDto("광고/제휴 문의가 정상적으로 수정되었습니다.");
+    }
+
+    private void verifyInquiryUser(Inquiry inquiry, Users currentUser) {
+        if(!inquiry.getUser().getId().equals(currentUser.getId())) {
+            throw new CustomException(ErrorCode.FORBIDDEN_INQUIRY_ACCESS);
+        }
+    }
+
+    private Inquiry getInquiry(Long inquiryId) {
+       return inquiryRepository.findById(inquiryId).orElseThrow(() ->
+                new CustomException(ErrorCode.INQUIRY_NOT_FOUND));
+    }
+
+    public DeleteInquiryResDto deleteInquiry(Long inquiryId) {
+        return null;
+    }
+
+    public List<InquiryListResDto> inquiryList(Pageable pageable, Long lastInquiryId) {
+        return null;
+    }
+
+    public DetailInquiryResDto detailInquiry(Long inquiryId) {
+        return null;
     }
 }
