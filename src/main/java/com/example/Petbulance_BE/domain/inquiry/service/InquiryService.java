@@ -54,6 +54,7 @@ public class InquiryService {
         return new CreateInquiryResDto("광고/병원 제휴 문의가 정상적으로 접수되었습니다.");
     }
 
+    @Transactional
     public UpdateInquiryResDto updateInquiry(@Valid UpdateInquiryReqDto dto, Long inquiryId) {
         // enum타입 올바른지 확인
         InquiryType inquiryType = InquiryType.fromString(dto.getType());
@@ -86,8 +87,18 @@ public class InquiryService {
                 new CustomException(ErrorCode.INQUIRY_NOT_FOUND));
     }
 
+    @Transactional
     public DeleteInquiryResDto deleteInquiry(Long inquiryId) {
-        return null;
+        Inquiry inquiry = getInquiry(inquiryId);
+        Users currentUser = UserUtil.getCurrentUser();
+
+        if(currentUser != null) {
+            verifyInquiryUser(inquiry, currentUser);
+        }
+
+        inquiryRepository.delete(inquiry);
+
+        return new DeleteInquiryResDto("광고/제휴 문의가 정상적으로 삭제되었습니다.");
     }
 
     public List<InquiryListResDto> inquiryList(Pageable pageable, Long lastInquiryId) {
