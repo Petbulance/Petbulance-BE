@@ -81,6 +81,10 @@ dependencies {
 
 	// JTS Core (Geometry 처리)
 	implementation 'org.locationtech.jts:jts-core:1.19.0'
+
+	//테스트 롬복
+	testCompileOnly 'org.projectlombok:lombok'
+	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
 tasks.named('test') {
