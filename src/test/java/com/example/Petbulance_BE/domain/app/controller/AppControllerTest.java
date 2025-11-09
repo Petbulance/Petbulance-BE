@@ -2,7 +2,6 @@ package com.example.Petbulance_BE.domain.app.controller;
 
 import com.example.Petbulance_BE.domain.app.dto.MetadataRequestDto;
 import com.example.Petbulance_BE.domain.app.repository.AppsJpaRepository;
-import com.example.Petbulance_BE.domain.category.repository.CategoryJpaRepository;
 import com.example.Petbulance_BE.domain.region1.repository.Region1JpaRepository;
 import com.example.Petbulance_BE.domain.region2.repository.Region2JpaRepository;
 import com.example.Petbulance_BE.domain.species.repository.SpeciesJpaRepository;
@@ -40,8 +39,6 @@ class AppControllerTest {
     private Region2JpaRepository region2JpaRepository;
     @Autowired
     private SpeciesJpaRepository speciesJpaRepository;
-    @Autowired
-    private CategoryJpaRepository categoryJpaRepository;
     @Autowired
     private AppsJpaRepository appsJpaRepository;
 

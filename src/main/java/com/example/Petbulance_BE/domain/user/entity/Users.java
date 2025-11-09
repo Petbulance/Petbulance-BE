@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.user.entity;
 
 import com.example.Petbulance_BE.domain.device.entity.Device;
+import com.example.Petbulance_BE.domain.recent.entity.History;
 import com.example.Petbulance_BE.domain.userEmail.entity.UserEmails;
 import com.example.Petbulance_BE.domain.userSetting.entity.UserSetting;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
@@ -68,6 +69,9 @@ public class Users extends BaseTimeEntity {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<UserSetting> userSetting;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<History> histories;
 
     @Override
     public boolean equals(Object o) {
