@@ -12,12 +12,14 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class InquiryService {
     private final InquiryRepository inquiryRepository;
 
+    @Transactional
     public CreateInquiryResDto createInquiry(CreateInquiryReqDto dto) {
         // enum타입 올바른지 확인
         InquiryType inquiryType = InquiryType.fromString(dto.getType());

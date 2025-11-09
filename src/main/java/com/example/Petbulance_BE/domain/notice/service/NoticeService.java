@@ -8,22 +8,22 @@ import com.example.Petbulance_BE.domain.notice.repository.NoticeFileRepository;
 import com.example.Petbulance_BE.domain.notice.repository.NoticeRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class NoticeService {
     private final NoticeRepository noticeRepository;
     private final NoticeFileRepository noticeFileRepository;
 
+    @Transactional(readOnly = true)
     @Cacheable(value = "noticeList", key = "#lastNoticeId != null ? #lastNoticeId : 'first'")
     public PagingNoticeListResDto noticeList(Long lastNoticeId, Pageable pageable) {
         Notice notice = null;
@@ -40,6 +40,7 @@ public class NoticeService {
         return noticeRepository.findNoticeList(lastNoticeId, lastCreatedAt, lastIsImportant, pageable);
     }
 
+    @Transactional(readOnly = true)
     @Cacheable(value = "noticeDetail", key = "#noticeId")
     public DetailNoticeResDto detailNotice(Long noticeId) {
         Notice n = noticeRepository.findById(noticeId).orElseThrow(

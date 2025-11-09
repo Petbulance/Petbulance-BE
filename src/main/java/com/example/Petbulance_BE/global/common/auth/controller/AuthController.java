@@ -12,16 +12,14 @@ import com.example.Petbulance_BE.global.common.redisRepository.RefreshTokenRepos
 import com.example.Petbulance_BE.global.common.response.GlobalResponse;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-@RestController("/auth")
+@RestController
+@RequestMapping("/auth")
 public class AuthController {
 
     private final JWTUtil jwtUtil;

@@ -11,22 +11,20 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class PostLikeService {
     private final PostRepository postRepository;
     private final PostLikeRepository postLikeRepository;
     private final PostLikeCountRepository postLikeCountRepository;
 
-
+    @Transactional
     public PostLikeDto postLike(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
@@ -46,12 +44,12 @@ public class PostLikeService {
 
         // 좋아요 수 증가
         int result = postLikeCountRepository.increase(postId);
-        if (result == 0) {
+        if (result == 0) { // 좋아요 수 증가에 실패한 경우 -> 좋아요 내역이 없는 경우
             try {
                 postLikeCountRepository.save(
                         PostLikeCount.builder()
                                 .postId(postId)
-                                .postLikeCount(1L)
+                                .postLikeCount(1L) // 좋아요수를 1로 초기화
                                 .build()
                 );
             } catch (Exception ignored) {}
@@ -69,18 +67,21 @@ public class PostLikeService {
                 .build();
     }
 
+    @Transactional
     public PostLikeDto postUnlike(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
         Users currentUser = UserUtil.getCurrentUser();
 
-        verifyLikeUser(post, currentUser);
-
+        // 현재 사용자에게 좋아요 내역이 있는지 조회
         PostLike postLike = postLikeRepository.findByPostAndUser(post, currentUser)
                 .orElseThrow(() -> new CustomException(ErrorCode.LIKE_NOT_FOUND));
 
+        // 좋아요 삭제
         postLikeRepository.delete(postLike);
 
+        // 좋아요수 감소
         int result = postLikeCountRepository.decrease(postId);
         if (result == 0) {
             // update된 행이 없으면 → 0으로 초기화 (이 게시글에 count row가 없는 경우)
@@ -102,11 +103,5 @@ public class PostLikeService {
                 .liked(false)
                 .likeCount(likeCount)
                 .build();
-    }
-
-    private void verifyLikeUser(Post post, Users currentUser) {
-        if(!Objects.equals(post.getUser().getId(), currentUser.getId())) {
-            throw new CustomException(ErrorCode.FORBIDDEN_LIKE_ACCESS);
-        }
     }
 }

@@ -1,7 +1,6 @@
 package com.example.Petbulance_BE.domain.qna.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateQnaReqDto {
+public class UpdateQnaReqDto {
     @NotBlank(message = "제목(title)은 비워둘 수 없습니다.")
     private String title;
 

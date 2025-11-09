@@ -37,5 +37,7 @@ public class GlobalExceptionHandler {
         GlobalResponse response = GlobalResponse.failure(HttpStatus.BAD_REQUEST.value(), errorResponse);
         return ResponseEntity.badRequest().body(response);
     }
+
+
 }
 

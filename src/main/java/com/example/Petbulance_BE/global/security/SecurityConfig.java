@@ -4,6 +4,7 @@ import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.redisRepository.RefreshTokenRepository;
 import com.example.Petbulance_BE.global.filter.JWTFilter;
 import com.example.Petbulance_BE.global.filter.LogoutFilter;
+import com.example.Petbulance_BE.global.oauth2.custom.CustomOAuth2User;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -61,12 +62,12 @@ public class SecurityConfig {
                 );
         http
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-//        http
-//                .oauth2Login((oauth2) -> oauth2
-//                        .userInfoEndpoint((userInfoEndpointConfig) -> userInfoEndpointConfig
-//                                .userService(customOAuth2UserService))
-//                        .successHandler(customSuccessHandler)
-//                );
+      /*  http
+                .oauth2Login((oauth2) -> oauth2
+                        .userInfoEndpoint((userInfoEndpointConfig) -> userInfoEndpointConfig
+                                .userService(customOAuth2UserService))
+                        .successHandler(customSuccessHandler)
+                );*/
         http
                 .addFilterBefore(logoutFilter, UsernamePasswordAuthenticationFilter.class);
 

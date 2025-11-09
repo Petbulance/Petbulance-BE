@@ -80,14 +80,11 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
 
         if (current == null) return null;
 
-        // 동일한 정렬 규칙: 중요공지 → 최신순
         return queryFactory
                 .selectFrom(n)
                 .where(
-                        // 1) 같은 중요도 내에서 createdAt이 더 이전이거나
                         (n.isImportant.eq(current.isImportant())
                                 .and(n.createdAt.lt(current.getCreatedAt())))
-                                // 2) 혹은 중요도가 낮은 게시글
                                 .or(n.isImportant.lt(current.isImportant()))
                 )
                 .orderBy(n.isImportant.desc(), n.createdAt.desc())
@@ -105,10 +102,8 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
         return queryFactory
                 .selectFrom(n)
                 .where(
-                        // 1) 같은 중요도 내에서 createdAt이 더 최신이거나
                         (n.isImportant.eq(current.isImportant())
                                 .and(n.createdAt.gt(current.getCreatedAt())))
-                                // 2) 혹은 중요도가 높은 게시글
                                 .or(n.isImportant.gt(current.isImportant()))
                 )
                 .orderBy(n.isImportant.asc(), n.createdAt.asc())

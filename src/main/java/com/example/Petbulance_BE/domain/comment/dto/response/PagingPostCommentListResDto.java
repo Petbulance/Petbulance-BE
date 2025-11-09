@@ -15,9 +15,11 @@ import java.util.List;
 public class PagingPostCommentListResDto {
     private List<PostCommentListResDto> content;
     private boolean hasNext;
+    private Long totalCommentCount;
 
-    public PagingPostCommentListResDto(Slice<PostCommentListResDto> slice) {
+    public PagingPostCommentListResDto(Slice<PostCommentListResDto> slice, Long totalCommentCount) {
         this.content = slice.getContent();
         this.hasNext = slice.hasNext();
+        this.totalCommentCount = totalCommentCount;
     }
 }
