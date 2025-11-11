@@ -4,6 +4,7 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.userEmail.entity.UserEmails;
 import com.example.Petbulance_BE.domain.userEmail.repository.UserEmailsJpaRepository;
+import com.example.Petbulance_BE.global.common.auth.component.RandomNicknameGenerator;
 import com.example.Petbulance_BE.global.common.dto.LoginRequestDto;
 import com.example.Petbulance_BE.global.common.dto.LoginResponseDto;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -25,6 +26,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
+import java.util.Random;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -36,6 +40,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final FirebaseTokenService firebaseTokenService;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final RandomNicknameGenerator randomNicknameGenerator;
 
     public LoginResponseDto loginService(LoginRequestDto dto) {
         String provider = dto.getProvider().toUpperCase();
@@ -128,7 +133,14 @@ public class AuthService {
     }
 
     private Users createNewUser(String provider, String email) {
+
+        String nickname;
+        do{
+            nickname = randomNicknameGenerator.generateNickname();
+        } while (usersJpaRepository.existsByNickname(nickname));
+
         Users newUser = Users.builder()
+                .nickname(nickname)
                 .role(Role.ROLE_CLIENT)
                 .build();
 

@@ -53,7 +53,8 @@ public enum ErrorCode {
     PRIVACY_CONSENT_REQUIRED(HttpStatus.BAD_REQUEST, "개인정보 수집 및 이용 동의가 필요합니다."),
     INVALID_CONTACT_INFO(HttpStatus.BAD_REQUEST, "연락처는 최소 1개 이상 입력해야 합니다."),
     INVALID_TYPE(HttpStatus.BAD_REQUEST,"올바르지 않은 type값입니다."),
-    NOT_FOUND_KEYWORD(HttpStatus.BAD_REQUEST, "존재하지 않는 키워드 입니다.");
+    NOT_FOUND_KEYWORD(HttpStatus.BAD_REQUEST, "존재하지 않는 키워드 입니다."),
+    FAIL_READ_RANDOM_NICKNAME_FILE(HttpStatus.BAD_REQUEST, "랜덤 닉네임 조합 파일을 읽는데 실패하였습니다");
 
     private final HttpStatus status;
     private final String message;
