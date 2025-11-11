@@ -1,5 +1,7 @@
 package com.example.Petbulance_BE.global.common.auth.component;
 
+import com.example.Petbulance_BE.global.common.error.exception.CustomException;
+import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
@@ -45,11 +47,8 @@ public class RandomNicknameGenerator {
                     .filter(s -> !s.isBlank())
                     .toList();
 
-            log.info("{}",adjectives);
-            log.info("{}",animals);
         } catch (Exception e) {
-            log.error("{}",e.getMessage());
-            throw new RuntimeException(e);
+            throw new CustomException(ErrorCode.FAIL_READ_RANDOM_NICKNAME_FILE);
         }
     }
 
