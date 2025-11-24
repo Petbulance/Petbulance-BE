@@ -20,7 +20,7 @@ public interface HospitalJpaRepository extends JpaRepository<Hospital, Long>, Ho
     @Query("SELECT DISTINCT h FROM Hospital h " +
             "LEFT JOIN FETCH h.hospitalWorktimes hw " +
             "LEFT JOIN FETCH h.treatmentAnimals ta " +
-            "WHERE h.id = :id" )
+            "WHERE h.id = :id")
     Optional<Hospital> findDetailHospital(@Param("id") Long id);
 
     @EntityGraph(attributePaths = {"hospitalWorktimes", "treatmentAnimals", "userReviews"})
@@ -29,8 +29,8 @@ public interface HospitalJpaRepository extends JpaRepository<Hospital, Long>, Ho
 
     @Query("""
         SELECT CAST(function('ST_Distance_Sphere', 
-            function('ST_GeomFromText', CONCAT('POINT(', h.lng, ' ', h.lat, ')'),4326), 
-            function('ST_GeomFromText', CONCAT('POINT(', :lng, ' ', :lat, ')'), 4326)
+            function('ST_GeomFromText', CONCAT('POINT(', h.lat, ' ', h.lng, ')'),4326), 
+            function('ST_GeomFromText', CONCAT('POINT(', :lat, ' ', :lng, ')'), 4326)
         ) AS Double)
         FROM Hospital h
         WHERE h.id = :id
@@ -43,4 +43,23 @@ public interface HospitalJpaRepository extends JpaRepository<Hospital, Long>, Ho
 
     @Query("SELECT AVG(r.overallRating) FROM UserReview r WHERE r.hospital.id = :id")
     Optional<Double> getOverallRating(@Param("id") Long id);
+
+    //POINT(위도 경도)
+    @Query(value = """
+        SELECT *
+        FROM hospitals
+        WHERE MBRContains(
+            ST_BUFFER(
+                ST_PointFromText(CONCAT('POINT(', :lat, ' ', :lng, ')'), 4326),
+                :radius
+            ),
+            hospitals.location
+        )
+        ORDER BY ST_Distance_Sphere(hospitals.location, ST_PointFromText(CONCAT('POINT(', :lat, ' ', :lng, ')'), 4326))
+        LIMIT 1
+        """, nativeQuery = true)
+        List<Hospital> findNearestHospitals(@Param("lng") double lng, @Param("lat") double lat, @Param("radius") int radius);
+
+    @Query("select h FROM Hospital  h WHERE h.name LIKE CONCAT(:hospitalName, '%')")
+    List<Hospital> findByNameStartsWith(String hospitalName);
 }
