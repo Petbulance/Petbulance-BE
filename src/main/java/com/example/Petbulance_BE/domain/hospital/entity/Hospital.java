@@ -14,7 +14,10 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "hospitals")
+@Table(name = "hospitals",
+indexes = {
+        @Index(name = "idx_location", columnList = "location")
+})
 @Builder
 @Getter
 @Setter
@@ -36,7 +39,7 @@ public class Hospital extends BaseTimeEntity {
 
     private String information;
 
-    @Column(columnDefinition = "POINT SRID 4326")
+    @Column(columnDefinition = "POINT SRID 4326", nullable = false)
     private Point location;
 
     private Double lat;
@@ -47,6 +50,7 @@ public class Hospital extends BaseTimeEntity {
 
     private String image;
 
+    //일대다 다중 페치조인은 list불가 set으로 지정
     @Builder.Default
     @OneToMany(mappedBy = "hospital")
     @OrderBy("id ASC ")
