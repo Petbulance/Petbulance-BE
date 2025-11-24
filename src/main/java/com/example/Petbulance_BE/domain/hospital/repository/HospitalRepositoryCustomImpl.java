@@ -55,7 +55,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
 
         BooleanExpression openNowFilter = getBooleanExpression(openNow, todayStr, now);
 
-        NumberExpression<Double> doubleNumberExpression = calculateDistance(lng, lat);
+        NumberExpression<Double> doubleNumberExpression = calculateDistance(lat, lng);
 
         JPAQuery<HospitalSearchRes> query = queryFactory.select(
                         Projections.fields(HospitalSearchRes.class,
@@ -346,7 +346,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                 Double.class,
                 "ST_Distance_Sphere({0}, ST_GeomFromText({1}, 4326))",
                 hospital.location,
-                "POINT(" + lng + " " + lat + ")"
+                "POINT(" + lat + " " + lng + ")"
         );
     }
 

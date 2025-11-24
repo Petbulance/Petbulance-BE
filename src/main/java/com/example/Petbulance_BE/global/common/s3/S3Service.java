@@ -1,6 +1,9 @@
 package com.example.Petbulance_BE.global.common.s3;
 
+import com.example.Petbulance_BE.global.common.error.exception.CustomException;
+import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -18,6 +21,7 @@ import java.net.URL;
 import java.time.Duration;
 //ec2에 배포할때는 iam 사용자가 아닌 role로 수정하는 것도 좋아 보임!
 @Service
+@Slf4j
 public class S3Service {
 
     @Value("${cloud.aws.s3.bucket}")
@@ -54,7 +58,7 @@ public class S3Service {
 
     //key는 s3 객체 키(예: user/profile/userId.png)
     //expireSeconds는 url 만료 시간
-    public URL createPresignedPutUrl(String key,String contentType, long expireSeconds) {
+    public URL createPresignedPutUrl(String key, String contentType, long expireSeconds) {
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
@@ -93,7 +97,8 @@ public class S3Service {
                     .build();
             s3.deleteObject(delReq);
         } catch (Exception e) {
-
+            log.error("이미지 삭제에서 발생한 예외 {}", e.getMessage());
+            throw new CustomException(ErrorCode.FAIL_DELETE_IMAGE);
         }
     }
 
