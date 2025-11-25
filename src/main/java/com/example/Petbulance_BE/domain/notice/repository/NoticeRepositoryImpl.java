@@ -48,6 +48,7 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
                         NoticeListResDto.class,
                         n.id,
                         n.isImportant,
+                        n.noticeStatus,
                         n.title,
                         n.content,
                         n.createdAt

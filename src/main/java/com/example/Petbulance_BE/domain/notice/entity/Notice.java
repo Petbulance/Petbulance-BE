@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.notice.entity;
 
+import com.example.Petbulance_BE.domain.notice.type.NoticeStatus;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -23,6 +24,9 @@ public class Notice extends BaseTimeEntity {
     private Long id;
 
     private boolean isImportant;
+
+    @Enumerated(EnumType.STRING)
+    private NoticeStatus noticeStatus;
 
     @Column(length = 200)
     private String title;
