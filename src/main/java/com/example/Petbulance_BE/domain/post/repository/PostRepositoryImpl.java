@@ -12,6 +12,7 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -302,10 +303,13 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     public PagingMyPostListResDto findMyPostList(Users currentUser, String keyword, Long lastPostId, Pageable pageable) {
         QPost p = QPost.post;
         QBoard b = QBoard.board;
+        QPostImage pi = QPostImage.postImage;
+        QPostLikeCount pl = new QPostLikeCount("postLike");
+
 
         BooleanBuilder whereBuilder = new BooleanBuilder();
         whereBuilder.and(p.user.eq(currentUser))
-                .and(p.deleted.eq(false)); // 삭제되지 않은 것만
+                .and(p.deleted.eq(false));
 
         if (lastPostId != null) {
             whereBuilder.and(p.id.lt(lastPostId));
@@ -327,16 +331,29 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         p.content,
                         p.createdAt,
                         Expressions.constant(0L),
+                        JPAExpressions
+                                .select(pl.postLikeCount)
+                                .from(pl)
+                                .where(pl.postId.eq(p.id))
+                                .limit(1),
+                        JPAExpressions
+                                .select(pi.imageUrl)
+                                .from(pi)
+                                .where(
+                                        pi.post.eq(p),
+                                        pi.thumbnail.eq(true)
+                                )
+                                .limit(1),
+
                         p.hidden
                 ))
                 .from(p)
                 .leftJoin(p.board, b)
                 .where(whereBuilder)
                 .orderBy(p.id.desc())
-                .limit(pageable.getPageSize() + 1) // 무한스크롤 다음 페이지 존재 여부 확인용
+                .limit(pageable.getPageSize() + 1)
                 .fetch();
 
-        // 다음 페이지 여부 판별
         boolean hasNext = results.size() > pageable.getPageSize();
         if (hasNext) {
             results.remove(results.size() - 1);
@@ -344,6 +361,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
         return new PagingMyPostListResDto(results, hasNext);
     }
+
 
 
 }
