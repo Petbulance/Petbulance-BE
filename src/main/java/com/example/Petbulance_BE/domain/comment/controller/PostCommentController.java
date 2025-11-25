@@ -1,10 +1,8 @@
 package com.example.Petbulance_BE.domain.comment.controller;
 
+import com.example.Petbulance_BE.domain.comment.dto.request.BulkDeleteCommentReqDto;
 import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.DelCommentResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.PagingMyCommentListResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
-import com.example.Petbulance_BE.domain.comment.dto.response.SearchPostCommentListResDto;
+import com.example.Petbulance_BE.domain.comment.dto.response.*;
 import com.example.Petbulance_BE.domain.comment.service.PostCommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +28,12 @@ public class PostCommentController {
     public DelCommentResDto deletePostComment(@PathVariable("commentId") Long commentId) {
         return postCommentService.deletePostComment(commentId);
     }
+
+    @DeleteMapping
+    public BulkDeleteCommentResDto deleteComments(@RequestBody BulkDeleteCommentReqDto req) {
+        return postCommentService.deletePostComments(req.commentIds());
+    }
+
 
     @GetMapping("/search")
     public SearchPostCommentListResDto searchPostCommentList(@RequestParam(name = "keyword", required = true) String keyword,

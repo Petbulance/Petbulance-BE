@@ -24,6 +24,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -136,6 +138,59 @@ public class PostCommentService {
         }
         return new DelCommentResDto("댓글이 성공적으로 삭제되었습니다.");
     }
+
+    @Transactional
+    @CacheEvict(
+            value = "myComments",
+            key = "#currentUser.id + '_0'",
+            condition = "#keyword == null"
+    )
+    public BulkDeleteCommentResDto deletePostComments(List<Long> commentIds) {
+
+        Users currentUser = UserUtil.getCurrentUser();
+
+        // 1. 댓글 전체 조회
+        List<PostComment> comments = postCommentRepository.findAllById(commentIds);
+
+        // 요청한 ID 중 일부가 존재하지 않을 때
+        if (comments.size() != commentIds.size()) {
+            throw new CustomException(ErrorCode.COMMENT_NOT_FOUND);
+        }
+
+        List<BulkDeleteCommentItemDto> deletedItems = new ArrayList<>();
+
+        for (PostComment comment : comments) {
+
+            // 2. 권한 확인
+            verifyPostCommentWriter(comment, currentUser);
+
+            // 3. 단일 삭제 규칙 그대로 사용
+            if (!comment.getDeleted()) {
+
+                if (hasChildren(comment)) { // 상위 댓글 + 자식 있는 경우
+                    comment.delete();
+                    postCommentCountRepository.decrease(comment.getPost().getId());
+                } else { // 자식 없는 상위 댓글 or 하위 댓글
+                    delete(comment);
+                    postCommentCountRepository.decrease(comment.getPost().getId());
+                }
+            }
+
+            // 4. 삭제 결과 리스트에 추가
+            deletedItems.add(
+                    new BulkDeleteCommentItemDto(
+                            comment.getId(),
+                            comment.getPost().getId(),
+                            true,
+                            comment.getDeleted(),
+                            LocalDateTime.now()
+                    )
+            );
+        }
+
+        return new BulkDeleteCommentResDto(deletedItems);
+    }
+
 
     private PostComment findPostCommentById(Long commentId) {
         return postCommentRepository.findById(commentId).orElseThrow(
@@ -255,4 +310,5 @@ public class PostCommentService {
         Users currentUser = UserUtil.getCurrentUser();
         return postCommentRepository.findMyCommentList(currentUser, keyword, lastCommentId, pageable);
     }
+
 }

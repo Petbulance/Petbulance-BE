@@ -234,9 +234,7 @@ public class PostService {
         List<BulkDeletePostItemDto> deletedItems = posts.stream()
                 .map(post -> new BulkDeletePostItemDto(
                         post.getId(),
-                        post.getBoard().getId(),
                         true,
-                        post.isHidden(),
                         LocalDateTime.now()
                 ))
                 .toList();
