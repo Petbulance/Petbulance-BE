@@ -26,6 +26,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     JOIN Hospital h ON h.id = r.hospital.id
     WHERE ( r.treatmentService LIKE CONCAT('%', :search, '%') OR h.name LIKE CONCAT('%', :search, '%') )
     AND (:cursorId IS NULL OR r.id < :cursorId)
+    AND (r.hidden = FALSE )
     ORDER BY r.id DESC
     """)
     List<UserReviewSearchDto> findByHospitalNameOrTreatmentService(
@@ -45,6 +46,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     AND EXISTS (
         SELECT 1 FROM UserReviewImage i WHERE i.review = ur
     )
+    AND (ur.hidden = FALSE )
     """)
     Page<UserReview> findByHospitalIdWithImages(@Param("hospitalId") Long hospitalId, Pageable pageable);
 
@@ -60,6 +62,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     WHERE r.hospital.id = :hospitalId
     AND (:imageOnly = FALSE OR EXISTS (SELECT 1 FROM UserReviewImage i WHERE i.review = r))
     AND (:cursorId IS NULL OR r.id < :cursorId)
+    AND (r.hidden = FALSE )
     ORDER BY r.id DESC
     """)
     List<UserReview> findByHospitalIdOrderByLatest(
@@ -82,6 +85,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
          r.overallRating < :cursorRating OR
          (r.overallRating = :cursorRating AND r.id < :cursorId)
         )
+    AND (r.hidden = FALSE )
     ORDER BY r.overallRating DESC, r.id DESC
     """)
     List<UserReview> findByHospitalIdOrderByRating(
@@ -105,6 +109,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
          (SELECT COUNT(li) FROM UserReviewLike li WHERE li.review = r) < :cursorLikeCount OR
          ((SELECT COUNT(li) FROM UserReviewLike li WHERE li.review = r) = :cursorLikeCount AND r.id < :cursorId)
         )
+    AND (r.hidden = FALSE )
     ORDER BY (SELECT COUNT(li) FROM UserReviewLike li WHERE li.review = r) DESC, r.id DESC
     """)
         List<UserReview> findByHospitalIdOrderByLikeCount(
