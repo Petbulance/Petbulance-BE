@@ -194,6 +194,57 @@ public class PostService {
         return new DeletePostResDto(postId, post.getBoard().getId(), true, post.isHidden(), LocalDateTime.now());
     }
 
+    @CacheEvict(
+            value = "myPosts",
+            key = "#currentUser.id + '_0'",
+            condition = "#keyword == null"
+    )
+    @Transactional
+    public BulkDeletePostResDto deletePosts(List<Long> postIds) {
+
+        // 1. 게시글 리스트 조회
+        List<Post> posts = postRepository.findAllById(postIds); // 삭제하고자 하는 게시글 전체 조회
+
+        if (posts.size() != postIds.size()) {
+            throw new CustomException(ErrorCode.POST_NOT_FOUND);
+        }
+
+        // 2. 현재 로그인 유저 가져오기
+        Users currentUser = UserUtil.getCurrentUser();
+
+        // 3. 모든 게시글의 작성자가 현재 유저인지 확인
+        boolean hasUnauthorizedPost = posts.stream()
+                .anyMatch(post -> !currentUserIsPostAuthor(post.getUser(), currentUser));
+
+        if (hasUnauthorizedPost) {
+            throw new CustomException(ErrorCode.FORBIDDEN_POST_ACCESS);
+        }
+
+        // 4. 게시글 일괄 삭제
+        postRepository.deleteAll(posts);
+
+        // 5. Redis 캐시 삭제
+        List<String> cacheKeys = posts.stream()
+                .map(post -> String.format(CACHE_KEY_FORMAT, post.getId()))
+                .toList();
+
+        redisTemplate.delete(cacheKeys);
+
+        // 6. 응답 생성
+        List<BulkDeletePostItemDto> deletedItems = posts.stream()
+                .map(post -> new BulkDeletePostItemDto(
+                        post.getId(),
+                        post.getBoard().getId(),
+                        true,
+                        post.isHidden(),
+                        LocalDateTime.now()
+                ))
+                .toList();
+
+        return new BulkDeletePostResDto(deletedItems);
+    }
+
+
     @Transactional(readOnly = true)
     public DetailPostResDto detailPost(Long postId) {
         Post post = validateVisiblePost(postId); // 숨김 게시글이나 삭제된 게시글 볼 수 없음
