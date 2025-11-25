@@ -48,7 +48,7 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
             )
                     .from(userReview)
                     .join(hospital).on(hospital.eq(userReview.hospital))
-                    .where(checkAnimalType(animalType), checkRegion(region), checkReceiptReview(onlyReceipt))
+                    .where(checkAnimalType(animalType), checkRegion(region), checkReceiptReview(onlyReceipt), checkHidden())
                     .orderBy(userReview.createdAt.desc())
                     .fetch();
 
@@ -72,6 +72,12 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
         if(receiptCheck == null || receiptCheck == false) return null;
 
         return userReview.receiptCheck.eq(receiptCheck);
+
+    }
+
+    public BooleanExpression checkHidden(){
+
+        return userReview.hidden.eq(Boolean.FALSE);
 
     }
 

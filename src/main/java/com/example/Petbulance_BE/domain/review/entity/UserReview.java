@@ -58,6 +58,9 @@ public class UserReview extends BaseTimeEntity {
     private Long totalPrice;
 
     @Builder.Default
+    private Boolean hidden = false;
+
+    @Builder.Default
     private Boolean deleted = false;
 
     @Builder.Default

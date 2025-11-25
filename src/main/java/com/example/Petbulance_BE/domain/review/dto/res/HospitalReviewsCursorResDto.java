@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.review.dto.res;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,9 +18,10 @@ public class HospitalReviewsCursorResDto {
     private List<SearchResDto> list;
 
     private Long nextCursorId;
-    @JsonIgnore
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Double nextCursorRating;
-    @JsonIgnore
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer nextCursorLikeCount;
 
     private Boolean hasNext;

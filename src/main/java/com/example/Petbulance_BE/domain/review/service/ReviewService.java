@@ -356,10 +356,10 @@ public class ReviewService {
 
         switch (sortBy.toUpperCase()){
             case "TOTALRATING" -> {
-                return new HospitalReviewsCursorResDto(list, nextCursorId, list.get(list.size()-1).getTotalRating(), null, hasNext);
+                return new HospitalReviewsCursorResDto(list, nextCursorId, list.size()>0?list.get(list.size()-1).getTotalRating():null, null, hasNext);
             }
             case "LIKECOUNT" -> {
-                return new HospitalReviewsCursorResDto(list, nextCursorId, null, list.get(list.size()-1).getLikeCount(), hasNext);
+                return new HospitalReviewsCursorResDto(list, nextCursorId, null, list.size()>0?list.get(list.size()-1).getLikeCount():null, hasNext);
             }
             case "CREATEDAT" -> {
                 return new HospitalReviewsCursorResDto(list, nextCursorId, null, null, hasNext);
