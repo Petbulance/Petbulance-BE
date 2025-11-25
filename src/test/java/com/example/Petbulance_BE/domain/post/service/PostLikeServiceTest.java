@@ -17,6 +17,7 @@ import org.mockito.MockedStatic;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
+@ActiveProfiles("test")
 class PostLikeServiceTest {
 
     @InjectMocks
