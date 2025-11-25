@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.global.common.error.exception;
 
+import com.google.api.Http;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
@@ -55,6 +56,18 @@ public enum ErrorCode {
     INVALID_TYPE(HttpStatus.BAD_REQUEST,"올바르지 않은 type값입니다."),
     INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 문의내역을 찾을 수 없습니다."),
     FORBIDDEN_INQUIRY_ACCESS(HttpStatus.UNAUTHORIZED, "문의내역에 대한 권한이 존재하지 않습니다.");
+    NOT_FOUND_KEYWORD(HttpStatus.BAD_REQUEST, "존재하지 않는 키워드 입니다."),
+    FAIL_READ_RANDOM_NICKNAME_FILE(HttpStatus.BAD_REQUEST, "랜덤 닉네임 조합 파일을 읽는데 실패하였습니다"),
+    NOT_FOUND_RECEIPT(HttpStatus.BAD_REQUEST, "영수증 이미지가 존재하지 않습니다."),
+    FAIL_RECEIPT_EXTRACT(HttpStatus.BAD_REQUEST, "영수증 정보 추출에 실패하였습니다."),
+    FAIL_API_CONNECT(HttpStatus.BAD_REQUEST, "외부 API연결에 실패하였습니다."),
+    FAIL_WHILE_API(HttpStatus.BAD_REQUEST, "외부 API요청 도중 예외가 발생하였습니다."),
+    NO_ADDRESS_FOUND(HttpStatus.BAD_REQUEST, "영수증에서 주소 정보를 얻지 못하였습니다."),
+    FAIL_GEOCODING(HttpStatus.BAD_REQUEST, "지오코딩에 실패하였습니다."),
+    NOT_FOUND_RECEIPT_HOSPITAL(HttpStatus.BAD_REQUEST, "영수증에 존재하는 병원을 찾지 못했습니다."),
+    IMAGE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "최대 5장까지 등록할 수 있습니다."),
+    NOT_FOUND_REVIEW(HttpStatus.BAD_REQUEST, "리뷰를 찾을 수 없습니다."),
+    FAIL_DELETE_IMAGE(HttpStatus.BAD_REQUEST, "이미지 삭제에 실패했습니다");
 
     private final HttpStatus status;
     private final String message;

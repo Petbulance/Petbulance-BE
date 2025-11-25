@@ -264,7 +264,7 @@ public class UserService {
                 user.setProfileImage("profileImage/" + imageUUID + "/" + filename);
             }
 
-            return Map.of("message", "이미지 저장에 완료하였습니다.");
+            return Map.of("message", "이미지 저장에 성공하였습니다.");
         }
     }
 
