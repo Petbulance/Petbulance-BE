@@ -34,7 +34,7 @@ public class InquiryController {
     }
 
     @GetMapping
-    public List<InquiryListResDto> inquiryList(@RequestParam(required = false) Long lastInquiryId,
+    public PagingInquiryListResDto inquiryList(@RequestParam(required = false) Long lastInquiryId,
                                                @RequestParam(defaultValue = "10") int pageSize) {
         Pageable pageable = PageRequest.of(0, pageSize);
         return inquiryService.inquiryList(pageable, lastInquiryId);

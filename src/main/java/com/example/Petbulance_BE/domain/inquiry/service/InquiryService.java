@@ -7,6 +7,7 @@ import com.example.Petbulance_BE.domain.inquiry.entity.Inquiry;
 import com.example.Petbulance_BE.domain.inquiry.repository.InquiryRepository;
 import com.example.Petbulance_BE.domain.inquiry.type.InquiryType;
 import com.example.Petbulance_BE.domain.inquiry.type.InterestType;
+import com.example.Petbulance_BE.domain.notice.dto.response.PagingNoticeListResDto;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
@@ -26,7 +27,6 @@ public class InquiryService {
 
     @Transactional
     public CreateInquiryResDto createInquiry(CreateInquiryReqDto dto) {
-        // enum타입 올바른지 확인
         InquiryType inquiryType = InquiryType.fromString(dto.getType());
         InterestType interestType = InterestType.fromString(dto.getInterestType());
 
@@ -101,8 +101,8 @@ public class InquiryService {
         return new DeleteInquiryResDto("광고/제휴 문의가 정상적으로 삭제되었습니다.");
     }
 
-    public List<InquiryListResDto> inquiryList(Pageable pageable, Long lastInquiryId) {
-        return null;
+    public PagingInquiryListResDto inquiryList(Pageable pageable, Long lastInquiryId) {
+        return inquiryRepository.findInquiryList(pageable, lastInquiryId, UserUtil.getCurrentUser());
     }
 
     public DetailInquiryResDto detailInquiry(Long inquiryId) {
