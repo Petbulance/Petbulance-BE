@@ -1,12 +1,7 @@
 package com.example.Petbulance_BE.domain.hospital.repository;
 
-import com.example.Petbulance_BE.domain.hospital.dto.HospitalSearchReqDto;
-import com.example.Petbulance_BE.domain.hospital.dto.HospitalSearchRes;
-import com.example.Petbulance_BE.domain.hospital.entity.QHospital;
-import com.example.Petbulance_BE.domain.hospitalWorktime.entity.QHospitalWorktime;
-import com.example.Petbulance_BE.domain.review.entity.QUserReview;
-import com.example.Petbulance_BE.domain.treatmentAnimal.entity.QTreatmentAnimal;
-import com.querydsl.core.types.Expression;
+import com.example.Petbulance_BE.domain.hospital.dto.req.HospitalSearchReqDto;
+import com.example.Petbulance_BE.domain.hospital.dto.HospitalSearchDao;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.*;
@@ -14,10 +9,6 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageImpl;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -40,7 +31,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<HospitalSearchRes> searchHospitals(HospitalSearchReqDto dto, Pageable pageable) {
+    public List<HospitalSearchDao> searchHospitals(HospitalSearchReqDto dto) {
         String q = dto.getQ(); //병원 검색어
         String region = dto.getRegion(); //지역 검색어 ex)서울특별시강남구, 서울특별시
         Double lat = dto.getLat(); //위도 37.1
@@ -57,8 +48,14 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
 
         NumberExpression<Double> doubleNumberExpression = calculateDistance(lat, lng);
 
-        JPAQuery<HospitalSearchRes> query = queryFactory.select(
-                        Projections.fields(HospitalSearchRes.class,
+        //결과가 쿼리가 반환되어 null은 아니지만 db에서 누락, 잘못된 값이 있을때 쿼리의 결과가 null이 나올 수 있음 그래서 .coalesce(0.0)
+        //아예 lat,lng가 존재하지 않으면 쿼리가 아닌 null이 반환 그럴때 Expressions.asNumber(0.0);
+        NumberExpression<Double> safeDistance =
+                doubleNumberExpression != null ? doubleNumberExpression.coalesce(0.0) : Expressions.asNumber(0.0);
+
+
+        JPAQuery<HospitalSearchDao> query = queryFactory.select(
+                        Projections.fields(HospitalSearchDao.class,
                                 hospital.id.as("id"),
                                 hospital.name.as("name"),
                                 hospital.lat.as("lat"),
@@ -257,30 +254,54 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                 .leftJoin(treatmentAnimal).on(hospital.eq(treatmentAnimal.hospital))
                 .leftJoin(userReview).on(hospital.eq(userReview.hospital))
                 .where(likeQ(q), likeRegion(region), withinBounds(bounds), filterByAnimalArray(animalArray), openNowFilter)
-                .groupBy(hospital.id)
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize());
+                .groupBy(hospital.id);
 
-        if (doubleNumberExpression != null) {
-            query = query.orderBy(doubleNumberExpression.asc(), hospital.id.asc());
+        NumberExpression<Double> safeAvgRating = userReview.overallRating.avg().coalesce(0.0);
+
+        NumberExpression<Long> safeReviewCount = userReview.id.count().coalesce(0L);
+
+
+        // 정렬 조건 처리
+        if ("distance".equalsIgnoreCase(dto.getSortBy())) {
+
+            if (dto.getCursorDistance() != null && dto.getCursorId() != null) {
+                query.where(
+                        safeDistance.gt(dto.getCursorDistance())
+                                .or(safeDistance.eq(dto.getCursorDistance()).and(hospital.id.gt(dto.getCursorId())))
+                );
+            }
+            query.orderBy(safeDistance.asc(), hospital.id.asc());
+
+        } else if ("rating".equalsIgnoreCase(dto.getSortBy())) {
+
+            if (dto.getCursorRating() != null && dto.getCursorId() != null) {
+                query.having(
+                        safeAvgRating.lt(dto.getCursorRating())
+                                .or(safeAvgRating.eq(dto.getCursorRating()).and(hospital.id.gt(dto.getCursorId())))
+                );
+            }
+            query.orderBy(safeAvgRating.desc(), hospital.id.asc());
+
+        } else if ("reviewCount".equalsIgnoreCase(dto.getSortBy())) {
+
+            if (dto.getCursorReviewCount() != null && dto.getCursorId() != null) {
+                query.having(
+                        safeReviewCount.lt(dto.getCursorReviewCount())
+                                .or(safeReviewCount.eq(dto.getCursorReviewCount()).and(hospital.id.gt(dto.getCursorId())))
+                );
+            }
+            query.orderBy(safeReviewCount.desc(), hospital.id.asc());
+
         } else {
-            query = query.orderBy(hospital.id.asc());
+            if (dto.getCursorId() != null) {
+                query.where(hospital.id.gt(dto.getCursorId()));
+            }
+            query.orderBy(hospital.id.asc());
         }
 
-        List<HospitalSearchRes> result = query.fetch();
+        List<HospitalSearchDao> result = query.offset(0).limit(dto.getSize()+1).fetch();
+        return result;
 
-        Long total = queryFactory
-                .select(hospital.id.countDistinct())
-                .from(hospital)
-                .leftJoin(hospitalWorktime).on(hospital.eq(hospitalWorktime.hospital))
-                .leftJoin(treatmentAnimal).on(hospital.eq(treatmentAnimal.hospital))
-                .where(likeQ(q), likeRegion(region), withinBounds(bounds),
-                        filterByAnimalArray(animalArray), openNowFilter)
-                .fetchOne();
-
-        if(total == null) total = 0L;
-
-        return new PageImpl<>(result, pageable, total);
     }
 
     // 현재 영업중

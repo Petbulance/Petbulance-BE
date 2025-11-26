@@ -1,4 +1,4 @@
-package com.example.Petbulance_BE.domain.hospital.dto;
+package com.example.Petbulance_BE.domain.hospital.dto.res;
 
 import lombok.*;
 

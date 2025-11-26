@@ -1,6 +1,5 @@
-package com.example.Petbulance_BE.domain.hospital.dto;
+package com.example.Petbulance_BE.domain.hospital.dto.req;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,6 +26,18 @@ public class HospitalSearchReqDto {
     private String animal;
 
     private Boolean openNow;
+
+    private String sortBy = "Id";
+
+    private int size = 10;
+
+    private Long cursorId;
+
+    private Double cursorDistance;
+
+    private Double cursorRating;
+
+    private Long cursorReviewCount;
 
     public Double[] getBounds() {
         if(bounds == null) {

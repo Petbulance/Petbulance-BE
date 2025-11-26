@@ -1,17 +1,20 @@
 package com.example.Petbulance_BE.domain.hospital.service;
 
 import com.example.Petbulance_BE.domain.hospital.dto.*;
+import com.example.Petbulance_BE.domain.hospital.dto.req.HospitalSearchReqDto;
+import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalCardResDto;
+import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalDetailResDto;
+import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalSearchResDto;
+import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalsResDto;
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
 import com.example.Petbulance_BE.domain.hospitalWorktime.entity.HospitalWorktime;
 import com.example.Petbulance_BE.domain.review.entity.UserReview;
-import com.example.Petbulance_BE.domain.treatmentAnimal.entity.TreatmentAnimal;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -27,131 +30,130 @@ public class HospitalService {
 
     private final HospitalJpaRepository hospitalRepository;
 
-    public Page<HospitalsResDto> searchHospitalsProcess(HospitalSearchReqDto hospitalSearchReqDto, Pageable pageable) {
+    public HospitalSearchResDto searchHospitalsProcess(HospitalSearchReqDto hospitalSearchReqDto) {
 
-        Page<HospitalSearchRes> hospitalSearchRes = hospitalRepository.searchHospitals(hospitalSearchReqDto, pageable);
+        // 1. DB에서 조회 (limit + 1로 한 개 더 가져와서 hasNext 체크)
+        List<HospitalSearchDao> hospitalSearchDaos = hospitalRepository.searchHospitals(hospitalSearchReqDto);
+
+        // 2. hasNext 처리
+        boolean hasNext = hospitalSearchDaos.size() > hospitalSearchReqDto.getSize();
+        if (hasNext) {
+            hospitalSearchDaos = hospitalSearchDaos.subList(0, hospitalSearchReqDto.getSize());
+        }
 
         DayOfWeek today = LocalDate.now().getDayOfWeek();
         String dayPrefix = today.toString().substring(0, 3).toLowerCase();
-
         LocalTime now = LocalTime.now();
-
         String[] dayOrder = {"mon", "tue", "wed", "thu", "fri", "sat", "sun"};
         int todayIndex = Arrays.asList(dayOrder).indexOf(dayPrefix);
 
-        List<HospitalsResDto> content = hospitalSearchRes.stream()
+        // 3. DTO 매핑
+        List<HospitalsResDto> content = hospitalSearchDaos.stream()
                 .map(hs -> {
-
                     boolean isOpenNow = false;
                     LocalTime openTimeToday = null;
                     LocalTime closeTimeToday = null;
 
                     // 오늘 영업시간 체크
                     switch (dayPrefix) {
-                        case "mon":
+                        case "mon" -> {
                             openTimeToday = hs.getMonOpenTime();
                             closeTimeToday = hs.getMonCloseTime();
                             isOpenNow = hs.getMonIsOpen() != null && hs.getMonIsOpen()
                                     && now.isAfter(openTimeToday) && now.isBefore(closeTimeToday);
-                            break;
-                        case "tue":
+                        }
+                        case "tue" -> {
                             openTimeToday = hs.getTueOpenTime();
                             closeTimeToday = hs.getTueCloseTime();
                             isOpenNow = hs.getTueIsOpen() != null && hs.getTueIsOpen()
                                     && now.isAfter(openTimeToday) && now.isBefore(closeTimeToday);
-                            break;
-                        case "wed":
+                        }
+                        case "wed" -> {
                             openTimeToday = hs.getWedOpenTime();
                             closeTimeToday = hs.getWedCloseTime();
                             isOpenNow = hs.getWedIsOpen() != null && hs.getWedIsOpen()
                                     && now.isAfter(openTimeToday) && now.isBefore(closeTimeToday);
-                            break;
-                        case "thu":
+                        }
+                        case "thu" -> {
                             openTimeToday = hs.getThuOpenTime();
                             closeTimeToday = hs.getThuCloseTime();
                             isOpenNow = hs.getThuIsOpen() != null && hs.getThuIsOpen()
                                     && now.isAfter(openTimeToday) && now.isBefore(closeTimeToday);
-                            break;
-                        case "fri":
+                        }
+                        case "fri" -> {
                             openTimeToday = hs.getFriOpenTime();
                             closeTimeToday = hs.getFriCloseTime();
                             isOpenNow = hs.getFriIsOpen() != null && hs.getFriIsOpen()
                                     && now.isAfter(openTimeToday) && now.isBefore(closeTimeToday);
-                            break;
-                        case "sat":
+                        }
+                        case "sat" -> {
                             openTimeToday = hs.getSatOpenTime();
                             closeTimeToday = hs.getSatCloseTime();
                             isOpenNow = hs.getSatIsOpen() != null && hs.getSatIsOpen()
                                     && now.isAfter(openTimeToday) && now.isBefore(closeTimeToday);
-                            break;
-                        case "sun":
+                        }
+                        case "sun" -> {
                             openTimeToday = hs.getSunOpenTime();
                             closeTimeToday = hs.getSunCloseTime();
                             isOpenNow = hs.getSunIsOpen() != null && hs.getSunIsOpen()
                                     && now.isAfter(openTimeToday) && now.isBefore(closeTimeToday);
-                            break;
+                        }
                     }
 
-                    // openHours 계산
+                    // 다음 영업일 탐색
                     String openHours = null;
                     if (isOpenNow) {
                         openHours = String.format("%s ~ %s", openTimeToday, closeTimeToday);
                     } else {
-                        // 다음 영업일 탐색
                         LocalTime nextOpen = null;
                         LocalTime nextClose = null;
                         for (int i = 1; i <= 7; i++) {
                             int nextIndex = (todayIndex + i) % 7;
                             String nextDay = dayOrder[nextIndex];
                             boolean nextIsOpen = false;
-
                             switch (nextDay) {
-                                case "mon":
+                                case "mon" -> {
                                     nextOpen = hs.getMonOpenTime();
                                     nextClose = hs.getMonCloseTime();
                                     nextIsOpen = hs.getMonIsOpen() != null && hs.getMonIsOpen();
-                                    break;
-                                case "tue":
+                                }
+                                case "tue" -> {
                                     nextOpen = hs.getTueOpenTime();
                                     nextClose = hs.getTueCloseTime();
                                     nextIsOpen = hs.getTueIsOpen() != null && hs.getTueIsOpen();
-                                    break;
-                                case "wed":
+                                }
+                                case "wed" -> {
                                     nextOpen = hs.getWedOpenTime();
                                     nextClose = hs.getWedCloseTime();
                                     nextIsOpen = hs.getWedIsOpen() != null && hs.getWedIsOpen();
-                                    break;
-                                case "thu":
+                                }
+                                case "thu" -> {
                                     nextOpen = hs.getThuOpenTime();
                                     nextClose = hs.getThuCloseTime();
                                     nextIsOpen = hs.getThuIsOpen() != null && hs.getThuIsOpen();
-                                    break;
-                                case "fri":
+                                }
+                                case "fri" -> {
                                     nextOpen = hs.getFriOpenTime();
                                     nextClose = hs.getFriCloseTime();
                                     nextIsOpen = hs.getFriIsOpen() != null && hs.getFriIsOpen();
-                                    break;
-                                case "sat":
+                                }
+                                case "sat" -> {
                                     nextOpen = hs.getSatOpenTime();
                                     nextClose = hs.getSatCloseTime();
                                     nextIsOpen = hs.getSatIsOpen() != null && hs.getSatIsOpen();
-                                    break;
-                                case "sun":
+                                }
+                                case "sun" -> {
                                     nextOpen = hs.getSunOpenTime();
                                     nextClose = hs.getSunCloseTime();
                                     nextIsOpen = hs.getSunIsOpen() != null && hs.getSunIsOpen();
-                                    break;
+                                }
                             }
-
                             if (nextIsOpen) {
                                 openHours = String.format("%s ~ %s", nextOpen, nextClose);
                                 break;
                             }
                         }
-                        // 혹시 찾지 못하면 null 처리
-                        if (nextOpen == null) {
-                            openHours = null;
-                        }
+                        if (nextOpen == null) openHours = null;
                     }
 
                     return HospitalsResDto.builder()
@@ -161,7 +163,7 @@ public class HospitalService {
                             .lng(hs.getLng())
                             .distanceMeters(hs.getDistanceMeters())
                             .phone(hs.getPhoneNumber())
-                            .types(hs.getTreatedAnimalTypes()!=null?hs.getTreatedAnimalTypes().split(","):null)
+                            .types(hs.getTreatedAnimalTypes() != null ? hs.getTreatedAnimalTypes().split(",") : null)
                             .isOpenNow(isOpenNow)
                             .openHours(openHours)
                             .thumbnailUrl(hs.getUrl())
@@ -171,8 +173,43 @@ public class HospitalService {
                 })
                 .collect(Collectors.toList());
 
-        return new PageImpl<>(content, pageable, hospitalSearchRes.getTotalElements());
+        // 4. cursor 값 세팅
+        Long cursorId = null;
+        Double cursorDistance = null;
+        Double cursorRating = null;
+        Long cursorReviewCount = null;
+
+        if (!hospitalSearchDaos.isEmpty()) {
+            HospitalSearchDao last = hospitalSearchDaos.get(hospitalSearchDaos.size() - 1);
+
+            // 정렬 기준에 따라 cursor 필드만 채움
+            switch (hospitalSearchReqDto.getSortBy().toLowerCase()) {
+                case "distance" -> {
+                    cursorDistance = last.getDistanceMeters();
+                    cursorId = last.getId();
+                }
+                case "rating" -> {
+                    cursorRating = last.getRating()==null?0.0:last.getRating();
+                    cursorId = last.getId();
+                }
+                case "reviewcount" -> {
+                    cursorReviewCount = last.getReviewCount();
+                    cursorId = last.getId();
+                }
+                default -> cursorId = last.getId();
+            }
+        }
+        // 5. 결과 반환
+        return HospitalSearchResDto.builder()
+                .list(content)
+                .hasNext(hasNext)
+                .cursorId(cursorId)
+                .cursorDistance(cursorDistance)
+                .cursorRating(cursorRating)
+                .cursorReviewCount(cursorReviewCount)
+                .build();
     }
+
 
     public HospitalDetailResDto searchHospitalDetailProcess(Long hospitalId) {
 

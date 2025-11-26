@@ -1,10 +1,6 @@
 package com.example.Petbulance_BE.domain.hospital.repository;
 
-import com.example.Petbulance_BE.domain.hospital.dto.HospitalCardSelectDto;
-import com.example.Petbulance_BE.domain.hospital.dto.HospitalSearchReqDto;
-import com.example.Petbulance_BE.domain.hospital.dto.HospitalsResDto;
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
-import com.example.Petbulance_BE.domain.review.entity.UserReview;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

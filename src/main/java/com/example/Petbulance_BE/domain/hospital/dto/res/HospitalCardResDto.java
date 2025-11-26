@@ -1,8 +1,7 @@
-package com.example.Petbulance_BE.domain.hospital.dto;
+package com.example.Petbulance_BE.domain.hospital.dto.res;
 
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
 

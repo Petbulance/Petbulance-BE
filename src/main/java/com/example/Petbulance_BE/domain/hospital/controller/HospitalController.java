@@ -1,14 +1,14 @@
 package com.example.Petbulance_BE.domain.hospital.controller;
 
-import com.example.Petbulance_BE.domain.hospital.dto.*;
+import com.example.Petbulance_BE.domain.hospital.dto.req.HospitalSearchReqDto;
+import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalCardResDto;
+import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalDetailResDto;
+import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalSearchResDto;
+import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalsResDto;
 import com.example.Petbulance_BE.domain.hospital.service.HospitalService;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/hospitals")
@@ -18,8 +18,8 @@ public class HospitalController {
     private final HospitalService hospitalService;
 
     @GetMapping
-    public Page<HospitalsResDto> searchHospitals(@ModelAttribute HospitalSearchReqDto hospitalSearchReqDto, Pageable pageable) {
-        return hospitalService.searchHospitalsProcess(hospitalSearchReqDto, pageable);
+    public HospitalSearchResDto searchHospitals(@ModelAttribute HospitalSearchReqDto hospitalSearchReqDto) {
+        return hospitalService.searchHospitalsProcess(hospitalSearchReqDto);
     }
 
     @GetMapping("/{hospitalId}")
