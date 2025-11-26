@@ -1,5 +1,6 @@
-package com.example.Petbulance_BE.domain.hospital.dto;
+package com.example.Petbulance_BE.domain.hospital.dto.res;
 
+import com.example.Petbulance_BE.domain.hospital.dto.OpenHours;
 import lombok.*;
 
 import java.util.ArrayList;

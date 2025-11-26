@@ -9,7 +9,7 @@ import java.time.LocalTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class HospitalSearchRes {
+public class HospitalSearchDao {
 
     private Long id;
     private String name;

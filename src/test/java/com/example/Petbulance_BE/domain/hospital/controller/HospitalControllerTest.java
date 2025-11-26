@@ -1,7 +1,5 @@
 package com.example.Petbulance_BE.domain.hospital.controller;
 
-import com.example.Petbulance_BE.domain.device.service.DeviceService;
-import com.example.Petbulance_BE.domain.hospital.dto.HospitalSearchReqDto;
 import com.example.Petbulance_BE.domain.hospital.service.HospitalService;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +11,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 @SpringBootTest
