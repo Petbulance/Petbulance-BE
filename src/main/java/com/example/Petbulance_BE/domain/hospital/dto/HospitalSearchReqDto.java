@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Arrays;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -40,7 +42,8 @@ public class HospitalSearchReqDto {
         if(animal == null) {
             return new String[0];
         }
-        return animal.split(",");
+        String[] arr = animal.split(",");
+        return Arrays.stream(arr).map(String::toUpperCase).toArray(String[]::new);
     }
 
 }

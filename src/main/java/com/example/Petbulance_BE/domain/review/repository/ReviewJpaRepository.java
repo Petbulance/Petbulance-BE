@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.review.repository;
 
 import com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto;
+import com.example.Petbulance_BE.domain.review.dto.dao.MyReviewGetDao;
 import com.example.Petbulance_BE.domain.review.entity.UserReview;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     WHERE ( r.treatmentService LIKE CONCAT('%', :search, '%') OR h.name LIKE CONCAT('%', :search, '%') )
     AND (:cursorId IS NULL OR r.id < :cursorId)
     AND (r.hidden = FALSE )
+    AND (r.deleted = FALSE )
     ORDER BY r.id DESC
     """)
     List<UserReviewSearchDto> findByHospitalNameOrTreatmentService(
@@ -47,6 +49,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
         SELECT 1 FROM UserReviewImage i WHERE i.review = ur
     )
     AND (ur.hidden = FALSE )
+    AND (ur.deleted = FALSE )
     """)
     Page<UserReview> findByHospitalIdWithImages(@Param("hospitalId") Long hospitalId, Pageable pageable);
 
@@ -57,12 +60,13 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     SELECT r
     FROM UserReview r
     JOIN FETCH r.user u 
-    LEFT JOIN FETCH r.images i
+    LEFT JOIN r.images i
     LEFT JOIN r.likes l 
     WHERE r.hospital.id = :hospitalId
     AND (:imageOnly = FALSE OR EXISTS (SELECT 1 FROM UserReviewImage i WHERE i.review = r))
     AND (:cursorId IS NULL OR r.id < :cursorId)
     AND (r.hidden = FALSE )
+    AND (r.deleted = FALSE )
     ORDER BY r.id DESC
     """)
     List<UserReview> findByHospitalIdOrderByLatest(
@@ -77,7 +81,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     SELECT r
     FROM UserReview r
     JOIN FETCH r.user u 
-    LEFT JOIN FETCH r.images i
+    LEFT JOIN r.images i
     LEFT JOIN r.likes l 
     WHERE r.hospital.id = :hospitalId
     AND (:imageOnly = FALSE OR EXISTS (SELECT 1 FROM UserReviewImage i WHERE i.review = r))
@@ -86,6 +90,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
          (r.overallRating = :cursorRating AND r.id < :cursorId)
         )
     AND (r.hidden = FALSE )
+    AND (r.deleted = FALSE )
     ORDER BY r.overallRating DESC, r.id DESC
     """)
     List<UserReview> findByHospitalIdOrderByRating(
@@ -101,7 +106,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     SELECT r
     FROM UserReview r
     JOIN FETCH r.user u 
-    LEFT JOIN FETCH r.images i
+    LEFT JOIN r.images i
     LEFT JOIN r.likes l 
     WHERE r.hospital.id = :hospitalId
     AND (:imageOnly = FALSE OR EXISTS (SELECT 1 FROM UserReviewImage i WHERE i.review = r))
@@ -110,6 +115,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
          ((SELECT COUNT(li) FROM UserReviewLike li WHERE li.review = r) = :cursorLikeCount AND r.id < :cursorId)
         )
     AND (r.hidden = FALSE )
+    AND (r.deleted = FALSE )
     ORDER BY (SELECT COUNT(li) FROM UserReviewLike li WHERE li.review = r) DESC, r.id DESC
     """)
         List<UserReview> findByHospitalIdOrderByLikeCount(
@@ -119,4 +125,25 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
             @Param("cursorId") Long cursorId,
             Pageable pageable
     );
+
+    @Query("SELECT u FROM UserReview u WHERE u.user = :user AND u.id = :reviewId")
+    Optional<UserReview> findByUserId(@Param("user") Users user, @Param("reviewId") Long reviewId);
+
+    @Query(value = """
+            SELECT new com.example.Petbulance_BE.domain.review.dto.dao.MyReviewGetDao(
+            r.id,
+            r.hospital.name,
+            r.hospital.image,
+            r.createdAt,
+            r.receiptCheck,
+            SIZE(r.likes),
+            r.reviewContent
+            )
+            FROM UserReview r
+            WHERE r.user = :user
+            AND (r.deleted = FALSE )
+            AND (:cursorId IS NULL OR r.id < :cursorId)
+            order by r.id DESC 
+            """)
+    List<MyReviewGetDao> findByUserIdAndCursorId(@Param("user") Users user, @Param("cursorId") Long cursorId, Pageable pageable);
 }

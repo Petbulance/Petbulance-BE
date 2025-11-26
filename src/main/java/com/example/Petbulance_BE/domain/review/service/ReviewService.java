@@ -4,6 +4,7 @@ import com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto;
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
 import com.example.Petbulance_BE.domain.review.dto.*;
+import com.example.Petbulance_BE.domain.review.dto.dao.MyReviewGetDao;
 import com.example.Petbulance_BE.domain.review.dto.req.FilterReqDto;
 import com.example.Petbulance_BE.domain.review.dto.req.ReviewImageCheckReqDto;
 import com.example.Petbulance_BE.domain.review.dto.req.ReviewSaveReqDto;
@@ -123,7 +124,7 @@ public class ReviewService {
                      log.info("x위도{}", lat);
                      log.info("y경도{}", lng);
 
-                     List<Hospital> nearestHospitals = hospitalJpaRepository.findNearestHospitals(lng, lat,10000);
+                     List<Hospital> nearestHospitals = hospitalJpaRepository.findNearestHospitals(lng, lat,3000);
                      if(nearestHospitals.isEmpty()) {
                          throw new CustomException(ErrorCode.NOT_FOUND_RECEIPT_HOSPITAL);
                      }
@@ -471,5 +472,49 @@ public class ReviewService {
 
     }
 
+    public MyReviewGetResDto myReviewGetProcess(Long cursorId, int size){
+        //3a7a6eba-f107-42b5-8e2d-4536a94a17bf
+//        String jwt = jwtUtil.createJwt("3a7a6eba-f107-42b5-8e2d-4536a94a17bf", "access", "ROLE_CLIENT", "GOOGLE");
+//        log.info("{}", jwt);
 
+        Users currentUser = userUtil.getCurrentUser();
+
+        if(currentUser==null){
+            throw new CustomException(ErrorCode.NON_EXIST_USER);
+        }
+
+        Pageable pageable = PageRequest.of(0,size+1);
+
+        List<MyReviewGetDao> list = reviewJpaRepository.findByUserIdAndCursorId(currentUser, cursorId, pageable);
+
+        Boolean hasNext = list.size() > size;
+
+        Long nextCursorId = null;
+
+        List<MyReviewGetDao> limitedList = hasNext ? list.subList(0, size): list;
+
+        nextCursorId = hasNext ? limitedList.get(limitedList.size()-1).getId() : null;
+
+
+        return new MyReviewGetResDto(limitedList, nextCursorId, hasNext);
+
+    }
+
+    @Transactional
+    public void myReviewDeleteProcess(List<Long> receiptIds) {
+
+        Users currentUserById = userUtil.getCurrentUser();
+
+        for(Long receiptId:receiptIds) {
+
+            Optional<UserReview> review = reviewJpaRepository.findByUserId(currentUserById, receiptId);
+
+            if (review.isEmpty()) {
+                throw new CustomException(ErrorCode.NOT_FOUND_REVIEW);
+            }
+
+            review.get().setDeleted(true);
+        }
+
+    }
 }

@@ -11,17 +11,20 @@ import com.example.Petbulance_BE.domain.review.service.ReviewService;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Map;
 
 
 @RestController
 @RequestMapping("/receipts")
 @RequiredArgsConstructor
+@Slf4j
 public class ReviewController {
 
     private final ReviewService reviewService;
@@ -91,6 +94,23 @@ public class ReviewController {
         reviewService.reviewImageSaveCheckProcess(reviewImageCheckReqDto);
 
         return Map.of("message", "이미지 저장에 성공하였습니다.");
+
+    }
+
+    @GetMapping("/me")
+    public MyReviewGetResDto myReviewGet(@RequestParam(value = "size", defaultValue = "10")int size,
+                            @RequestParam(value = "cursorId", required = false)Long cursorId){
+
+        return reviewService.myReviewGetProcess(cursorId, size);
+
+    }
+
+    @DeleteMapping
+    public Map<String, String> myReviewDelete(@RequestParam List<Long> ids){
+
+        reviewService.myReviewDeleteProcess(ids);
+
+        return Map.of("message", "리뷰 삭제에 성공하였습니다.");
 
     }
 
