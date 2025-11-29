@@ -2,10 +2,7 @@ package com.example.Petbulance_BE.domain.hospital.service;
 
 import com.example.Petbulance_BE.domain.hospital.dto.*;
 import com.example.Petbulance_BE.domain.hospital.dto.req.HospitalSearchReqDto;
-import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalCardResDto;
-import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalDetailResDto;
-import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalSearchResDto;
-import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalsResDto;
+import com.example.Petbulance_BE.domain.hospital.dto.res.*;
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
 import com.example.Petbulance_BE.domain.hospitalWorktime.entity.HospitalWorktime;
@@ -360,5 +357,25 @@ public class HospitalService {
                 .rating(overallRating.orElse(null))
                 .reviewCount((long) userReviews.size())
                 .build();
+    }
+
+    public List<HospitalMatchingResDto> hospitalMatching(String filter, String species, Double lat, Double lng) {
+
+        LocalDate today = LocalDate.now(); // 현재 날짜
+        LocalTime now = LocalTime.now(); // 현재 시간
+
+        return hospitalRepository.findMatchingHospitals(
+                species,
+                filter,
+                lat,
+                lng,
+                today.getDayOfWeek(), // 현재 요일
+                now // 현재 시간
+        );
+    }
+
+    public DetailHospitalResDto detailHospital(Long hospitalId, Double lat, Double lng) {
+        return hospitalRepository.findHospitalDetail(hospitalId, lat, lng);
+
     }
 }
