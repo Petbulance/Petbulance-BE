@@ -175,6 +175,7 @@ public class AiService {
                             위 정보를 바탕으로 Vertex AI 검색 결과(RAG)를 참고하여 정밀 진단을 내려주세요.
                             반드시 무조건 절대로 아래 JSON 형식으로만 답변해야 합니다.
                             totalSteps는 항상 5로 고정이고 steps로 다섯가지 단계별 응급처치 방법이 존재해야합니다.
+                            emergencyLevel은 "high", "middle", "low" 세가지 값중 하나만 지정될 수 있습니다.
                             
                             [필수 포함 항목]
                             - confidence: 검색된 정보와 증상의 일치도를 바탕으로 진단 신뢰도(0.0 ~ 1.0)를 계산하여 포함하세요.
