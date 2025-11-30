@@ -5,6 +5,7 @@ import com.example.Petbulance_BE.domain.hospital.dto.req.HospitalSearchReqDto;
 import com.example.Petbulance_BE.domain.hospital.dto.res.DetailHospitalResDto;
 import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalMatchingResDto;
 import com.example.Petbulance_BE.domain.hospital.entity.QHospital;
+import com.example.Petbulance_BE.domain.hospital.entity.QTag;
 import com.example.Petbulance_BE.domain.hospitalWorktime.entity.HospitalWorktime;
 import com.example.Petbulance_BE.domain.hospitalWorktime.entity.QHospitalWorktime;
 import com.example.Petbulance_BE.domain.treatmentAnimal.entity.QTreatmentAnimal;
@@ -411,6 +412,9 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         QHospitalWorktime work = hospitalWorktime;
         QTreatmentAnimal treat = QTreatmentAnimal.treatmentAnimal;
 
+
+        QTag tag = QTag.tag1;
+
         NumberExpression<Double> distance = distanceExpression(lat, lng);
 
         // 종 필터 (Enum)
@@ -507,12 +511,45 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                         )
                 );
 
-        // 5) 결과 DTO에 동물 리스트 주입
-        result.forEach(res ->
-                res.setTreatableAnimals(
-                        animalMap.getOrDefault(res.getHospitalId(), new ArrayList<>())
-                )
-        );
+        // ==========================================================
+        // 💡 태그(Tags) 조회 및 매핑 로직 추가
+        // ==========================================================
+
+        // 6) 한 번의 쿼리로 모든 태그 조회 및 병원 ID별로 그룹화 (Map<Long, List<String>>)
+        Map<Long, List<String>> tagMap = queryFactory
+                .select(tag.hospital.id, tag.tag)
+                .from(tag)
+                .where(tag.hospital.id.in(hospitalIds))
+                .fetch()
+                .stream()
+                .collect(
+                        Collectors.groupingBy(
+                                tuple -> tuple.get(tag.hospital.id),
+                                Collectors.mapping(
+                                        tuple -> tuple.get(tag.tag),
+                                        Collectors.toList()
+                                )
+                        )
+                );
+
+        // 7) 결과 DTO에 동물 리스트 및 태그 리스트 주입
+        result.forEach(res -> {
+            // 동물 리스트 주입
+            res.setTreatableAnimals(
+                    animalMap.getOrDefault(res.getHospitalId(), new ArrayList<>())
+            );
+
+            // 💡 태그 리스트 주입 (태그가 없으면 null 대신 빈 리스트를 넣거나, null을 명시적으로 처리)
+            // DTO에 null 허용: tagMap.get(res.getHospitalId())
+            // DTO에 빈 리스트: tagMap.getOrDefault(res.getHospitalId(), null)
+
+            // 태그가 없는 경우 null을 넣으라는 요청에 따라 `get`을 사용합니다.
+            // 다만, Java List 타입 필드는 보통 빈 리스트로 초기화하는 것이 좋습니다.
+            // 여기서는 요청대로 get()을 사용하여 태그가 없는 경우 Map에서 `null`을 반환합니다.
+            res.setTags(tagMap.get(res.getHospitalId()));
+        });
+
+        // ==========================================================
 
         return result;
     }
