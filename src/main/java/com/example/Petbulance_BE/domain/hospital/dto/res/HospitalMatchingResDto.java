@@ -20,6 +20,7 @@ public class HospitalMatchingResDto {
     private LocalTime todayCloseTime;
     private List<String> treatableAnimals;
     private String phone;
+    private List<String> tags;
 
     @Builder
     public HospitalMatchingResDto(
