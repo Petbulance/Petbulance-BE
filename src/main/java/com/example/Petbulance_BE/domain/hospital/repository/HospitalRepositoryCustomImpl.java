@@ -398,6 +398,8 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         );
     }
 
+    // ... (클래스 정의 및 import 생략)
+
     @Override
     public List<HospitalMatchingResDto> findMatchingHospitals(
             String species,
@@ -411,21 +413,17 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         QHospital hospital = QHospital.hospital;
         QHospitalWorktime work = hospitalWorktime;
         QTreatmentAnimal treat = QTreatmentAnimal.treatmentAnimal;
-
-
         QTag tag = QTag.tag1;
 
+        // 💡 Cannot resolve symbol 오류 해결을 위한 변수 정의 (이전 단계에서 추가된 내용)
+        String todayStr = today.toString().substring(0, 3).toUpperCase();
         NumberExpression<Double> distance = distanceExpression(lat, lng);
 
-        // 종 필터 (Enum)
         BooleanExpression speciesFilter =
                 treat.animaType.eq(AnimalType.valueOf(species));
 
-        String todayStr = today.toString().substring(0, 3).toUpperCase();
         BooleanExpression todayFilter = work.id.dayOfWeek.eq(todayStr);
 
-
-        // [기존 로직 - TWENTY_FOUR_HOUR 필터에서 사용하지 않음]
         BooleanExpression isTwentyFour =
                 work.openTime.eq(LocalTime.of(0, 0))
                         .and(work.closeTime.goe(LocalTime.of(23, 59)));
@@ -442,13 +440,15 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                                 )
                                         )
                         );
+        // -------------------------------------------------------------
 
-        // 1. 필터 조건식 생성 (TWENTY_FOUR_HOUR일 경우 work 조인 불필요)
+        // 1. 필터 조건식 생성
         BooleanExpression filterWhere =
                 getFilterExpression(filter, todayFilter, isTwentyFour, isOpenNow);
 
-        // 2. 24시간 필터 여부 플래그
+        // 2. 24시간 및 거리 필터 여부 플래그
         boolean isTwentyFourHourFilter = filter.equals("TWENTY_FOUR_HOUR");
+        boolean isDistanceFilter = filter.equals("DISTANCE");
 
         // 3. 쿼리 구성 시작
         JPAQuery<HospitalMatchingResDto> query = queryFactory
@@ -458,24 +458,25 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                 hospital.id,
                                 hospital.image,
                                 hospital.name,
-                                // TWENTY_FOUR_HOUR 필터 시 is_open_now는 항상 true로 표시
-                                isTwentyFourHourFilter ? Expressions.constant(true) : isOpenNow,
+                                // TWENTY_FOUR_HOUR/DISTANCE 필터 시 is_open_now는 항상 true로 표시
+                                (isTwentyFourHourFilter || isDistanceFilter) ? Expressions.constant(true) : isOpenNow,
                                 distance,
-                                // TWENTY_FOUR_HOUR 필터 시 closeTime은 더미 값 (null이나 00:00도 가능)
-                                isTwentyFourHourFilter ? Expressions.constant(LocalTime.of(0, 0)) : work.closeTime,
+                                // TWENTY_FOUR_HOUR/DISTANCE 필터 시 closeTime은 더미 값
+                                (isTwentyFourHourFilter || isDistanceFilter) ? Expressions.constant(LocalTime.of(0, 0)) : work.closeTime,
                                 hospital.phoneNumber
                         )
                 )
                 .from(hospital)
                 .join(hospital.treatmentAnimals, treat)
-                .where(speciesFilter);
+                .where(speciesFilter)
+                .groupBy(hospital.id); // GROUP BY로 변경 (이전 단계에서 MySQL DISTINCT 에러 해결)
 
-        // 4. 24시간 필터가 아닐 경우에만 HospitalWorktime 조인 및 work 관련 필터 적용
-        if (!isTwentyFourHourFilter) {
+        // 4. 24시간 또는 DISTANCE 필터가 아닐 경우에만 HospitalWorktime 조인 및 work 관련 필터 적용
+        if (!isTwentyFourHourFilter && !isDistanceFilter) {
             query.join(hospital.hospitalWorktimes, work);
             query.where(filterWhere);
         } else {
-            // 24시간 필터인 경우, work 테이블 조인 없이 hospital.twentyFourHours=true만 적용
+            // 24시간 필터 또는 DISTANCE 필터인 경우, work 테이블 조인 없이 where 조건만 적용
             query.where(filterWhere);
         }
 
@@ -485,21 +486,24 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                 .limit(3)
                 .fetch();
 
-
         if (result.isEmpty()) return result;
 
-        // 2) 조회된 병원 ID 리스트
+        // ==========================================================
+        // 🚨 Cannot resolve symbol 'animalMap' 및 'tagMap' 오류 해결: 변수 정의 추가
+        // ==========================================================
+
+        // 1) 조회된 병원 ID 리스트
         List<Long> hospitalIds = result.stream()
                 .map(HospitalMatchingResDto::getHospitalId)
                 .toList();
 
-        // 3) 한 번의 쿼리로 모든 진료 가능 동물 조회
+        // 2) 한 번의 쿼리로 모든 진료 가능 동물 조회
         List<TreatmentAnimal> animals = queryFactory
                 .selectFrom(treat)
                 .where(treat.hospital.id.in(hospitalIds))
                 .fetch();
 
-        // 4) 병원 ID -> 동물 description 리스트로 매핑
+        // 3) 병원 ID -> 동물 description 리스트로 매핑 (animalMap 정의)
         Map<Long, List<String>> animalMap = animals.stream()
                 .collect(
                         Collectors.groupingBy(
@@ -511,11 +515,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                         )
                 );
 
-        // ==========================================================
-        // 💡 태그(Tags) 조회 및 매핑 로직 추가
-        // ==========================================================
-
-        // 6) 한 번의 쿼리로 모든 태그 조회 및 병원 ID별로 그룹화 (Map<Long, List<String>>)
+        // 4) 한 번의 쿼리로 모든 태그 조회 및 병원 ID별로 그룹화 (tagMap 정의)
         Map<Long, List<String>> tagMap = queryFactory
                 .select(tag.hospital.id, tag.tag)
                 .from(tag)
@@ -532,43 +532,41 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                         )
                 );
 
-        // 7) 결과 DTO에 동물 리스트 및 태그 리스트 주입
+        // 5) 결과 DTO에 동물 리스트 및 태그 리스트 주입
         result.forEach(res -> {
-            // 동물 리스트 주입
             res.setTreatableAnimals(
                     animalMap.getOrDefault(res.getHospitalId(), new ArrayList<>())
             );
-
-            // 💡 태그 리스트 주입 (태그가 없으면 null 대신 빈 리스트를 넣거나, null을 명시적으로 처리)
-            // DTO에 null 허용: tagMap.get(res.getHospitalId())
-            // DTO에 빈 리스트: tagMap.getOrDefault(res.getHospitalId(), null)
-
-            // 태그가 없는 경우 null을 넣으라는 요청에 따라 `get`을 사용합니다.
-            // 다만, Java List 타입 필드는 보통 빈 리스트로 초기화하는 것이 좋습니다.
-            // 여기서는 요청대로 get()을 사용하여 태그가 없는 경우 Map에서 `null`을 반환합니다.
-            res.setTags(tagMap.get(res.getHospitalId()));
+            res.setTags(tagMap.get(res.getHospitalId())); // 없으면 null
         });
-
-        // ==========================================================
 
         return result;
     }
-
     private BooleanExpression getFilterExpression(
             String filter,
             BooleanExpression today,
             BooleanExpression twentyFour,
             BooleanExpression openNow
     ) {
-        QHospital h = QHospital.hospital; // QHospital 객체 사용을 위해 추가
+        QHospital h = QHospital.hospital;
+        QHospitalWorktime work = QHospitalWorktime.hospitalWorktime;
 
         return switch (filter) {
-            case "DISTANCE" -> today;
-            case "TWENTY_FOUR_HOUR" -> h.twentyFourHours.eq(true); // 👈 24시간 필터 로직 변경
-            case "IS_OPEN_NOW" -> today.and(openNow);
+            // DISTANCE: WHERE 조건 없음 (정렬만 적용).
+            case "DISTANCE" -> Expressions.asBoolean(true).isTrue();
+
+            // 24시간 필터
+            case "TWENTY_FOUR_HOUR" -> h.twentyFourHours.eq(true);
+
+            // IS_OPEN_NOW: today, work.isOpen=true, openNow 세 가지 조건을 모두 만족
+            case "IS_OPEN_NOW" -> today
+                    .and(work.isOpen.eq(true))
+                    .and(openNow);
+
             default -> throw new IllegalArgumentException("Invalid filter");
         };
     }
+
 
     private NumberExpression<Double> distanceExpression(Double lat, Double lng) {
 
