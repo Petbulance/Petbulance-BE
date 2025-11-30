@@ -12,6 +12,7 @@ import com.example.Petbulance_BE.domain.treatmentAnimal.entity.QTreatmentAnimal;
 import com.example.Petbulance_BE.domain.treatmentAnimal.entity.TreatmentAnimal;
 import com.example.Petbulance_BE.global.common.type.AnimalType;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -398,8 +399,6 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         );
     }
 
-    // ... (클래스 정의 및 import 생략)
-
     @Override
     public List<HospitalMatchingResDto> findMatchingHospitals(
             String species,
@@ -411,46 +410,85 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
     ) {
 
         QHospital hospital = QHospital.hospital;
-        QHospitalWorktime work = hospitalWorktime;
+        QHospitalWorktime work = QHospitalWorktime.hospitalWorktime;
         QTreatmentAnimal treat = QTreatmentAnimal.treatmentAnimal;
         QTag tag = QTag.tag1;
 
-        // 💡 Cannot resolve symbol 오류 해결을 위한 변수 정의 (이전 단계에서 추가된 내용)
+        // -----------------------------------
+        // 기본 준비
+        // -----------------------------------
         String todayStr = today.toString().substring(0, 3).toUpperCase();
         NumberExpression<Double> distance = distanceExpression(lat, lng);
 
         BooleanExpression speciesFilter =
                 treat.animaType.eq(AnimalType.valueOf(species));
 
-        BooleanExpression todayFilter = work.id.dayOfWeek.eq(todayStr);
+        // -----------------------------
+        // 오늘 영업 요일인지 체크
+        // -----------------------------
+        NumberExpression<Integer> isOpenTodayCase =
+                Expressions.numberTemplate(Integer.class,
+                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END)",
+                        work.id.dayOfWeek,
+                        Expressions.constant(todayStr),
+                        work.isOpen
+                );
 
-        BooleanExpression isTwentyFour =
-                work.openTime.eq(LocalTime.of(0, 0))
-                        .and(work.closeTime.goe(LocalTime.of(23, 59)));
+        // -----------------------------
+        // 현재 시간 기준으로 OPEN 여부 계산
+        // -----------------------------
+        NumberExpression<Integer> isOpenNowCase =
+                Expressions.numberTemplate(Integer.class,
+                        "MAX(CASE " +
+                                "WHEN {0} = true " +
+                                "AND ( " +
+                                "     ({1} <= {2} AND {3} BETWEEN {1} AND {2}) " +
+                                "  OR ({1} > {2} AND ({3} >= {1} OR {3} <= {2})) " +
+                                ") " +
+                                "AND ( {4} IS NULL OR NOT({3} BETWEEN {4} AND {5}) ) " +
+                                "THEN 1 ELSE 0 END)",
+                        work.isOpen,
+                        work.openTime,
+                        work.closeTime,
+                        Expressions.constant(now),
+                        work.breakStartTime,
+                        work.breakEndTime
+                );
 
-        BooleanExpression isOpenNow =
-                work.openTime.loe(now)
-                        .and(work.closeTime.goe(now))
-                        .and(
-                                work.breakStartTime.isNull()
-                                        .or(
-                                                Expressions.booleanTemplate(
-                                                        "{0} not between {1} and {2}",
-                                                        now, work.breakStartTime, work.breakEndTime
-                                                )
-                                        )
-                        );
-        // -------------------------------------------------------------
+        // -----------------------------
+        // SELECT용 isOpenNow(Boolean)
+        // -----------------------------
+        Expression<Boolean> isOpenNowExpr =
+                Expressions.booleanTemplate(
+                        "({0} = 1 AND {1} = 1)",
+                        isOpenTodayCase,
+                        isOpenNowCase
+                );
 
-        // 1. 필터 조건식 생성
-        BooleanExpression filterWhere =
-                getFilterExpression(filter, todayFilter, isTwentyFour, isOpenNow);
+        // -----------------------------
+        // HAVING 필터전용 CASE (숫자 1개만 반환)
+        // -----------------------------
+        NumberExpression<Integer> isOpenNowFilter =
+                Expressions.numberTemplate(Integer.class,
+                        "CASE WHEN ({0} = 1 AND {1} = 1) THEN 1 ELSE 0 END",
+                        isOpenTodayCase,
+                        isOpenNowCase
+                );
 
-        // 2. 24시간 및 거리 필터 여부 플래그
-        boolean isTwentyFourHourFilter = filter.equals("TWENTY_FOUR_HOUR");
-        boolean isDistanceFilter = filter.equals("DISTANCE");
+        // -----------------------------
+        // 오늘 closeTime 계산
+        // -----------------------------
+        Expression<LocalTime> todayCloseTimeExpr =
+                Expressions.timeTemplate(LocalTime.class,
+                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
+                        work.id.dayOfWeek,
+                        Expressions.constant(todayStr),
+                        work.closeTime
+                );
 
-        // 3. 쿼리 구성 시작
+        // -----------------------------
+        // 기본 SELECT
+        // -----------------------------
         JPAQuery<HospitalMatchingResDto> query = queryFactory
                 .select(
                         Projections.constructor(
@@ -458,29 +496,28 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                 hospital.id,
                                 hospital.image,
                                 hospital.name,
-                                // TWENTY_FOUR_HOUR/DISTANCE 필터 시 is_open_now는 항상 true로 표시
-                                (isTwentyFourHourFilter || isDistanceFilter) ? Expressions.constant(true) : isOpenNow,
+                                isOpenNowExpr,
                                 distance,
-                                // TWENTY_FOUR_HOUR/DISTANCE 필터 시 closeTime은 더미 값
-                                (isTwentyFourHourFilter || isDistanceFilter) ? Expressions.constant(LocalTime.of(0, 0)) : work.closeTime,
+                                todayCloseTimeExpr,
                                 hospital.phoneNumber
                         )
                 )
                 .from(hospital)
                 .join(hospital.treatmentAnimals, treat)
+                .leftJoin(hospital.hospitalWorktimes, work)
                 .where(speciesFilter)
-                .groupBy(hospital.id); // GROUP BY로 변경 (이전 단계에서 MySQL DISTINCT 에러 해결)
+                .groupBy(hospital.id);
 
-        // 4. 24시간 또는 DISTANCE 필터가 아닐 경우에만 HospitalWorktime 조인 및 work 관련 필터 적용
-        if (!isTwentyFourHourFilter && !isDistanceFilter) {
-            query.join(hospital.hospitalWorktimes, work);
-            query.where(filterWhere);
-        } else {
-            // 24시간 필터 또는 DISTANCE 필터인 경우, work 테이블 조인 없이 where 조건만 적용
-            query.where(filterWhere);
+        // -----------------------------
+        // 필터 적용
+        // -----------------------------
+        if ("IS_OPEN_NOW".equals(filter)) {
+            query.having(isOpenNowFilter.eq(1));   // 현재 영업중인 병원만
         }
 
-        // 5. 거리순 정렬 및 제한
+        // -----------------------------
+        // 정렬 + LIMIT
+        // -----------------------------
         List<HospitalMatchingResDto> result = query
                 .orderBy(distance.asc())
                 .limit(3)
@@ -488,85 +525,69 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
 
         if (result.isEmpty()) return result;
 
-        // ==========================================================
-        // 🚨 Cannot resolve symbol 'animalMap' 및 'tagMap' 오류 해결: 변수 정의 추가
-        // ==========================================================
-
-        // 1) 조회된 병원 ID 리스트
+        // -----------------------------
+        // 동물 및 태그 조회
+        // -----------------------------
         List<Long> hospitalIds = result.stream()
                 .map(HospitalMatchingResDto::getHospitalId)
                 .toList();
 
-        // 2) 한 번의 쿼리로 모든 진료 가능 동물 조회
         List<TreatmentAnimal> animals = queryFactory
                 .selectFrom(treat)
                 .where(treat.hospital.id.in(hospitalIds))
                 .fetch();
 
-        // 3) 병원 ID -> 동물 description 리스트로 매핑 (animalMap 정의)
         Map<Long, List<String>> animalMap = animals.stream()
-                .collect(
-                        Collectors.groupingBy(
-                                ta -> ta.getHospital().getId(),
-                                Collectors.mapping(
-                                        ta -> ta.getAnimaType().getDescription(),
-                                        Collectors.toList()
-                                )
+                .collect(Collectors.groupingBy(
+                        ta -> ta.getHospital().getId(),
+                        Collectors.mapping(
+                                ta -> ta.getAnimaType().getDescription(),
+                                Collectors.toList()
                         )
-                );
+                ));
 
-        // 4) 한 번의 쿼리로 모든 태그 조회 및 병원 ID별로 그룹화 (tagMap 정의)
         Map<Long, List<String>> tagMap = queryFactory
                 .select(tag.hospital.id, tag.tag)
                 .from(tag)
                 .where(tag.hospital.id.in(hospitalIds))
                 .fetch()
                 .stream()
-                .collect(
-                        Collectors.groupingBy(
-                                tuple -> tuple.get(tag.hospital.id),
-                                Collectors.mapping(
-                                        tuple -> tuple.get(tag.tag),
-                                        Collectors.toList()
-                                )
+                .collect(Collectors.groupingBy(
+                        tuple -> tuple.get(tag.hospital.id),
+                        Collectors.mapping(
+                                tuple -> tuple.get(tag.tag),
+                                Collectors.toList()
                         )
-                );
+                ));
 
-        // 5) 결과 DTO에 동물 리스트 및 태그 리스트 주입
+        // -----------------------------
+        // DTO 매핑
+        // -----------------------------
         result.forEach(res -> {
             res.setTreatableAnimals(
                     animalMap.getOrDefault(res.getHospitalId(), new ArrayList<>())
             );
-            res.setTags(tagMap.get(res.getHospitalId())); // 없으면 null
+            res.setTags(tagMap.get(res.getHospitalId()));
         });
 
         return result;
     }
+
+
+
     private BooleanExpression getFilterExpression(
             String filter,
-            BooleanExpression today,
-            BooleanExpression twentyFour,
-            BooleanExpression openNow
+            BooleanExpression openNowExpr
     ) {
         QHospital h = QHospital.hospital;
-        QHospitalWorktime work = QHospitalWorktime.hospitalWorktime;
 
         return switch (filter) {
-            // DISTANCE: WHERE 조건 없음 (정렬만 적용).
-            case "DISTANCE" -> Expressions.asBoolean(true).isTrue();
-
-            // 24시간 필터
+            case "DISTANCE" -> Expressions.TRUE;
             case "TWENTY_FOUR_HOUR" -> h.twentyFourHours.eq(true);
-
-            // IS_OPEN_NOW: today, work.isOpen=true, openNow 세 가지 조건을 모두 만족
-            case "IS_OPEN_NOW" -> today
-                    .and(work.isOpen.eq(true))
-                    .and(openNow);
-
-            default -> throw new IllegalArgumentException("Invalid filter");
+            case "IS_OPEN_NOW" -> openNowExpr;
+            default -> Expressions.TRUE;
         };
     }
-
 
     private NumberExpression<Double> distanceExpression(Double lat, Double lng) {
 
