@@ -108,7 +108,7 @@ public class AiService {
                                             return Mono.error(new CustomException(ErrorCode.BAD_IMAGE));
                                         }
                                     } catch (JsonProcessingException e) {
-                                        return Mono.error(new RuntimeException("JSON 파싱 오류", e));
+                                        return Mono.error(new CustomException(ErrorCode.TEXT_ERROR));
                                     }
                                 })
                                 .onErrorMap(e -> (e instanceof CustomException) ? e :
@@ -191,7 +191,7 @@ public class AiService {
                             return rawText;
                         } catch (Exception e) {
                             // 구조가 다르면 재시도 (AI가 가끔 형식을 어길 때가 있음)
-                            throw new RuntimeException("RAG 응답 구조 불일치", e);
+                            throw new CustomException(ErrorCode.TEXT_ERROR);
                         }
                     })
                     .flatMap(finalJsonString -> {
@@ -209,7 +209,7 @@ public class AiService {
 
                         } catch (Exception e) {
                             // JSON 파싱 에러 -> 재시도 대상
-                            return Mono.error(new RuntimeException("최종 JSON 파싱 실패", e));
+                            return Mono.error(new CustomException(ErrorCode.TEXT_ERROR));
                         }
                     })
                     // 2차 과정에서 발생한 에러를 CustomException으로 매핑
