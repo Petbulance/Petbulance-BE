@@ -45,11 +45,16 @@ public class Hospital extends BaseTimeEntity {
     private Double lat;
 
     private Double lng;
+
     @Column(length = 500)
     private String url;
 
     @Column(length = 500)
     private String image;
+
+    private boolean nighCare;
+
+    private boolean twentyFourHours;
 
     //일대다 다중 페치조인은 list불가 set으로 지정
     @Builder.Default
