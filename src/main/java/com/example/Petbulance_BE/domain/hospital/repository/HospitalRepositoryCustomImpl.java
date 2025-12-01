@@ -420,8 +420,8 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         String todayStr = today.toString().substring(0, 3).toUpperCase();
         NumberExpression<Double> distance = distanceExpression(lat, lng);
 
-        BooleanExpression speciesFilter =
-                treat.animaType.eq(AnimalType.valueOf(species));
+//        BooleanExpression speciesFilter =
+//                treat.animaType.eq(AnimalType.valueOf(species));
 
         // -----------------------------
         // 오늘 영업 요일인지 체크
@@ -486,6 +486,12 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                         work.closeTime
                 );
 
+        BooleanExpression speciesCheck= null;
+
+        if(species != null){
+            speciesCheck =  treat.animaType.eq(AnimalType.valueOf(species));
+        }
+
         // -----------------------------
         // 기본 SELECT
         // -----------------------------
@@ -505,7 +511,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                 .from(hospital)
                 .join(hospital.treatmentAnimals, treat)
                 .leftJoin(hospital.hospitalWorktimes, work)
-                .where(speciesFilter)
+                .where(speciesCheck)
                 .groupBy(hospital.id);
 
         // -----------------------------

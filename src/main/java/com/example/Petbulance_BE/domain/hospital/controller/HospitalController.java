@@ -34,7 +34,7 @@ public class HospitalController {
     @GetMapping("/matching")
     public List<HospitalMatchingResDto> hospitalMatching(
             @RequestParam String filter,
-            @RequestParam String species,
+            @RequestParam(required = false) String species,
             @RequestParam Double lat,
             @RequestParam Double lng
     ) {
