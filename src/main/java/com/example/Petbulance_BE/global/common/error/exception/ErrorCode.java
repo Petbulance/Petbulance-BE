@@ -68,10 +68,10 @@ public enum ErrorCode {
     IMAGE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "최대 5장까지 등록할 수 있습니다."),
     NOT_FOUND_REVIEW(HttpStatus.BAD_REQUEST, "리뷰를 찾을 수 없습니다."),
     FAIL_DELETE_IMAGE(HttpStatus.BAD_REQUEST, "이미지 삭제에 실패했습니다"),
-    IMAGE_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 처리 중 오류가 발생했습니다."),
-    GEMINI_API_CONNECTION_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "AI 서버와의 통신이 원활하지 않습니다."),
-    AI_RESPONSE_PARSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI 응답을 분석하는 데 실패했습니다."),
-    AI_DIAGNOSIS_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "AI 진단에 실패했습니다."),
+    IMAGE_PROCESSING_ERROR(HttpStatus.BAD_REQUEST, "이미지 처리 중 오류가 발생했습니다."),
+    GEMINI_API_CONNECTION_ERROR(HttpStatus.BAD_REQUEST, "AI 서버와의 통신이 원활하지 않습니다."),
+    AI_RESPONSE_PARSING_ERROR(HttpStatus.BAD_REQUEST, "AI 응답을 분석하는 데 실패했습니다."),
+    AI_DIAGNOSIS_FAIL(HttpStatus.BAD_REQUEST, "AI 진단에 실패했습니다."),
     BAD_IMAGE(HttpStatus.BAD_REQUEST, "이미지가 손상되었거나 동물이 아닙니다.");
 
     private final HttpStatus status;
