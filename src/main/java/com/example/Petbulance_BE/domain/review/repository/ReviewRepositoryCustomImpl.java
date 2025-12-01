@@ -29,7 +29,7 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
 
         Users user = userUtil.getCurrentUser();
 
-        AnimalType animalType = filterReqDto.getAnimalType();
+        List<AnimalType> animalType = filterReqDto.getAnimalType();
         String region = filterReqDto.getRegion();
         Boolean onlyReceipt = filterReqDto.getReceipt();
 
@@ -54,11 +54,12 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
 
     }
 
-    public BooleanExpression checkAnimalType(AnimalType animalType){
-        if(animalType == null) return null;
+    public BooleanExpression checkAnimalType(List<AnimalType> animalTypes){
+        if(animalTypes == null || animalTypes.isEmpty()) return null;
 
-        return userReview.animalType.eq(animalType);
+        return userReview.animalType.in(animalTypes);
     }
+
 
     public BooleanExpression checkRegion(String region){
         if(region == null) return null;

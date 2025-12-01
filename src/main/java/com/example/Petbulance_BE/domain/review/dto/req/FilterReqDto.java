@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -14,7 +16,7 @@ public class FilterReqDto {
 
     private String region;
 
-    private AnimalType animalType;
+    private List<AnimalType> animalType;
 
     private Boolean receipt;
 
