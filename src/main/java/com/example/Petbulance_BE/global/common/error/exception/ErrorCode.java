@@ -72,7 +72,8 @@ public enum ErrorCode {
     GEMINI_API_CONNECTION_ERROR(HttpStatus.BAD_REQUEST, "AI 서버와의 통신이 원활하지 않습니다."),
     AI_RESPONSE_PARSING_ERROR(HttpStatus.BAD_REQUEST, "AI 응답을 분석하는 데 실패했습니다."),
     AI_DIAGNOSIS_FAIL(HttpStatus.BAD_REQUEST, "AI 진단에 실패했습니다."),
-    BAD_IMAGE(HttpStatus.BAD_REQUEST, "이미지가 손상되었거나 동물이 아닙니다.");
+    BAD_IMAGE(HttpStatus.BAD_REQUEST, "이미지가 손상되었거나 동물이 아닙니다."),
+    TEXT_ERROR(HttpStatus.BAD_REQUEST, "텍스트의 내용이 적합하지 않습니다.");
 
     private final HttpStatus status;
     private final String message;
