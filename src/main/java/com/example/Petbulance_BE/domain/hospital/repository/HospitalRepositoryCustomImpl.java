@@ -28,10 +28,7 @@ import org.springframework.util.StringUtils;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.example.Petbulance_BE.domain.hospital.entity.QHospital.hospital;
@@ -620,6 +617,8 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
 
     public DetailHospitalResDto findHospitalDetail(Long hospitalId, Double userLat, Double userLng) {
 
+        List<String> order = List.of("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN");
+
         QHospital h = QHospital.hospital;
         QHospitalWorktime w = hospitalWorktime;
         QTreatmentAnimal t = QTreatmentAnimal.treatmentAnimal;
@@ -674,13 +673,17 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                 .where(w.hospital.id.eq(hospitalId))
                 .fetch();
 
+        List<HospitalWorktime> list = weekly.stream().sorted(Comparator.comparing(hw ->
+                order.indexOf(hw.getId().getDayOfWeek())
+        )).toList();
+
         // 오늘 요일
         DayOfWeek today = LocalDate.now().getDayOfWeek();
         LocalTime now = LocalTime.now();
 
         // 🚨 수정된 부분 1: todayWork 필터링 로직 수정 (NumberFormatException 발생 지점)
         // DB 저장값("FRI")을 Map을 사용하여 정수로 변환하여 비교
-        HospitalWorktime todayWork = weekly.stream()
+        HospitalWorktime todayWork = list.stream()
                 .filter(x -> {
                     String dayStr = x.getId().getDayOfWeek().toUpperCase();
                     Integer dayInt = DAY_OF_WEEK_MAP.get(dayStr);
@@ -744,7 +747,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         // 4) openHours 변환
         // ======================
         List<DetailHospitalResDto.OpenHour> openHours =
-                weekly.stream()
+                list.stream()
                         .map(work -> {
                             String hours;
                             if (!Boolean.TRUE.equals(work.getIsOpen())) {
