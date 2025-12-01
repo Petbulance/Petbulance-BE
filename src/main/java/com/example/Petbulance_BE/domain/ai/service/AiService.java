@@ -59,9 +59,12 @@ public class AiService {
             });
 
 
-    public Mono<DiagnosisResDto> aiDiagnosisProcess(List<MultipartFile> images, String animalType, String symptom) {
+    public Mono<DiagnosisResDto> aiDiagnosisProcess(List<MultipartFile> images, String animalTypes, String symptoms) {
 
         boolean hasImage = images != null && !images.isEmpty() && !images.get(0).isEmpty();
+
+        String animalType = (animalTypes == null) ? "입력없음" : animalTypes;
+        String symptom = (symptoms == null) ? "입력없음" : symptoms;
 
         Mono<List<ExtractedData>> imageAnalysisMono;
 
@@ -79,11 +82,16 @@ public class AiService {
 
                         List<Part> parts = new ArrayList<>();
                         String prompt = String.format(
-                                "당신은 동물 진단 전문가입니다. 아래 규칙을 따라 오직 JSON 형식으로 응답하세요. 입력 동물 타입 %s\n"
-                                        + "1. 입력된 이미지가 동물이 아니면, {\"status\": \"fail\", \"message\": \"동물 이미지가 아닙니다.\"} 반환\n"
-                                        + "2. 입력된 animalType과 이미지가 일치하지 않으면, {\"status\": \"fail\", \"message\": \"이미지와 입력된 동물 종이 일치하지 않습니다.\"} 반환\n"
-                                        + "3. 이미지가 올바른 동물이고, animalType과 일치하면, {\"status\": \"success\", \"data\": {\"description\": \"...\", \"confidence\": ...}}\n"
-                                        + "4. JSON 외 다른 텍스트는 절대 출력하지 마세요.", animalType
+                                "당신은 동물 진단 전문가입니다. 아래 규칙을 따라 동물 이미지의 증상을 분석하고, 오직 JSON 형식으로 응답하세요.\n" +
+                                        "입력 동물 타입: %s\n\n" +
+                                        "규칙:\n" +
+                                        "1. 입력 동물 타입이 \"입력없음\"이면, 이미지만 분석하여 가장 유력한 증상과 동물종을 판별합니다.\n" +
+                                        "   반환 형식: {\"status\": \"success\", \"data\": {\"description\": \"...\", \"confidence\": ..., \"animalType\": \"...\"}}\n" +
+                                        "2. 이미지가 동물이 아니면, {\"status\": \"fail\", \"message\": \"동물 이미지가 아닙니다.\"} 반환\n" +
+                                        "3. 입력된 animalType이 \"입력없음\"이 아니고 이미지가 일치하지 않으면, {\"status\": \"fail\", \"message\": \"이미지와 입력된 동물 종이 일치하지 않습니다.\"} 반환\n" +
+                                        "4. 이미지가 올바른 동물이고, animalType과 일치하면, {\"status\": \"success\", \"data\": {\"description\": \"...\", \"confidence\": ..., \"animalType\": \"...\"}} 반환\n" +
+                                        "5. JSON 외 다른 텍스트는 절대 출력하지 마세요.",
+                                animalType
                         );
                         parts.add(new Part(prompt, null));
                         parts.add(new Part(null, new InlineData(image.getContentType(), base64)));
@@ -119,7 +127,7 @@ public class AiService {
         } else {
             log.info("이미지 없음: 텍스트 기반 진단으로 바로 진행");
             imageAnalysisMono = Mono.just(List.of(new ExtractedData(
-                    "사용자가 이미지를 제공하지 않았습니다. 텍스트 증상에만 의존하여 진단하세요.", 0.0
+                    "사용자가 이미지를 제공하지 않았습니다. 텍스트 증상에만 의존하여 진단하세요.", 0.0,"없음"
             )));
         }
 
@@ -166,7 +174,7 @@ public class AiService {
                               "message": null
                             }
                             """,
-                    animalType, symptom, firstOutputData.description(), animalType);
+                    firstOutputData.animalType(), symptom, firstOutputData.description(), firstOutputData.animalType());
 
             Content2 ragContent = new Content2("user", List.of(new Part(ragPrompt, null)));
             GeminiRequest2 geminiRequest2 = new GeminiRequest2(List.of(ragContent));

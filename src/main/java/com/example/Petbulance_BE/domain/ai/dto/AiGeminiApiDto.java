@@ -54,7 +54,8 @@ public class AiGeminiApiDto {
 
     public record ExtractedData(
             String description,
-            Double confidence
+            Double confidence,
+            String animalType
     ) {}
 
     /**

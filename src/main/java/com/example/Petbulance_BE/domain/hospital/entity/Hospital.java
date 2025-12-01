@@ -72,4 +72,9 @@ public class Hospital extends BaseTimeEntity {
     @OrderBy("id ASC")
     private Set<TreatmentAnimal> treatmentAnimals = new HashSet<>();
 
+    @OneToMany(mappedBy = "hospital")
+    @Builder.Default
+    @OrderBy("id ASC")
+    private Set<Tag> tags = new HashSet<>();
+
 }

@@ -22,8 +22,8 @@ public class AiController {
     private final AiService aiService;
 
     @PostMapping("/diagnosis")
-    public Mono<DiagnosisResDto> aiDiagnosis(@RequestParam(name = "images", required = false) List<MultipartFile> images,
-    @RequestParam(name = "animalType")String animalType, @RequestParam(name = "symptom")String symptom) {
+    public Mono<DiagnosisResDto> aiDiagnosis(@RequestParam(name = "images") List<MultipartFile> images,
+    @RequestParam(name = "animalType", required = false)String animalType, @RequestParam(name = "symptom", required = false)String symptom) {
         return aiService.aiDiagnosisProcess(images, animalType, symptom);
     }
 

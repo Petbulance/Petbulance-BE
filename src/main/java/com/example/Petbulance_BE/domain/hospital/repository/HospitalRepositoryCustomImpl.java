@@ -511,6 +511,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                 .from(hospital)
                 .join(hospital.treatmentAnimals, treat)
                 .leftJoin(hospital.hospitalWorktimes, work)
+                .join(hospital.tags, tag)
                 .where(speciesCheck)
                 .groupBy(hospital.id);
 
@@ -519,6 +520,8 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         // -----------------------------
         if ("IS_OPEN_NOW".equals(filter)) {
             query.having(isOpenNowFilter.eq(1));   // 현재 영업중인 병원만
+        }else if("TWENTY_FOUR_HOUR".equals(filter)){
+            query.where(tag.tag.eq("24시간"));
         }
 
         // -----------------------------

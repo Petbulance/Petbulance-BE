@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.hospital.controller;
 import com.example.Petbulance_BE.domain.hospital.dto.req.HospitalSearchReqDto;
 import com.example.Petbulance_BE.domain.hospital.dto.res.*;
 import com.example.Petbulance_BE.domain.hospital.service.HospitalService;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
@@ -34,11 +35,11 @@ public class HospitalController {
     @GetMapping("/matching")
     public List<HospitalMatchingResDto> hospitalMatching(
             @RequestParam String filter,
-            @RequestParam(required = false) String species,
+            @RequestParam(required = false) AnimalType species,
             @RequestParam Double lat,
             @RequestParam Double lng
     ) {
-        return hospitalService.hospitalMatching(filter, species, lat, lng);
+        return hospitalService.hospitalMatching(filter, species.toString(), lat, lng);
     }
 
     @GetMapping("/{hospitalId}/matching")
