@@ -1,6 +1,5 @@
 package com.example.Petbulance_BE.domain.ai.service;
 
-import com.example.Petbulance_BE.domain.ai.dto.AiGeminiApiDto;
 import com.example.Petbulance_BE.domain.ai.dto.AiGeminiApiDto.*;
 import com.example.Petbulance_BE.domain.ai.dto.res.DiagnosisResDto;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -16,16 +15,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 @Service
 @Slf4j
@@ -64,105 +61,72 @@ public class AiService {
 
     public Mono<DiagnosisResDto> aiDiagnosisProcess(List<MultipartFile> images, String animalType, String symptom) {
 
-        // 0. 이미지 존재 여부 확인
         boolean hasImage = images != null && !images.isEmpty() && !images.get(0).isEmpty();
 
-        // [1단계] 이미지 분석 Mono 생성
-        Mono<ExtractedData> imageAnalysisMono;
+        Mono<List<ExtractedData>> imageAnalysisMono;
 
         if (hasImage) {
             log.info("이미지 발견: 1차 이미지 분석 수행");
 
-            List<String> base64Images = new LinkedList<>();
-            try {
-                for (MultipartFile i : images) {
-                    base64Images.add(Base64.getEncoder().encodeToString(i.getBytes()));
-                }
-            } catch (IOException e) {
-                log.error("이미지 인코딩 실패", e);
-                return Mono.error(new CustomException(ErrorCode.IMAGE_PROCESSING_ERROR));
-            }
-
-            // 프롬프트 생성
-            List<Part> parts = new ArrayList<>();
-            String prompt = String.format("당신은 동물 진단 전문가입니다."
-                            + " 아래 규칙을 따라 오직 JSON 형식으로 응답하세요."
-                            + " 입력 동물 타입 %s"
-                            + " 1. 입력된 이미지가 동물이 아니면,"
-                            + "    {\"status\": \"fail\", \"message\": \"동물 이미지가 아닙니다.\"} 를 반환하세요."
-                            + " 2. 입력된 animalType과 이미지가 일치하지 않으면,"
-                            + "    {\"status\": \"fail\", \"message\": \"이미지와 입력된 동물 종이 일치하지 않습니다.\"} 를 반환하세요."
-                            + " 3. 이미지가 올바른 동물이고, animalType과 일치하면,"
-                            + "    {"
-                            + "      \"status\": \"success\","
-                            + "      \"data\": {"
-                            + "          \"description\": \"...\",  // 이미지가 무엇인지 텍스트로 묘사"
-                            + "          \"confidence\": ...        // 0~1 범위의 신뢰도 값"
-                            + "      }"
-                            + "    }"
-                            + " 4. JSON 외 다른 텍스트는 절대 출력하지 마세요."
-                    , animalType
-            );
-
-            parts.add(new Part(prompt, null));
-
-            for (int i = 0; i < images.size(); i++) {
-                String contentType = images.get(i).getContentType();
-                String base64 = base64Images.get(i);
-                parts.add(new Part(null, new InlineData(contentType, base64)));
-            }
-
-            Content content = new Content(parts);
-            GeminiRequest geminiRequest = new GeminiRequest(List.of(content));
-
-            // [1차 API 호출]
-            imageAnalysisMono = webClient.post()
-                    .uri(genimiApiUrl)
-                    .bodyValue(geminiRequest)
-                    .retrieve()
-                    .bodyToMono(GeminiResponse.class)
-                    .retryWhen(retrySpec) // 1회 재시도 적용 ⚡
-                    .map(response -> {
+            imageAnalysisMono = Flux.fromIterable(images)
+                    .flatMap(image -> {
+                        String base64;
                         try {
-                            String rawText = response.candidates().get(0).content().parts().get(0).text();
-                            return rawText.replace("```json", "").replace("```", "").trim();
+                            base64 = Base64.getEncoder().encodeToString(image.getBytes());
                         } catch (Exception e) {
-                            // 이 에러가 발생하면 retrySpec에 의해 재시도 됨
-                            throw new RuntimeException("Gemini 1차 응답 텍스트 추출 실패", e);
+                            return Mono.error(new CustomException(ErrorCode.IMAGE_PROCESSING_ERROR));
                         }
+
+                        List<Part> parts = new ArrayList<>();
+                        String prompt = String.format(
+                                "당신은 동물 진단 전문가입니다. 아래 규칙을 따라 오직 JSON 형식으로 응답하세요. 입력 동물 타입 %s\n"
+                                        + "1. 입력된 이미지가 동물이 아니면, {\"status\": \"fail\", \"message\": \"동물 이미지가 아닙니다.\"} 반환\n"
+                                        + "2. 입력된 animalType과 이미지가 일치하지 않으면, {\"status\": \"fail\", \"message\": \"이미지와 입력된 동물 종이 일치하지 않습니다.\"} 반환\n"
+                                        + "3. 이미지가 올바른 동물이고, animalType과 일치하면, {\"status\": \"success\", \"data\": {\"description\": \"...\", \"confidence\": ...}}\n"
+                                        + "4. JSON 외 다른 텍스트는 절대 출력하지 마세요.", animalType
+                        );
+                        parts.add(new Part(prompt, null));
+                        parts.add(new Part(null, new InlineData(image.getContentType(), base64)));
+
+                        Content content = new Content(parts);
+                        GeminiRequest geminiRequest = new GeminiRequest(List.of(content));
+
+                        return webClient.post()
+                                .uri(genimiApiUrl)
+                                .bodyValue(geminiRequest)
+                                .retrieve()
+                                .bodyToMono(GeminiResponse.class)
+                                .retryWhen(retrySpec)
+                                .map(resp -> resp.candidates().get(0).content().parts().get(0).text()
+                                        .replace("```json", "").replace("```", "").trim())
+                                .flatMap(jsonString -> {
+                                    try {
+                                        GeminiJsonOutput output = objectMapper.readValue(jsonString, GeminiJsonOutput.class);
+                                        if ("success".equals(output.status())) {
+                                            return Mono.just(output.data());
+                                        } else {
+                                            return Mono.error(new CustomException(ErrorCode.BAD_IMAGE));
+                                        }
+                                    } catch (JsonProcessingException e) {
+                                        return Mono.error(new RuntimeException("JSON 파싱 오류", e));
+                                    }
+                                })
+                                .onErrorMap(e -> (e instanceof CustomException) ? e :
+                                        new CustomException(ErrorCode.GEMINI_API_CONNECTION_ERROR));
                     })
-                    .flatMap(jsonString -> {
-                        try {
-                            GeminiJsonOutput output = objectMapper.readValue(jsonString, GeminiJsonOutput.class);
-                            if ("success".equals(output.status())) {
-                                log.info("1차 이미지 분석 성공: {}", output.data());
-                                return Mono.just(output.data());
-                            } else {
-                                // "동물이 아닙니다" 같은 비즈니스 로직 실패는 재시도하지 않고 바로 에러 반환
-                                return Mono.error(new CustomException(ErrorCode.BAD_IMAGE));
-                            }
-                        } catch (JsonProcessingException e) {
-                            log.error("1차 JSON 파싱 실패: {}", jsonString);
-                            // 파싱 에러는 AI가 이상한 답을 준 것이므로 재시도 해볼 만함 (retrySpec 적용됨)
-                            return Mono.error(new RuntimeException("JSON 파싱 오류", e));
-                        }
-                    })
-                    .onErrorMap(e -> {
-                        // CustomException은 그대로 두고, 나머지는 적절한 에러로 포장
-                        if (e instanceof CustomException) return e;
-                        log.error("1차 분석 중 알 수 없는 에러", e);
-                        return new CustomException(ErrorCode.GEMINI_API_CONNECTION_ERROR);
-                    });
+                    .collectList(); // Mono<List<ExtractedData>>
 
         } else {
             log.info("이미지 없음: 텍스트 기반 진단으로 바로 진행");
-            imageAnalysisMono = Mono.just(new ExtractedData(
+            imageAnalysisMono = Mono.just(List.of(new ExtractedData(
                     "사용자가 이미지를 제공하지 않았습니다. 텍스트 증상에만 의존하여 진단하세요.", 0.0
-            ));
+            )));
         }
 
         // [2단계] RAG 진단 수행
-        return imageAnalysisMono.flatMap(firstOutputData -> {
+        return imageAnalysisMono.flatMap(list -> {
+
+            ExtractedData firstOutputData = list.get(0);
 
             String ragPrompt = String.format("""
                             당신은 수의학 응급 진단 전문가입니다. 애완동물인 만큼 사람처럼 지칭할 필요는 없어.
