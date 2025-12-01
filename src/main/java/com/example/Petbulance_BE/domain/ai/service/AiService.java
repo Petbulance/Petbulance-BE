@@ -129,7 +129,7 @@ public class AiService {
             ExtractedData firstOutputData = list.get(0);
 
             String ragPrompt = String.format("""
-                            당신은 수의학 응급 진단 전문가입니다. 애완동물인 만큼 사람처럼 지칭할 필요는 없어.
+                            당신은 수의학 응급 진단 전문가입니다. 애완동물인 만큼 사람처럼 지칭할 필요는 없어. 감정은 절제하고 정확한 정보 전달을 목표로 해.
                             
                             [환자 정보]
                             - 동물 종: %s
