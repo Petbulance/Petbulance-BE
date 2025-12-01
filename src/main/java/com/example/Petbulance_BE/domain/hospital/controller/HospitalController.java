@@ -39,7 +39,7 @@ public class HospitalController {
             @RequestParam Double lat,
             @RequestParam Double lng
     ) {
-        return hospitalService.hospitalMatching(filter, species.toString(), lat, lng);
+        return hospitalService.hospitalMatching(filter, species, lat, lng);
     }
 
     @GetMapping("/{hospitalId}/matching")

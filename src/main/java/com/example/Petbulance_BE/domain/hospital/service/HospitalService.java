@@ -9,6 +9,7 @@ import com.example.Petbulance_BE.domain.hospitalWorktime.entity.HospitalWorktime
 import com.example.Petbulance_BE.domain.review.entity.UserReview;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -359,13 +360,17 @@ public class HospitalService {
                 .build();
     }
 
-    public List<HospitalMatchingResDto> hospitalMatching(String filter, String species, Double lat, Double lng) {
+    public List<HospitalMatchingResDto> hospitalMatching(String filter, AnimalType species, Double lat, Double lng) {
 
         LocalDate today = LocalDate.now(); // 현재 날짜
         LocalTime now = LocalTime.now(); // 현재 시간
+        String s = null;
+        if(species != null) {
+            s = species.name();
+        }
 
         return hospitalRepository.findMatchingHospitals(
-                species,
+                s,
                 filter,
                 lat,
                 lng,
