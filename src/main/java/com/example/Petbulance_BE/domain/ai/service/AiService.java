@@ -70,6 +70,7 @@ public class AiService {
 
         if (hasImage) {
             log.info("이미지 발견: 1차 이미지 분석 수행");
+            log.info("이미지 인코딩 정보 {}", images);
 
             imageAnalysisMono = Flux.fromIterable(images)
                     .flatMap(image -> {
