@@ -17,8 +17,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -42,6 +47,29 @@ public class AiService {
         this.objectMapper = objectMapper;
         this.genimiApiUrl = genimiApiUrl;
     }
+
+    public Mono<String> encodeBase64Streaming(MultipartFile image) {
+        return Mono.fromCallable(() -> {
+            Base64.Encoder encoder = Base64.getEncoder();
+
+            InputStream inputStream = image.getInputStream();
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            OutputStream base64Stream = encoder.wrap(outputStream); //oustputStream에 적히는 값을 base64로 암호화
+
+            byte[] buffer = new byte[8192]; // 8KB chunk
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                base64Stream.write(buffer, 0, bytesRead);
+            }
+
+            base64Stream.flush();
+            inputStream.close();
+            base64Stream.close();
+
+            return outputStream.toString(StandardCharsets.UTF_8);
+        });
+    }
+
 
     // [재시도 전략 정의]: 에러 발생 시 2초 대기 후 1회 재시도 (최대 2번 실행됨)
     private final Retry retrySpec = Retry.backoff(1, Duration.ofSeconds(2))
@@ -73,17 +101,13 @@ public class AiService {
             log.info("이미지 인코딩 정보 {}", images);
 
             imageAnalysisMono = Flux.fromIterable(images)
-                    .flatMap(image -> {
-                        String base64;
-                        try {
-                            base64 = Base64.getEncoder().encodeToString(image.getBytes());
-                        } catch (Exception e) {
-                            return Mono.error(new CustomException(ErrorCode.IMAGE_PROCESSING_ERROR));
-                        }
+                    .flatMap(image -> encodeBase64Streaming(image)
+                            .subscribeOn(Schedulers.boundedElastic()) //전용 스레드풀로 옮겨 비동기 유지
+                            .flatMap(base64 -> {
 
-                        List<Part> parts = new ArrayList<>();
-                        String prompt = String.format(
-                                "당신은 동물 진단 전문가입니다. 아래 규칙을 따라 동물 이미지의 증상을 분석하고, 오직 JSON 형식으로 응답하세요.\n" +
+                                List<Part> parts = new ArrayList<>();
+                                String prompt = String.format(
+                                        "당신은 동물 진단 전문가입니다. 아래 규칙을 따라 동물 이미지의 증상을 분석하고, 오직 JSON 형식으로 응답하세요.\n" +
                                         "입력 동물 타입: %s\n\n" +
                                         "규칙:\n" +
                                         "1. 입력 동물 타입이 \"입력없음\"이면, 이미지만 분석하여 가장 유력한 증상과 동물종을 판별합니다.\n" +
@@ -91,39 +115,46 @@ public class AiService {
                                         "2. 이미지가 동물이 아니면, {\"status\": \"fail\", \"message\": \"동물 이미지가 아닙니다.\"} 반환\n" +
                                         "3. 입력된 animalType이 \"입력없음\"이 아니고 이미지가 일치하지 않으면, {\"status\": \"fail\", \"message\": \"이미지와 입력된 동물 종이 일치하지 않습니다.\"} 반환\n" +
                                         "4. 이미지가 올바른 동물이고, animalType과 일치하면, {\"status\": \"success\", \"data\": {\"description\": \"...\", \"confidence\": ..., \"animalType\": \"...\"}} 반환\n" +
-                                        "5. JSON 외 다른 텍스트는 절대 출력하지 마세요.",
-                                animalType
-                        );
-                        parts.add(new Part(prompt, null));
-                        parts.add(new Part(null, new InlineData(image.getContentType(), base64)));
+                                        "5. JSON 외 다른 텍스트는 절대 출력하지 마세요.", animalType );
 
-                        Content content = new Content(parts);
-                        GeminiRequest geminiRequest = new GeminiRequest(List.of(content));
+                                parts.add(new Part(prompt, null));
+                                parts.add(new Part(null, new InlineData(image.getContentType(), base64)));
 
-                        return webClient.post()
-                                .uri(genimiApiUrl)
-                                .bodyValue(geminiRequest)
-                                .retrieve()
-                                .bodyToMono(GeminiResponse.class)
-                                .retryWhen(retrySpec)
-                                .map(resp -> resp.candidates().get(0).content().parts().get(0).text()
-                                        .replace("```json", "").replace("```", "").trim())
-                                .flatMap(jsonString -> {
-                                    try {
-                                        GeminiJsonOutput output = objectMapper.readValue(jsonString, GeminiJsonOutput.class);
-                                        if ("success".equals(output.status())) {
-                                            return Mono.just(output.data());
-                                        } else {
-                                            return Mono.error(new CustomException(ErrorCode.BAD_IMAGE));
-                                        }
-                                    } catch (JsonProcessingException e) {
-                                        return Mono.error(new CustomException(ErrorCode.TEXT_ERROR));
-                                    }
-                                })
-                                .onErrorMap(e -> (e instanceof CustomException) ? e :
-                                        new CustomException(ErrorCode.GEMINI_API_CONNECTION_ERROR));
-                    })
-                    .collectList(); // Mono<List<ExtractedData>>
+                                Content content = new Content(parts);
+                                GeminiRequest geminiRequest = new GeminiRequest(List.of(content));
+
+                                return webClient.post()
+                                        .uri(genimiApiUrl)
+                                        .bodyValue(geminiRequest)
+                                        .retrieve()
+                                        .bodyToMono(GeminiResponse.class)
+                                        .retryWhen(retrySpec)
+                                        .flatMap(resp -> {
+                                            try {
+                                                String jsonString = resp.candidates().get(0)
+                                                        .content().parts().get(0).text()
+                                                        .replace("```json", "")
+                                                        .replace("```", "")
+                                                        .trim();
+
+                                                GeminiJsonOutput output = objectMapper.readValue(
+                                                        jsonString, GeminiJsonOutput.class);
+
+                                                if ("success".equals(output.status())) {
+                                                    return Mono.just(output.data());
+                                                } else {
+                                                    return Mono.error(new CustomException(ErrorCode.BAD_IMAGE));
+                                                }
+                                            } catch (Exception e) {
+                                                return Mono.error(new CustomException(ErrorCode.TEXT_ERROR));
+                                            }
+                                        })
+                                        .onErrorMap(e -> (e instanceof CustomException) ? e :
+                                                new CustomException(ErrorCode.GEMINI_API_CONNECTION_ERROR));
+                            })
+                    )
+                    .collectList();
+            // Mono<List<ExtractedData>>
 
         } else {
             log.info("이미지 없음: 텍스트 기반 진단으로 바로 진행");
