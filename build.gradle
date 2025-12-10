@@ -70,11 +70,16 @@ dependencies {
 	testRuntimeOnly 'com.h2database:h2'
 
 	//s3 의존성
-	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
-	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.767'
-	implementation 'software.amazon.awssdk:s3:2.27.3'
-	implementation 'software.amazon.awssdk:s3control:2.27.3'
-	implementation 'software.amazon.awssdk:s3outposts:2.27.3'
+	implementation platform('software.amazon.awssdk:bom:2.27.3')
+
+	implementation 'software.amazon.awssdk:s3'
+	implementation 'software.amazon.awssdk:s3control'
+	implementation 'software.amazon.awssdk:s3outposts'
+
+	// Lambda 의존성
+	implementation 'com.amazonaws:aws-lambda-java-core:1.2.1'
+	implementation 'com.amazonaws:aws-lambda-java-events:3.1.0'
+	implementation 'com.amazonaws:aws-lambda-java-log4j2:1.2.0'
 
 	// Hibernate Spatial
 	implementation 'org.hibernate:hibernate-spatial:6.2.0.Final'
@@ -93,4 +98,16 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.register('buildZip', Zip) {
+	from(tasks.named('compileJava'))
+	from(tasks.named('processResources'))
+	into('lib') {
+		from(configurations.runtimeClasspath)
+	}
+}
+
+tasks.named('build') {
+	dependsOn(tasks.named('buildZip'))
 }

@@ -3,9 +3,11 @@ package com.example.Petbulance_BE.domain.user.controller;
 import com.example.Petbulance_BE.domain.user.dto.request.*;
 import com.example.Petbulance_BE.domain.user.dto.response.*;
 import com.example.Petbulance_BE.domain.user.service.UserService;
+import com.example.Petbulance_BE.global.util.JWTUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -13,9 +15,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
+@Slf4j
 public class UserController {
 
     private final UserService userService;
+    private final JWTUtil jwtUtil;
 
     @GetMapping("/nickname")
     public NicknameResponseDto checkNickname(@RequestParam String nickname) {
@@ -44,6 +48,8 @@ public class UserController {
 
     @PatchMapping("/profile")
     public ProfileImageUpdateResponseDto updateProfileImage(@RequestBody ProfileImageUpdateReqeustDto profileImageUpdateReqeustDto){
+        //String jwt = jwtUtil.createJwt("3a7a6eba-f107-42b5-8e2d-4536a94a17bf", "access", "ROLE_CLIENT", "GOOGLE");
+        //log.info("{}", jwt);
         return userService.updateProfileImageProcess(profileImageUpdateReqeustDto);
     }
 
