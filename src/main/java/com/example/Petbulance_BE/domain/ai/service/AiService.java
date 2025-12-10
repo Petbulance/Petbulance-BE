@@ -218,7 +218,7 @@ public class AiService {
                     .bodyValue(geminiRequest2)
                     .retrieve()
                     .bodyToMono(JsonNode.class)
-                    .retryWhen(retrySpec) // 1회 재시도 적용 ⚡
+                    .retryWhen(retrySpec) // 1회 재시도 적용
                     .map(node -> {
                         try {
                             String rawText = node.path("candidates").get(0)
