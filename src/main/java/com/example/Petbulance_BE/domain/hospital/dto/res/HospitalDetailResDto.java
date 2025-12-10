@@ -26,8 +26,10 @@ public class HospitalDetailResDto {
 
     private String phone;
 
+    @Builder.Default
     private List<String> acceptedAnimals = new ArrayList<>();
 
+    @Builder.Default
     private List<OpenHours> openHours = new ArrayList<>();
 
     private String notes;

@@ -19,7 +19,6 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-    private final JWTUtil jwtUtil;
 
     @GetMapping("/nickname")
     public NicknameResponseDto checkNickname(@RequestParam String nickname) {
@@ -48,8 +47,6 @@ public class UserController {
 
     @PatchMapping("/profile")
     public ProfileImageUpdateResponseDto updateProfileImage(@RequestBody ProfileImageUpdateReqeustDto profileImageUpdateReqeustDto){
-        //String jwt = jwtUtil.createJwt("3a7a6eba-f107-42b5-8e2d-4536a94a17bf", "access", "ROLE_CLIENT", "GOOGLE");
-        //log.info("{}", jwt);
         return userService.updateProfileImageProcess(profileImageUpdateReqeustDto);
     }
 

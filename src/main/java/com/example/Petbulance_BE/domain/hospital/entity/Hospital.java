@@ -46,9 +46,15 @@ public class Hospital extends BaseTimeEntity {
 
     private Double lng;
 
+    @Column(length = 500)
     private String url;
 
+    @Column(length = 500)
     private String image;
+
+    private boolean nighCare;
+
+    private boolean twentyFourHours;
 
     //일대다 다중 페치조인은 list불가 set으로 지정
     @Builder.Default
@@ -65,5 +71,10 @@ public class Hospital extends BaseTimeEntity {
     @OneToMany(mappedBy = "hospital", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @OrderBy("id ASC")
     private Set<TreatmentAnimal> treatmentAnimals = new HashSet<>();
+
+    @OneToMany(mappedBy = "hospital")
+    @Builder.Default
+    @OrderBy("id ASC")
+    private Set<Tag> tags = new HashSet<>();
 
 }
