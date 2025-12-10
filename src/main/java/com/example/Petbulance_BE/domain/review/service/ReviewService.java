@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.review.service;
 import com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto;
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
+import com.example.Petbulance_BE.domain.review.DailyLimit;
 import com.example.Petbulance_BE.domain.review.dto.*;
 import com.example.Petbulance_BE.domain.review.dto.dao.MyReviewGetDao;
 import com.example.Petbulance_BE.domain.review.dto.req.FilterReqDto;
@@ -72,7 +73,7 @@ public class ReviewService {
         this.s3Service = s3Service;
         this.reviewImageJpaRepository = reviewImageJpaRepository;
     }
-
+    @DailyLimit
     public Mono<ReceiptResDto> receiptExtractProcess(MultipartFile image) {
 
         log.info("🚀 [{}] 요청 시작", Thread.currentThread().getName());
