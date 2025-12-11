@@ -3,7 +3,7 @@ package com.example.Petbulance_BE.domain.review.service;
 import com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto;
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
-import com.example.Petbulance_BE.domain.review.DailyLimit;
+import com.example.Petbulance_BE.domain.review.aop.DailyLimit;
 import com.example.Petbulance_BE.domain.review.dto.*;
 import com.example.Petbulance_BE.domain.review.dto.dao.MyReviewGetDao;
 import com.example.Petbulance_BE.domain.review.dto.req.FilterReqDto;

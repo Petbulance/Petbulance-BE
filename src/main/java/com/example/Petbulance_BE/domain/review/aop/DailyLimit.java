@@ -1,4 +1,4 @@
-package com.example.Petbulance_BE.domain.review;
+package com.example.Petbulance_BE.domain.review.aop;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
