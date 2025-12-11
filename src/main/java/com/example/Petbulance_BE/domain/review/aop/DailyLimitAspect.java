@@ -1,4 +1,4 @@
-package com.example.Petbulance_BE.domain.review;
+package com.example.Petbulance_BE.domain.review.aop;
 
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
