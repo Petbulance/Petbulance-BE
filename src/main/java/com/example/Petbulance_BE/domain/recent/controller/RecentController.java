@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.recent.controller;
 
+import com.example.Petbulance_BE.domain.recent.dto.response.DeleteAllKeywordResDto;
 import com.example.Petbulance_BE.domain.recent.dto.response.DeleteKeywordResDto;
 import com.example.Petbulance_BE.domain.recent.dto.response.RecentCommunityResDto;
 import com.example.Petbulance_BE.domain.recent.service.RecentService;
@@ -22,6 +23,12 @@ public class RecentController {
     @DeleteMapping("/community/{keywordId}")
     public DeleteKeywordResDto deleteRecentCommunitySearch(@PathVariable("keywordId") String keywordId) {
         recentService.deleteRecentCommunitySearch(keywordId);
-        return new DeleteKeywordResDto(true, "최근 검색어가 성공적으로 삭제되었습니다.");
+        return new DeleteKeywordResDto("최근 검색어가 성공적으로 삭제되었습니다.");
+    }
+
+    @DeleteMapping("/community")
+    public DeleteAllKeywordResDto deleteRecentCommunityAllSearch() {
+        recentService.deleteRecentCommunityAllSearch();
+        return new DeleteAllKeywordResDto("최근 검색어가 모두 삭제되었습니다.");
     }
 }
