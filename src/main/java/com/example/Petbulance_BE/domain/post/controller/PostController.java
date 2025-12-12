@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.post.controller;
 import com.example.Petbulance_BE.domain.comment.dto.response.PagingPostCommentListResDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.PostCommentResDto;
 import com.example.Petbulance_BE.domain.comment.service.PostCommentService;
+import com.example.Petbulance_BE.domain.post.dto.request.BulkDeletePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.PagingMyPostListResDto;
 import com.example.Petbulance_BE.domain.post.dto.PostLikeDto;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
@@ -42,6 +43,12 @@ public class PostController {
     public DeletePostResDto deletePost(@PathVariable("postId") Long postId) {
         return postService.deletePost(postId);
     }
+
+    @DeleteMapping
+    public BulkDeletePostResDto deletePosts(@RequestBody BulkDeletePostReqDto request) {
+        return postService.deletePosts(request.postIds());
+    }
+
 
     @GetMapping("/{postId}")
     public DetailPostResDto detailPost(@PathVariable Long postId) {

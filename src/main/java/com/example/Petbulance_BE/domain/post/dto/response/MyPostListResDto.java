@@ -17,15 +17,19 @@ public class MyPostListResDto {
     private String content;
     private String createdAt;
     private Long viewCount;
+    private Long likeCount;
+    private String thumbnailUrl;
     private boolean hidden;
 
-    public MyPostListResDto(Long postId, Long boardId, String title, String content, LocalDateTime createdAt, Long viewCount, boolean hidden) {
+    public MyPostListResDto(Long postId, Long boardId, String title, String content, LocalDateTime createdAt, Long viewCount, Long likeCount, String thumbnailUrl, boolean hidden) {
         this.postId = postId;
         this.boardId = boardId;
         this.title = title;
         this.content = content;
         this.createdAt = TimeUtil.formatCreatedAt(createdAt);
         this.viewCount = viewCount;
+        this.likeCount = likeCount;
+        this.thumbnailUrl = thumbnailUrl;
         this.hidden = hidden;
     }
 }
