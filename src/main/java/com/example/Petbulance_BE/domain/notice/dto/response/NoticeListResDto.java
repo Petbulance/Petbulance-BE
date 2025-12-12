@@ -13,15 +13,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class NoticeListResDto {
     private Long noticeId;
-    private boolean isImportant;
     private String noticeStatus;
     private String title;
     private String content;
     private String createdAt;
 
-    public NoticeListResDto(Long noticeId, boolean isImportant, NoticeStatus noticeStatus, String title, String content, LocalDateTime createdAt) {
+    public NoticeListResDto(Long noticeId, NoticeStatus noticeStatus, String title, String content, LocalDateTime createdAt) {
         this.noticeId = noticeId;
-        this.isImportant = isImportant;
         this.noticeStatus = noticeStatus.toString();
         this.title = title;
         this.content = content;

@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 
 public interface NoticeRepositoryCustom {
-    PagingNoticeListResDto findNoticeList(Long lastNoticeId, LocalDateTime lastCreatedAt, Boolean lastIsImportant, Pageable pageable);
+    PagingNoticeListResDto findNoticeList(Long lastNoticeId, LocalDateTime lastCreatedAt, Pageable pageable);
     Notice findPreviousNotice(Long noticeId);
     Notice findNextNotice(Long noticeId);
 }

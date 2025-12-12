@@ -23,8 +23,6 @@ public class Notice extends BaseTimeEntity {
     @Column(name = "notice_id")
     private Long id;
 
-    private boolean isImportant;
-
     @Enumerated(EnumType.STRING)
     private NoticeStatus noticeStatus;
 

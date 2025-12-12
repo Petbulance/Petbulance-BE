@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,7 +18,7 @@ import java.util.stream.Collectors;
 public class DetailNoticeResDto {
 
     private Long noticeId;
-    private boolean isImportant;
+    private String noticeStatus;
     private String title;
     private String createdAt;
     private String content;
@@ -30,7 +29,7 @@ public class DetailNoticeResDto {
     public static DetailNoticeResDto from(Notice n, List<NoticeFile> files, Notice prev, Notice next) {
         return DetailNoticeResDto.builder()
                 .noticeId(n.getId())
-                .isImportant(n.isImportant())
+                .noticeStatus(n.getNoticeStatus().toString())
                 .title(n.getTitle())
                 .createdAt(TimeUtil.formatCreatedAt(n.getCreatedAt()))
                 .content(n.getContent())
@@ -50,7 +49,7 @@ public class DetailNoticeResDto {
         private Long fileId;
         private String fileName;
         private String fileUrl;
-        private String fileType;    // MIME 타입 (application/pdf, image/png 등)
+        private String fileType;
 
         public static AttachmentDto from(NoticeFile f) {
             return AttachmentDto.builder()
@@ -61,7 +60,6 @@ public class DetailNoticeResDto {
                     .build();
         }
     }
-
 
     @Data
     @NoArgsConstructor
@@ -78,5 +76,4 @@ public class DetailNoticeResDto {
                     .build();
         }
     }
-
 }
