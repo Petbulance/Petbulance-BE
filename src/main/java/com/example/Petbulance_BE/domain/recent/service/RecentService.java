@@ -29,4 +29,8 @@ public class RecentService {
         recentCommunitySearchRepository.deleteKeyword(Objects.requireNonNull(UserUtil.getCurrentUser()).getId(), keywordId);
     }
 
+    public void deleteRecentCommunityAllSearch() {
+        Users currentUser = UserUtil.getCurrentUser();
+        recentCommunitySearchRepository.deleteAllKeywords(currentUser.getId());
+    }
 }

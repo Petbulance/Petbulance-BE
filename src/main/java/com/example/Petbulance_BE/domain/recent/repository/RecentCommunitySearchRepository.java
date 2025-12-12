@@ -53,4 +53,9 @@ public class RecentCommunitySearchRepository {
         }
     }
 
+    public void deleteAllKeywords(String userId) {
+        String key = "recent_keywords:" + userId;
+        redisTemplate.delete(key);
+    }
+
 }
