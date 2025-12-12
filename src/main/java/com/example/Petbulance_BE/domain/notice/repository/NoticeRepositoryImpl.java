@@ -24,21 +24,17 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
     public PagingNoticeListResDto findNoticeList(
             Long lastNoticeId,
             LocalDateTime lastCreatedAt,
-            Boolean lastIsImportant,
             Pageable pageable
     ) {
         BooleanBuilder whereBuilder = new BooleanBuilder();
 
-        // 커서 조건 (isImportant → createdAt → id)
-        if (lastNoticeId != null && lastCreatedAt != null && lastIsImportant != null) {
+        // 커서 조건 (createdAt → id)
+        if (lastNoticeId != null && lastCreatedAt != null) {
             whereBuilder.and(
-                    n.isImportant.lt(lastIsImportant)
-                            .or(n.isImportant.eq(lastIsImportant)
-                                    .and(n.createdAt.lt(lastCreatedAt))
-                            )
-                            .or(n.isImportant.eq(lastIsImportant)
-                                    .and(n.createdAt.eq(lastCreatedAt))
-                                    .and(n.id.lt(lastNoticeId))
+                    n.createdAt.lt(lastCreatedAt)
+                            .or(
+                                    n.createdAt.eq(lastCreatedAt)
+                                            .and(n.id.lt(lastNoticeId))
                             )
             );
         }
@@ -47,7 +43,6 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
                 .select(Projections.constructor(
                         NoticeListResDto.class,
                         n.id,
-                        n.isImportant,
                         n.noticeStatus,
                         n.title,
                         n.content,
@@ -56,11 +51,10 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
                 .from(n)
                 .where(whereBuilder)
                 .orderBy(
-                        n.isImportant.desc(),   // 중요공지 먼저
-                        n.createdAt.desc(),     // 최신순
-                        n.id.desc()             // 동일 시간대는 ID 순
+                        n.createdAt.desc(),
+                        n.id.desc()
                 )
-                .limit(pageable.getPageSize() + 1) // 다음 페이지 여부 확인용
+                .limit(pageable.getPageSize() + 1)
                 .fetch();
 
         boolean hasNext = results.size() > pageable.getPageSize();
@@ -73,7 +67,7 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
 
     @Override
     public Notice findPreviousNotice(Long noticeId) {
-        // 현재 notice의 중요도 및 생성일을 먼저 가져오기
+
         Notice current = queryFactory
                 .selectFrom(n)
                 .where(n.id.eq(noticeId))
@@ -84,15 +78,19 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
         return queryFactory
                 .selectFrom(n)
                 .where(
-                        (n.isImportant.eq(current.isImportant())
-                                .and(n.createdAt.lt(current.getCreatedAt())))
-                                .or(n.isImportant.lt(current.isImportant()))
+                        n.createdAt.lt(current.getCreatedAt())
+                                .or(
+                                        n.createdAt.eq(current.getCreatedAt())
+                                                .and(n.id.lt(noticeId))
+                                )
                 )
-                .orderBy(n.isImportant.desc(), n.createdAt.desc())
+                .orderBy(n.createdAt.desc(), n.id.desc())
                 .fetchFirst();
     }
+
     @Override
     public Notice findNextNotice(Long noticeId) {
+
         Notice current = queryFactory
                 .selectFrom(n)
                 .where(n.id.eq(noticeId))
@@ -103,11 +101,14 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
         return queryFactory
                 .selectFrom(n)
                 .where(
-                        (n.isImportant.eq(current.isImportant())
-                                .and(n.createdAt.gt(current.getCreatedAt())))
-                                .or(n.isImportant.gt(current.isImportant()))
+                        n.createdAt.gt(current.getCreatedAt())
+                                .or(
+                                        n.createdAt.eq(current.getCreatedAt())
+                                                .and(n.id.gt(noticeId))
+                                )
                 )
-                .orderBy(n.isImportant.asc(), n.createdAt.asc())
+                .orderBy(n.createdAt.asc(), n.id.asc())
                 .fetchFirst();
     }
+
 }

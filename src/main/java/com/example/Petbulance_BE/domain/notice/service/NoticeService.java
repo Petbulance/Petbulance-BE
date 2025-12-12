@@ -26,19 +26,18 @@ public class NoticeService {
     @Transactional(readOnly = true)
     @Cacheable(value = "noticeList", key = "#lastNoticeId != null ? #lastNoticeId : 'first'")
     public PagingNoticeListResDto noticeList(Long lastNoticeId, Pageable pageable) {
-        Notice notice = null;
+
         LocalDateTime lastCreatedAt = null;
-        Boolean lastIsImportant = null;
 
         if (lastNoticeId != null) {
-            notice = noticeRepository.findById(lastNoticeId)
+            Notice notice = noticeRepository.findById(lastNoticeId)
                     .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
             lastCreatedAt = notice.getCreatedAt();
-            lastIsImportant = notice.isImportant();
         }
 
-        return noticeRepository.findNoticeList(lastNoticeId, lastCreatedAt, lastIsImportant, pageable);
+        return noticeRepository.findNoticeList(lastNoticeId, lastCreatedAt, pageable);
     }
+
 
     @Transactional(readOnly = true)
     @Cacheable(value = "noticeDetail", key = "#noticeId")
