@@ -3,7 +3,6 @@ package com.example.Petbulance_BE.domain.user.controller;
 import com.example.Petbulance_BE.domain.user.dto.request.*;
 import com.example.Petbulance_BE.domain.user.dto.response.*;
 import com.example.Petbulance_BE.domain.user.service.UserService;
-import com.example.Petbulance_BE.global.util.JWTUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,8 +45,8 @@ public class UserController {
     }
 
     @PatchMapping("/profile")
-    public ProfileImageUpdateResponseDto updateProfileImage(@RequestBody ProfileImageUpdateReqeustDto profileImageUpdateReqeustDto){
-        return userService.updateProfileImageProcess(profileImageUpdateReqeustDto);
+    public ProfileImageUpdateResponseDto updateProfileImage(@RequestBody ProfileImageUpdateRequestDto profileImageUpdateRequestDto){
+        return userService.updateProfileImageProcess(profileImageUpdateRequestDto);
     }
 
     @GetMapping("/profile/success")
@@ -61,7 +60,7 @@ public class UserController {
     }
 
     @PatchMapping("/settings/notification")
-    public NotificationSettingResponseDto settingNotification (@RequestBody NotificationSettingReqeustDto notificationSettingReqeustDto) {
-        return userService.settingNotificationProcess(notificationSettingReqeustDto);
+    public NotificationSettingResponseDto settingNotification (@RequestBody NotificationSettingRequestDto notificationSettingRequestDto) {
+        return userService.settingNotificationProcess(notificationSettingRequestDto);
     }
 }

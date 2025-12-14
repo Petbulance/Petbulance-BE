@@ -1,14 +1,12 @@
 package com.example.Petbulance_BE.domain.user.controller;
 
-import com.example.Petbulance_BE.PetbulanceBeApplication;
 import com.example.Petbulance_BE.domain.user.dto.request.NicknameSaveRequestDto;
-import com.example.Petbulance_BE.domain.user.dto.request.NotificationSettingReqeustDto;
-import com.example.Petbulance_BE.domain.user.dto.request.ProfileImageUpdateReqeustDto;
+import com.example.Petbulance_BE.domain.user.dto.request.NotificationSettingRequestDto;
+import com.example.Petbulance_BE.domain.user.dto.request.ProfileImageUpdateRequestDto;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -122,7 +120,7 @@ class UserControllerTest {
     @DisplayName("유저 프로필 이미지 업데이트")
     void UserProfileImageUpdate() throws Exception {
         String jwtToken = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiIzZDI3NGI5Ni03NWU0LTRkZWItYWE3YS1jMmIxZjgzODk3NzciLCJjYXRlZ29yeSI6ImFjY2VzcyIsInJvbGUiOiJST0xFX0NMSUVOVCIsImlhdCI6MTc2MTExNTg4NCwiZXhwIjoxNzYxMjk1ODg0fQ.IGdJCkYKbZeVUIuya0cwKB10cvkpjm_K-bZZfmpChZI";
-        ProfileImageUpdateReqeustDto profileImageUpdateRequestDto = new ProfileImageUpdateReqeustDto("image1","image/jpeg");
+        ProfileImageUpdateRequestDto profileImageUpdateRequestDto = new ProfileImageUpdateRequestDto("image1","image/jpeg");
         mockMvc.perform(patch("/users/profile")
         .header("Authorization","Bearer "+jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -138,7 +136,7 @@ class UserControllerTest {
     @DisplayName("프로필 이미지 저장 완료 검증")
     void TestUserProfileImageUpdate() throws Exception {
         String jwtToken = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiIzZDI3NGI5Ni03NWU0LTRkZWItYWE3YS1jMmIxZjgzODk3NzciLCJjYXRlZ29yeSI6ImFjY2VzcyIsInJvbGUiOiJST0xFX0NMSUVOVCIsImlhdCI6MTc2MTExNTg4NCwiZXhwIjoxNzYxMjk1ODg0fQ.IGdJCkYKbZeVUIuya0cwKB10cvkpjm_K-bZZfmpChZI";
-        ProfileImageUpdateReqeustDto profileImageUpdateRequestDto = new ProfileImageUpdateReqeustDto("image1","image/jpeg");
+        ProfileImageUpdateRequestDto profileImageUpdateRequestDto = new ProfileImageUpdateRequestDto("image1","image/jpeg");
         mockMvc.perform(patch("/users/profile")
                         .header("Authorization","Bearer "+jwtToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -170,7 +168,7 @@ class UserControllerTest {
     @DisplayName("알림 설정 변경 테스트 코드")
     void check() throws Exception{
     String jwt = jwtUtil.createJwt("3d274b96-75e4-4deb-aa7a-c2b1f8389777", "access", "ROLE_CLIENT", "GOOGLE");
-        NotificationSettingReqeustDto n = new NotificationSettingReqeustDto(true, true, true);
+        NotificationSettingRequestDto n = new NotificationSettingRequestDto(true, true, true);
         mockMvc.perform(patch("/users/settings/notification")
                         .header("Authorization","Bearer "+jwt)
                         .contentType(MediaType.APPLICATION_JSON)

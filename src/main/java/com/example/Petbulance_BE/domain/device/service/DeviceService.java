@@ -1,7 +1,7 @@
 package com.example.Petbulance_BE.domain.device.service;
 
-import com.example.Petbulance_BE.domain.device.dto.DeleteDeviceReqeustDto;
-import com.example.Petbulance_BE.domain.device.dto.DeviceAddReqeustDto;
+import com.example.Petbulance_BE.domain.device.dto.DeleteDeviceRequestDto;
+import com.example.Petbulance_BE.domain.device.dto.DeviceAddRequestDto;
 import com.example.Petbulance_BE.domain.device.entity.Device;
 import com.example.Petbulance_BE.domain.device.repository.DeviceJpaRepository;
 import com.example.Petbulance_BE.domain.user.entity.Users;
@@ -19,10 +19,10 @@ public class DeviceService {
     private final DeviceJpaRepository deviceJpaRepository;
 
     @Transactional
-    public Map<String, String> AddDeviceProcess(DeviceAddReqeustDto deviceAddReqeustDto) {
-        String deviceOs = deviceAddReqeustDto.getDeviceOs().toLowerCase();
+    public Map<String, String> AddDeviceProcess(DeviceAddRequestDto deviceAddRequestDto) {
+        String deviceOs = deviceAddRequestDto.getDeviceOs().toLowerCase();
         Device device = Device.builder()
-                .fcm_token(deviceAddReqeustDto.getFcmToken())
+                .fcm_token(deviceAddRequestDto.getFcmToken())
                 .device_os(deviceOs)
                 .user(UserUtil.getCurrentUser())
                 .build();
@@ -32,11 +32,11 @@ public class DeviceService {
     }
 
     @Transactional
-    public Map<String, String> deleteDeviceProcess(DeleteDeviceReqeustDto deleteDeviceReqeustDto) {
+    public Map<String, String> deleteDeviceProcess(DeleteDeviceRequestDto deleteDeviceRequestDto) {
 
         Users currentUser = UserUtil.getCurrentUser();
 
-        deviceJpaRepository.deleteByFcmTokenAndUserId(deleteDeviceReqeustDto.getFcmToken(), currentUser.getId());
+        deviceJpaRepository.deleteByFcmTokenAndUserId(deleteDeviceRequestDto.getFcmToken(), currentUser.getId());
 
         return Map.of("message", "기기 등록을 해제하였습니다.");
 

@@ -9,7 +9,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class DeleteDeviceReqeustDto {
+public class DeleteDeviceRequestDto {
 
     private String fcmToken;
 
