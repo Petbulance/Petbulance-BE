@@ -1,8 +1,8 @@
 package com.example.Petbulance_BE.domain.user.service;
 
 import com.example.Petbulance_BE.domain.user.dto.request.CheckProfileImageRequestDto;
-import com.example.Petbulance_BE.domain.user.dto.request.NotificationSettingReqeustDto;
-import com.example.Petbulance_BE.domain.user.dto.request.ProfileImageUpdateReqeustDto;
+import com.example.Petbulance_BE.domain.user.dto.request.NotificationSettingRequestDto;
+import com.example.Petbulance_BE.domain.user.dto.request.ProfileImageUpdateRequestDto;
 import com.example.Petbulance_BE.domain.user.dto.request.SocialConnectRequestDto;
 import com.example.Petbulance_BE.domain.user.dto.response.*;
 import com.example.Petbulance_BE.domain.user.entity.Users;
@@ -217,9 +217,9 @@ public class UserService {
         return Map.of("message",String.format("%s 계정 연결이 성공적으로 해제되었습니다.", platform));
     }
 
-    public ProfileImageUpdateResponseDto updateProfileImageProcess(ProfileImageUpdateReqeustDto profileImageUpdateReqeustDto) {
-        String contentType = profileImageUpdateReqeustDto.getContentType();
-        String filename = profileImageUpdateReqeustDto.getFilename();
+    public ProfileImageUpdateResponseDto updateProfileImageProcess(ProfileImageUpdateRequestDto profileImageUpdateRequestDto) {
+        String contentType = profileImageUpdateRequestDto.getContentType();
+        String filename = profileImageUpdateRequestDto.getFilename();
 
         Users currentUser = UserUtil.getCurrentUser();
         String userId = Objects.requireNonNull(currentUser).getId();
@@ -315,7 +315,7 @@ public class UserService {
     }
 
     @Transactional
-    public NotificationSettingResponseDto settingNotificationProcess(NotificationSettingReqeustDto notificationSettingReqeustDto) {
+    public NotificationSettingResponseDto settingNotificationProcess(NotificationSettingRequestDto notificationSettingRequestDto) {
 
         Users currentUser = UserUtil.getCurrentUser();
 
@@ -337,16 +337,16 @@ public class UserService {
             userSetting = userSettings.get(0);
         }
 
-        Boolean notificationsEnabled = notificationSettingReqeustDto.getNotificationsEnabled();
+        Boolean notificationsEnabled = notificationSettingRequestDto.getNotificationsEnabled();
 
-        userSetting.setTotalPush(notificationSettingReqeustDto.getNotificationsEnabled());
-        userSetting.setEventPush(notificationSettingReqeustDto.getEventNotificationsEnabled());
-        userSetting.setMarketingPush(notificationSettingReqeustDto.getMarketingNotificationsEnabled());
+        userSetting.setTotalPush(notificationSettingRequestDto.getNotificationsEnabled());
+        userSetting.setEventPush(notificationSettingRequestDto.getEventNotificationsEnabled());
+        userSetting.setMarketingPush(notificationSettingRequestDto.getMarketingNotificationsEnabled());
 
         NotificationSettingResponseDto notificationSettingResponseDto = new NotificationSettingResponseDto();
         notificationSettingResponseDto.setNotificationsEnabled(notificationsEnabled);
-        notificationSettingResponseDto.setEventNotificationsEnabled(notificationSettingReqeustDto.getEventNotificationsEnabled());
-        notificationSettingResponseDto.setMarketingNotificationsEnabled(notificationSettingReqeustDto.getMarketingNotificationsEnabled());
+        notificationSettingResponseDto.setEventNotificationsEnabled(notificationSettingRequestDto.getEventNotificationsEnabled());
+        notificationSettingResponseDto.setMarketingNotificationsEnabled(notificationSettingRequestDto.getMarketingNotificationsEnabled());
 
         return notificationSettingResponseDto;
 

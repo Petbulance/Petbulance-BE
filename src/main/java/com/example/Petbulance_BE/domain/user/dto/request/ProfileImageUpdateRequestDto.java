@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProfileImageUpdateReqeustDto {
+public class ProfileImageUpdateRequestDto {
 
     @NotBlank(message = "파일명을 입력해주세요.")
     private String filename;

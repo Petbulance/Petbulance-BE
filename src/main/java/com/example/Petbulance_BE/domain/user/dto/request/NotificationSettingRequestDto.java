@@ -9,7 +9,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class NotificationSettingReqeustDto {
+public class NotificationSettingRequestDto {
 
     private Boolean notificationsEnabled;
 

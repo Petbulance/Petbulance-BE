@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class DeviceAddReqeustDto {
+public class DeviceAddRequestDto {
 
     @NotBlank(message = "FCM token 혹은 OS 정보가 누락되었습니다.")
     private String fcmToken;
