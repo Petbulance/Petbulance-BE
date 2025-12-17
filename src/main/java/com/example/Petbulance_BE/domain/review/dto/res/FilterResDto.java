@@ -27,4 +27,6 @@ public class FilterResDto {
 
     private Double totalRating;
 
+    private Long totalReviewCount;
+
 }
