@@ -17,11 +17,11 @@ public class UserReviewLike {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "review_id")
+    @JoinColumn(name = "review_id", nullable = false)
     private UserReview review;
 
 }

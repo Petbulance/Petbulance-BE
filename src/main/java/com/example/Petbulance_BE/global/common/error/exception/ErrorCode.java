@@ -75,7 +75,9 @@ public enum ErrorCode {
     BAD_IMAGE(HttpStatus.BAD_REQUEST, "이미지가 손상되었거나 동물이 아닙니다."),
     TEXT_ERROR(HttpStatus.BAD_REQUEST, "텍스트의 내용이 적합하지 않습니다."),
     TOO_FAST_REQUEST(HttpStatus.BAD_REQUEST, "리뷰 작성까지는 최소 3초의 간격이 필요합니다."),
-    TOO_MANY_REQUEST(HttpStatus.BAD_REQUEST, "일일 리뷰 작성 한도에 도달하였습니다.");
+    TOO_MANY_REQUEST(HttpStatus.BAD_REQUEST, "일일 리뷰 작성 한도에 도달하였습니다."),
+    ALREADY_LIKED_REVIEW(HttpStatus.BAD_REQUEST, "이미 좋아요 처리가 되어있습니다."),
+    NON_EXIST_LIKE(HttpStatus.BAD_REQUEST, "좋아요 내역이 존재하지 않습니다.");
 
     private final HttpStatus status;
     private final String message;

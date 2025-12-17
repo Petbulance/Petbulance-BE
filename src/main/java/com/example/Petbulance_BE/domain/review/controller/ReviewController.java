@@ -114,4 +114,18 @@ public class ReviewController {
 
     }
 
+    @PostMapping("/{reviewId}/like")
+    public Map<String, String> reviewLike(@PathVariable("reviewId")Long reviewId){
+
+        return reviewService.reviewLikeProcess(reviewId);
+
+    }
+
+    @DeleteMapping("/{reviewId}/like")
+    public Map<String, String> reviewLikeCancel(@PathVariable("reviewId")Long reviewId){
+
+        return reviewService.reviewLikeCancelProcess(reviewId);
+
+    }
+
 }

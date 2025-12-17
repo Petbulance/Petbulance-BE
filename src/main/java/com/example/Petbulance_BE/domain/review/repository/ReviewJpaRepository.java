@@ -146,4 +146,5 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
             order by r.id DESC 
             """)
     List<MyReviewGetDao> findByUserIdAndCursorId(@Param("user") Users user, @Param("cursorId") Long cursorId, Pageable pageable);
+
 }
