@@ -2,12 +2,16 @@ package com.example.Petbulance_BE.domain.review.repository;
 
 import com.example.Petbulance_BE.domain.review.dto.req.FilterReqDto;
 import com.example.Petbulance_BE.domain.review.dto.res.FilterResDto;
+import com.example.Petbulance_BE.domain.review.entity.QUserReview;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.type.AnimalType;
 import com.example.Petbulance_BE.global.util.UserUtil;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberPath;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -43,7 +47,8 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                                 userReview.treatmentService.as("treatmentService"),
                                 userReview.detailAnimalType.as("detailAnimalType"),
                                 userReview.reviewContent.as("reviewContent"),
-                                userReview.overallRating.as("totalRating")
+                                userReview.overallRating.as("totalRating"),
+                                countTotalReview(hospital.id)
                             )
             )
                     .from(userReview)
@@ -91,6 +96,19 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
     public BooleanExpression checkUser(Users user){
 
         return userReview.user.eq(user);
+
+    }
+    //Q타입 HospitalId를 받는 NumberPath
+    private Expression<Long> countTotalReview(NumberPath<Long> hospitalIdPath){
+
+        return Expressions.asNumber(
+                JPAExpressions.select(userReview.count())
+                        .from(userReview)
+                        .where(userReview.hospital.id.eq(hospitalIdPath))
+
+        )
+                .longValue()
+                .as("totalReviewCount");
 
     }
 
