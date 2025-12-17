@@ -12,8 +12,10 @@ import com.example.Petbulance_BE.domain.review.dto.req.ReviewSaveReqDto;
 import com.example.Petbulance_BE.domain.review.dto.res.*;
 import com.example.Petbulance_BE.domain.review.entity.UserReview;
 import com.example.Petbulance_BE.domain.review.entity.UserReviewImage;
+import com.example.Petbulance_BE.domain.review.entity.UserReviewLike;
 import com.example.Petbulance_BE.domain.review.repository.ReviewImageJpaRepository;
 import com.example.Petbulance_BE.domain.review.repository.ReviewJpaRepository;
+import com.example.Petbulance_BE.domain.review.repository.ReviewLikeJpaRepository;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
@@ -21,6 +23,7 @@ import com.example.Petbulance_BE.global.common.s3.S3Service;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -44,35 +47,29 @@ import java.util.*;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ReviewService {
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
-    private final String genimiApiUrl;
-    private final String geoApiUrl;
-    private final String geoKey;
     private final HospitalJpaRepository hospitalJpaRepository;
     private final ReviewJpaRepository reviewJpaRepository;
     private final UserUtil userUtil;
     private final JWTUtil jwtUtil;
     private final S3Service s3Service;
     private final ReviewImageJpaRepository reviewImageJpaRepository;
+    private final ReviewLikeJpaRepository reviewLikeJpaRepository;
 
-    public ReviewService(WebClient webClient, ObjectMapper objectMapper, @Value("${gemini.api.url-with-key}") String genimiApiUrl,
-                         @Value("${geo.api.uri}") String geoApiUrl, @Value("${geo.api.key}") String geoKey, HospitalJpaRepository hospitalJpaRepository
-            , ReviewJpaRepository reviewJpaRepository, UserUtil userUtil, JWTUtil jWTUtil, S3Service s3Service, ReviewImageJpaRepository reviewImageJpaRepository) {
-        this.webClient = webClient;
-        this.objectMapper = objectMapper;
-        this.genimiApiUrl = genimiApiUrl;
-        this.geoApiUrl = geoApiUrl;
-        this.geoKey = geoKey;
-        this.hospitalJpaRepository = hospitalJpaRepository;
-        this.reviewJpaRepository = reviewJpaRepository;
-        this.userUtil = userUtil;
-        this.jwtUtil = jWTUtil;
-        this.s3Service = s3Service;
-        this.reviewImageJpaRepository = reviewImageJpaRepository;
-    }
+    @Value("${gemini.api.url-with-key}")
+    private String genimiApiUrl;
+
+    @Value("${geo.api.uri}")
+    private String geoApiUrl;
+
+    @Value("${geo.api.key}")
+    private String geoKey;
+
+
     @DailyLimit
     public Mono<ReceiptResDto> receiptExtractProcess(MultipartFile image) {
 
@@ -516,6 +513,41 @@ public class ReviewService {
 
             review.get().setDeleted(true);
         }
+
+    }
+
+    @Transactional
+    public Map<String, String> reviewLikeProcess(Long reviewId) {
+
+        Users currentUser = userUtil.getCurrentUser();
+        Boolean exists = reviewLikeJpaRepository.existsByUserAndReviewId(currentUser, reviewId);
+        log.info("{}", exists);
+        UserReview reviewProxy = reviewJpaRepository.getReferenceById(reviewId);
+
+        if(exists){
+            throw new CustomException(ErrorCode.ALREADY_LIKED_REVIEW);
+        }
+
+        UserReviewLike userReviewLike = new UserReviewLike();
+        userReviewLike.setUser(currentUser);
+        userReviewLike.setReview(reviewProxy);
+        reviewLikeJpaRepository.save(userReviewLike);
+
+        return Map.of("message", "success");
+    }
+
+    public Map<String, String> reviewLikeCancelProcess(Long reviewId) {
+
+        Users currentUser = userUtil.getCurrentUser();
+        Optional<UserReviewLike> byUserAndReviewId = reviewLikeJpaRepository.findByUserAndReviewId(currentUser, reviewId);
+
+        if(byUserAndReviewId.isEmpty()){
+            throw new CustomException(ErrorCode.NON_EXIST_LIKE);
+        }
+
+        reviewLikeJpaRepository.delete(byUserAndReviewId.get());
+
+        return Map.of("message", "success");
 
     }
 }
