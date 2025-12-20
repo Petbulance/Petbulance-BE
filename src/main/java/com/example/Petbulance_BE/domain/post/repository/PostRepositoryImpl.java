@@ -136,12 +136,17 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     }
 
     @Override
-    public Slice<PostListResDto> findPostList(Long boardId, Category c, String sort, Long lastPostId, Integer pageSize) {
+    public Slice<PostListResDto> findPostList(
+            Long boardId,
+            Category c,
+            String sort,
+            Long lastPostId,
+            Integer pageSize
+    ) {
         QPost p = QPost.post;
         QPostLikeCount like = QPostLikeCount.postLikeCount1;
         QPostCommentCount comment = QPostCommentCount.postCommentCount1;
         QBoard b = QBoard.board;
-        QUsers u = QUsers.users;
         QPostImage img = QPostImage.postImage;
 
         JPAQuery<PostListResDto> query = queryFactory
@@ -151,25 +156,28 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         b.id,
                         b.nameKr,
                         p.category.stringValue(),
-                        u.profileImage,
-                        u.nickname,
-                        Expressions.constant(p.createdAt),
+                        p.createdAt.stringValue(),
                         img.imageUrl,
                         p.imageNum.longValue(),
                         p.title,
                         p.content,
-                        like.postLikeCount.coalesce(0L), // postLikeCount가 null이면 0으로 대체
+                        like.postLikeCount.coalesce(0L),
                         comment.postCommentCount.coalesce(0L),
-                        Expressions.constant(0L), // 서비스에서 매핑
-                        Expressions.constant(false) // 서비스에서 매핑
+                        Expressions.constant(0L),
+                        Expressions.constant(false)
                 ))
                 .from(p)
                 .leftJoin(p.board, b)
-                .leftJoin(p.user, u)
                 .leftJoin(like).on(like.postId.eq(p.id))
                 .leftJoin(comment).on(comment.postId.eq(p.id))
-                .leftJoin(img).on(img.post.id.eq(p.id).and(img.thumbnail.isTrue()))
-                .where(p.deleted.isFalse(), p.hidden.isFalse());
+                .leftJoin(img).on(
+                        img.post.id.eq(p.id)
+                                .and(img.thumbnail.isTrue())
+                )
+                .where(
+                        p.deleted.isFalse(),
+                        p.hidden.isFalse()
+                );
 
         if (boardId != null) {
             query.where(p.board.id.eq(boardId));
@@ -183,11 +191,17 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             query.where(p.id.lt(lastPostId));
         }
 
-        if ("popular".equals(sort)) { // 인기순 - 좋아요순 정렬
-            query.orderBy(like.postLikeCount.desc().nullsLast(), p.createdAt.desc());
-        } else if ("comment".equals(sort)) { // 댓글순 - 댓글수 정렬
-            query.orderBy(comment.postCommentCount.desc().nullsLast(), p.createdAt.desc());
-        } else { // default: 최신순
+        if ("popular".equals(sort)) {
+            query.orderBy(
+                    like.postLikeCount.desc().nullsLast(),
+                    p.createdAt.desc()
+            );
+        } else if ("comment".equals(sort)) {
+            query.orderBy(
+                    comment.postCommentCount.desc().nullsLast(),
+                    p.createdAt.desc()
+            );
+        } else {
             query.orderBy(p.createdAt.desc());
         }
 
@@ -196,10 +210,13 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 .fetch();
 
         boolean hasNext = results.size() > pageSize;
-        if (hasNext) results.remove(pageSize);
+        if (hasNext) {
+            results.remove(pageSize);
+        }
 
         return new SliceImpl<>(results, PageRequest.of(0, pageSize), hasNext);
     }
+
 
     @Override
     public PagingPostSearchListResDto findPostSearchList(Long boardId, List<String> category, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
