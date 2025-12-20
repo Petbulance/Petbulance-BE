@@ -99,7 +99,7 @@ public class UserService {
         Optional<Users> optionalUser = userEmailsJpaRepository.findByEmailByProvider(provider, email);
 
         if(optionalUser.isPresent()) {
-            throw new CustomException(ErrorCode.ALREADY_LIKED);
+            throw new CustomException(ErrorCode.SNS_ACCOUNT_ALREADY_LINKED);
         }
 
         switch (provider) {
