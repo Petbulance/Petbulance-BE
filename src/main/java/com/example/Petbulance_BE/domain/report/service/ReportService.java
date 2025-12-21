@@ -4,14 +4,16 @@ import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
+import com.example.Petbulance_BE.domain.report.dto.request.ReportActionReqDto;
 import com.example.Petbulance_BE.domain.report.dto.request.ReportCreateReqDto;
+import com.example.Petbulance_BE.domain.report.dto.response.PagingReportListResDto;
+import com.example.Petbulance_BE.domain.report.dto.response.ReportActionResDto;
 import com.example.Petbulance_BE.domain.report.dto.response.ReportCreateResDto;
 import com.example.Petbulance_BE.domain.report.entity.CommentReport;
 import com.example.Petbulance_BE.domain.report.entity.PostReport;
 import com.example.Petbulance_BE.domain.report.entity.Report;
 import com.example.Petbulance_BE.domain.report.entity.UserReport;
 import com.example.Petbulance_BE.domain.report.repository.ReportRepository;
-import com.example.Petbulance_BE.domain.report.type.ReportStatus;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -20,6 +22,7 @@ import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -70,7 +73,7 @@ public class ReportService {
                 .reportReason(req.getReportReason())
                 .reporter(reporter)
                 .targetUser(post.getUser()) // 게시글 작성자가 신고 대상자가 됨
-                .post(post)
+                .postId(post.getId())
                 .build();
     }
 
@@ -79,7 +82,7 @@ public class ReportService {
                 .reportReason(req.getReportReason())
                 .reporter(reporter)
                 .targetUser(comment.getUser())
-                .postComment(comment)
+                .commentId(comment.getId())
                 .build();
     }
 
@@ -89,5 +92,15 @@ public class ReportService {
                 .reporter(reporter)
                 .targetUser(targetUser)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public PagingReportListResDto reportList(Long lastReportId, Integer pageSize) {
+        int size = (pageSize == null || pageSize <= 0) ? 20 : pageSize;
+        return reportRepository.reportList(lastReportId, size);
+    }
+
+    public ReportActionResDto processReport(Long reportId, ReportActionReqDto reqDto) {
+        return null;
     }
 }

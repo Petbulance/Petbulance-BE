@@ -49,6 +49,12 @@ public abstract class Report {
 
     private LocalDateTime processedAt;
 
+    @Column(name = "post_id")
+    private Long postId;
+
+    @Column(name = "comment_id")
+    private Long commentId;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
