@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -87,5 +88,19 @@ public class QnaService {
         if(!qna.getUser().equals(currentUser)) {
             throw new CustomException(ErrorCode.FORBIDDEN_QNA_ACCESS);
         }
+    }
+
+    public PagingAdminQnaListResDto adminQnaList(Long lastQnaId, Pageable pageable) {
+        int pageSize = pageable.getPageSize();
+
+        List<AdminQnaListResDto> rows =
+                qnaRepository.findAdminQnaList(lastQnaId, pageSize + 1);
+
+        boolean hasNext = rows.size() > pageSize;
+        if (hasNext) {
+            rows = rows.subList(0, pageSize);
+        }
+
+        return new PagingAdminQnaListResDto(rows, hasNext);
     }
 }
