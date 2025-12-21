@@ -1,11 +1,14 @@
 package com.example.Petbulance_BE.domain.notice.repository;
 
+import com.example.Petbulance_BE.domain.notice.dto.response.AdminNoticeListResDto;
 import com.example.Petbulance_BE.domain.notice.dto.response.NoticeListResDto;
+import com.example.Petbulance_BE.domain.notice.dto.response.PagingAdminNoticeListResDto;
 import com.example.Petbulance_BE.domain.notice.dto.response.PagingNoticeListResDto;
 import com.example.Petbulance_BE.domain.notice.entity.Notice;
 import com.example.Petbulance_BE.domain.notice.entity.QNotice;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

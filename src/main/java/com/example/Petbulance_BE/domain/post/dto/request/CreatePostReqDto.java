@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.post.dto.request;
 
+import com.example.Petbulance_BE.domain.post.type.Category;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -16,7 +17,7 @@ public class CreatePostReqDto {
     private Long boardId;
 
     @NotBlank(message = "카테고리(category)는 필수입니다.")
-    private String category;
+    private Category category;
 
     @NotBlank(message = "게시글 제목(title)은 필수입니다.")
     private String title;

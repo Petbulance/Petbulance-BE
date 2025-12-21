@@ -1,5 +1,7 @@
 package com.example.Petbulance_BE.domain.inquiry.dto.request;
 
+import com.example.Petbulance_BE.domain.inquiry.type.InquiryType;
+import com.example.Petbulance_BE.domain.inquiry.type.InterestType;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -15,7 +17,7 @@ import lombok.NoArgsConstructor;
 public class CreateInquiryReqDto {
 
     @NotNull(message = "문의 유형(type)은 필수입니다.")
-    private String type;
+    private InquiryType type;
 
     @NotBlank(message = "회사명(companyName)은 비워둘 수 없습니다.")
     private String companyName;
@@ -35,7 +37,7 @@ public class CreateInquiryReqDto {
     private String email;
 
     @NotNull(message = "관심유형(interestType)은 필수입니다.")
-    private String interestType;
+    private InterestType interestType;
 
     @NotBlank(message = "문의 내용(content)은 비워둘 수 없습니다.")
     private String content;

@@ -56,9 +56,6 @@ public class PostService {
     )
     @Transactional
     public CreatePostResDto createPost(CreatePostReqDto dto) {
-        if (dto.getTitle().isBlank() || dto.getContent().isBlank()) {
-            throw new CustomException(ErrorCode.EMPTY_TITLE_OR_CONTENT);
-        }
         if (dto.getImageUrls() != null && dto.getImageUrls().size() > 10) {
             throw new CustomException(ErrorCode.EXCEEDED_MAX_IMAGE_COUNT);
         }
@@ -66,13 +63,11 @@ public class PostService {
         Board board = boardRepository.findById(dto.getBoardId())
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_BOARD_OR_CATEGORY));
 
-        Category category = Category.fromString(dto.getCategory()); // string -> Category
-
         Post savedPost = postRepository.save(
                 Post.builder()
                 .board(board)
                 .user(UserUtil.getCurrentUser())
-                .category(category)
+                .category(dto.getCategory())
                 .title(dto.getTitle())
                 .content(dto.getContent())
                 .hidden(false)
@@ -108,20 +103,15 @@ public class PostService {
             throw new CustomException(ErrorCode.FORBIDDEN_POST_ACCESS);
         }
 
-        if (dto.getTitle().isBlank() || dto.getContent().isBlank()) {
-            throw new CustomException(ErrorCode.EMPTY_TITLE_OR_CONTENT);
-        }
         if (dto.getImagesToKeepOrAdd() != null && dto.getImagesToKeepOrAdd().size() > 10) {
             throw new CustomException(ErrorCode.EXCEEDED_MAX_IMAGE_COUNT);
         }
-
-        Category category = Category.fromString(dto.getCategory());
 
         // 이미지 업데이트
         updatePostImages(post, dto);
 
         // 게시글 본문 수정
-        post.update(dto.getTitle(), dto.getContent(), category, dto.getImagesToKeepOrAdd().size());
+        post.update(dto.getTitle(), dto.getContent(), dto.getCategory(), dto.getImagesToKeepOrAdd().size());
 
         // 상세 조회 캐시 무효화
         String cacheKey = String.format(CACHE_KEY_FORMAT, postId);

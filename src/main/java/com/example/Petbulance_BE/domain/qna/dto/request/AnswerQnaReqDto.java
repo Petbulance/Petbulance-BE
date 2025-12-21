@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AnswerQnaReqDto {
-    @NotBlank
+    @NotBlank(message = "내용(content)은 비워둘 수 없습니다.")
     private String content;
 }

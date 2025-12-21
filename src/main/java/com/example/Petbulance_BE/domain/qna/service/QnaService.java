@@ -10,6 +10,7 @@ import com.example.Petbulance_BE.domain.qna.type.QnaStatus;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.common.type.Role;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -86,18 +87,31 @@ public class QnaService {
     }
 
     private void verifyQnaUer(Qna qna, Users currentUser) {
+        // 관리자면 무조건 허용
+        if (currentUser.getRole() == Role.ROLE_ADMIN) {
+            return;
+        }
+
         if(!qna.getUser().equals(currentUser)) {
             throw new CustomException(ErrorCode.FORBIDDEN_QNA_ACCESS);
         }
     }
 
+    @Transactional(readOnly = true)
     public PagingAdminQnaListResDto adminQnaList(Long lastQnaId, Pageable pageable, String keyword) {
         return qnaRepository.adminQnaList(lastQnaId, pageable, keyword);
     }
 
+    @Transactional
     public AnswerQnaResDto answerQna(Long qnaId, @Valid AnswerQnaReqDto reqDto) {
         Qna qna = getQna(qnaId);
-        qna.answer(reqDto.getContent());
+
+        if (qna.getStatus() == QnaStatus.ANSWER_WAITING) {
+            qna.answer(reqDto.getContent());
+        } else {
+            throw new CustomException(ErrorCode.ALREADY_WRITTEN_ANSWER);
+        }
+
         return new AnswerQnaResDto("답변이 정상적으로 작성되었습니다.");
     }
 }
