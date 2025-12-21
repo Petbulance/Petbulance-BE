@@ -1,15 +1,15 @@
 package com.example.Petbulance_BE.domain.qna.controller;
 
+import com.example.Petbulance_BE.domain.qna.dto.request.AnswerQnaReqDto;
+import com.example.Petbulance_BE.domain.qna.dto.response.AnswerQnaResDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.PagingAdminQnaListResDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.PagingQnaListResDto;
 import com.example.Petbulance_BE.domain.qna.service.QnaService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,5 +22,10 @@ public class AdminQnaController {
                                                  @RequestParam(defaultValue = "10") Integer pageSize) {
         Pageable pageable = PageRequest.of(0, pageSize);
         return qnaService.adminQnaList(lastQnaId, pageable);
+    }
+
+    @PatchMapping("/{qnaId}")
+    public AnswerQnaResDto answerQna(@PathVariable("qnaId") Long qnaId, @RequestBody @Valid AnswerQnaReqDto reqDto) {
+        return qnaService.answerQna(qnaId, reqDto);
     }
 }

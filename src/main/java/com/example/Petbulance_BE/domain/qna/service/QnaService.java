@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.qna.service;
 
+import com.example.Petbulance_BE.domain.qna.dto.request.AnswerQnaReqDto;
 import com.example.Petbulance_BE.domain.qna.dto.request.CreateQnaReqDto;
 import com.example.Petbulance_BE.domain.qna.dto.request.UpdateQnaReqDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.*;
@@ -102,5 +103,11 @@ public class QnaService {
         }
 
         return new PagingAdminQnaListResDto(rows, hasNext);
+    }
+
+    public AnswerQnaResDto answerQna(Long qnaId, @Valid AnswerQnaReqDto reqDto) {
+        Qna qna = getQna(qnaId);
+        qna.answer(reqDto.getContent());
+        return new AnswerQnaResDto("답변이 정상적으로 작성되었습니다.");
     }
 }
