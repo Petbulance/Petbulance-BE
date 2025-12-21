@@ -10,6 +10,7 @@ import com.example.Petbulance_BE.domain.report.type.ReportType;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -34,17 +35,17 @@ public class ReportRepositoryImpl implements ReportRepositoryCustom {
                         ReportListResDto.class,
                         r.reportId,
 
-                        /* 신고 유형 */
+                        // 신고 유형 (String)
                         new CaseBuilder()
-                                .when(r.postId.isNotNull()).then(ReportType.POST)
-                                .when(r.commentId.isNotNull()).then(ReportType.COMMENT)
-                                .otherwise(ReportType.USER),
+                                .when(r.postId.isNotNull()).then(ReportType.POST.name())
+                                .when(r.commentId.isNotNull()).then(ReportType.COMMENT.name())
+                                .otherwise(ReportType.USER.name()),
 
-                        /* content */
+                        // content
                         new CaseBuilder()
                                 .when(r.postId.isNotNull()).then(p.content)
                                 .when(r.commentId.isNotNull()).then(c.content)
-                                .otherwise((String) null),
+                                .otherwise(Expressions.nullExpression()),
 
                         r.postId,
                         r.commentId,

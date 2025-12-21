@@ -27,13 +27,13 @@ public class ReportListResDto {
     private ReportActionType actionType;
     private String createdAt;
 
-    public ReportListResDto(Long reportId, ReportType reportType, String content,
+    public ReportListResDto(Long reportId, String reportType, String content,
                             Long postId, Long commentId, String reportReason,
                             String reporterNickname, String targetUserNickname,
                             ReportStatus status, ReportActionType actionType,
                             LocalDateTime createdAt) {
         this.reportId = reportId;
-        this.reportType = reportType;
+        this.reportType = ReportType.valueOf(reportType);;
         this.content = content;
         this.postId = postId;
         this.commentId = commentId;
