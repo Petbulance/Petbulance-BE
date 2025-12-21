@@ -59,7 +59,7 @@ public class NoticeService {
     }
 
     public PagingAdminNoticeListResDto adminNoticeList(Long lastNoticeId, Pageable pageable) {
-        return null;
+        return noticeRepository.adminNoticeList(lastNoticeId, pageable);
     }
 
     public CreateNoticeResDto createNotice(@Valid CreateNoticeReqDto reqDto) {

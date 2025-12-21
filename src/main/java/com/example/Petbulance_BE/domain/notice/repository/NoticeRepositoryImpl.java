@@ -1,11 +1,14 @@
 package com.example.Petbulance_BE.domain.notice.repository;
 
+import com.example.Petbulance_BE.domain.notice.dto.response.AdminNoticeListResDto;
 import com.example.Petbulance_BE.domain.notice.dto.response.NoticeListResDto;
+import com.example.Petbulance_BE.domain.notice.dto.response.PagingAdminNoticeListResDto;
 import com.example.Petbulance_BE.domain.notice.dto.response.PagingNoticeListResDto;
 import com.example.Petbulance_BE.domain.notice.entity.Notice;
 import com.example.Petbulance_BE.domain.notice.entity.QNotice;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -109,6 +112,41 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
                 )
                 .orderBy(n.createdAt.asc(), n.id.asc())
                 .fetchFirst();
+    }
+
+    @Override
+    public PagingAdminNoticeListResDto adminNoticeList(Long lastNoticeId, Pageable pageable) {
+
+        QNotice notice = QNotice.notice;
+
+        int pageSize = pageable.getPageSize();
+        int limit = pageSize + 1; // hasNext 판별용
+
+        List<AdminNoticeListResDto> rows = queryFactory
+                .select(Projections.constructor(
+                        AdminNoticeListResDto.class,
+                        notice.id,
+                        notice.title,
+                        notice.noticeStatus,
+                        notice.createdAt
+                ))
+                .from(notice)
+                .where(ltNoticeId(lastNoticeId, notice))
+                .orderBy(notice.id.desc())   // 최신순
+                .limit(limit)
+                .fetch();
+
+        boolean hasNext = false;
+        if (rows.size() > pageSize) {
+            hasNext = true;
+            rows = rows.subList(0, pageSize);
+        }
+
+        return new PagingAdminNoticeListResDto(rows, hasNext);
+    }
+
+    private BooleanExpression ltNoticeId(Long lastNoticeId, QNotice notice) {
+        return lastNoticeId == null ? null : notice.id.lt(lastNoticeId);
     }
 
 }
