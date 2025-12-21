@@ -114,39 +114,4 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
                 .fetchFirst();
     }
 
-    @Override
-    public PagingAdminNoticeListResDto adminNoticeList(Long lastNoticeId, Pageable pageable) {
-
-        QNotice notice = QNotice.notice;
-
-        int pageSize = pageable.getPageSize();
-        int limit = pageSize + 1; // hasNext 판별용
-
-        List<AdminNoticeListResDto> rows = queryFactory
-                .select(Projections.constructor(
-                        AdminNoticeListResDto.class,
-                        notice.id,
-                        notice.title,
-                        notice.noticeStatus,
-                        notice.createdAt
-                ))
-                .from(notice)
-                .where(ltNoticeId(lastNoticeId, notice))
-                .orderBy(notice.id.desc())   // 최신순
-                .limit(limit)
-                .fetch();
-
-        boolean hasNext = false;
-        if (rows.size() > pageSize) {
-            hasNext = true;
-            rows = rows.subList(0, pageSize);
-        }
-
-        return new PagingAdminNoticeListResDto(rows, hasNext);
-    }
-
-    private BooleanExpression ltNoticeId(Long lastNoticeId, QNotice notice) {
-        return lastNoticeId == null ? null : notice.id.lt(lastNoticeId);
-    }
-
 }

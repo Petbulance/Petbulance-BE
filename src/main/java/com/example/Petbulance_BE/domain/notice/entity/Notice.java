@@ -38,6 +38,7 @@ public class Notice extends BaseTimeEntity {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
+    @Builder.Default
     private List<NoticeFile> files = new ArrayList<>();
 
     public void addFile(NoticeFile file) {

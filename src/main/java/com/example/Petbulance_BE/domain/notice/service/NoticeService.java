@@ -28,7 +28,6 @@ public class NoticeService {
     private final NoticeFileRepository noticeFileRepository;
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "noticeList", key = "#lastNoticeId != null ? #lastNoticeId : 'first'")
     public PagingNoticeListResDto noticeList(Long lastNoticeId, Pageable pageable) {
 
         LocalDateTime lastCreatedAt = null;
@@ -44,7 +43,6 @@ public class NoticeService {
 
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "noticeDetail", key = "#noticeId")
     public DetailNoticeResDto detailNotice(Long noticeId) {
         Notice n = noticeRepository.findById(noticeId).orElseThrow(
                 () -> new CustomException(ErrorCode.NOTICE_NOT_FOUND)
@@ -58,22 +56,28 @@ public class NoticeService {
         return DetailNoticeResDto.from(n, files, prev, next);
     }
 
-    public PagingAdminNoticeListResDto adminNoticeList(Long lastNoticeId, Pageable pageable) {
-        return noticeRepository.adminNoticeList(lastNoticeId, pageable);
-    }
-
+    @Transactional
     public CreateNoticeResDto createNotice(@Valid CreateNoticeReqDto reqDto) {
+
         Notice notice = Notice.builder()
                 .noticeStatus(reqDto.getNoticeStatus())
                 .title(reqDto.getTitle())
                 .content(reqDto.getContent())
                 .build();
-        notice.addFile(NoticeFile.builder()
-                        .notice(notice)
-                        .fileUrl(reqDto.getFileUrl())
-                        .fileName(reqDto.getFileName())
-                        .fileType(reqDto.getFileType())
-                .build());
+
+        if (reqDto.getFileUrl() != null) {
+            NoticeFile file = NoticeFile.builder()
+                    .fileUrl(reqDto.getFileUrl())
+                    .fileName(reqDto.getFileName())
+                    .fileType(reqDto.getFileType())
+                    .build();
+
+            notice.addFile(file);
+        }
+
+        noticeRepository.save(notice);
+
         return new CreateNoticeResDto("공지사항이 정상적으로 작성되었습니다.");
     }
+
 }

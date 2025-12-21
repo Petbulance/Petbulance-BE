@@ -77,7 +77,8 @@ public enum ErrorCode {
     TOO_FAST_REQUEST(HttpStatus.BAD_REQUEST, "리뷰 작성까지는 최소 3초의 간격이 필요합니다."),
     TOO_MANY_REQUEST(HttpStatus.BAD_REQUEST, "일일 리뷰 작성 한도에 도달하였습니다."),
     ALREADY_LIKED_REVIEW(HttpStatus.BAD_REQUEST, "이미 좋아요 처리가 되어있습니다."),
-    NON_EXIST_LIKE(HttpStatus.BAD_REQUEST, "좋아요 내역이 존재하지 않습니다.");
+    NON_EXIST_LIKE(HttpStatus.BAD_REQUEST, "좋아요 내역이 존재하지 않습니다."),
+    ALREADY_WRITTEN_ANSWER(HttpStatus.BAD_REQUEST, "이미 답변이 작성된 문의 입니다." );
 
     private final HttpStatus status;
     private final String message;

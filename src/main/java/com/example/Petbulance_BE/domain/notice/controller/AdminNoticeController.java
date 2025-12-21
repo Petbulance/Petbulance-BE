@@ -19,10 +19,10 @@ public class AdminNoticeController {
     private final NoticeService noticeService;
 
     @GetMapping
-    public PagingAdminNoticeListResDto adminNoticeList(@RequestParam(required = false) Long lastNoticeId,
+    public PagingNoticeListResDto adminNoticeList(@RequestParam(required = false) Long lastNoticeId,
                                                        @RequestParam(defaultValue = "10") int pageSize) {
         Pageable pageable = PageRequest.of(0, pageSize);
-        return noticeService.adminNoticeList(lastNoticeId, pageable);
+        return noticeService.noticeList(lastNoticeId, pageable);
     }
 
     @PostMapping

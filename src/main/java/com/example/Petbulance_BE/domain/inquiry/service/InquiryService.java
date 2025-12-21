@@ -7,6 +7,7 @@ import com.example.Petbulance_BE.domain.inquiry.dto.request.UpdateInquiryReqDto;
 import com.example.Petbulance_BE.domain.inquiry.dto.response.*;
 import com.example.Petbulance_BE.domain.inquiry.entity.Inquiry;
 import com.example.Petbulance_BE.domain.inquiry.repository.InquiryRepository;
+import com.example.Petbulance_BE.domain.inquiry.type.InquiryAnswerType;
 import com.example.Petbulance_BE.domain.inquiry.type.InquiryType;
 import com.example.Petbulance_BE.domain.inquiry.type.InterestType;
 import com.example.Petbulance_BE.domain.user.entity.Users;
@@ -104,6 +105,7 @@ public class InquiryService {
         return inquiryRepository.findInquiryList(pageable, lastInquiryId, UserUtil.getCurrentUser());
     }
 
+    @Transactional(readOnly = true)
     public DetailInquiryResDto detailInquiry(Long inquiryId) {
         Inquiry inquiry = getInquiry(inquiryId);
 
@@ -115,13 +117,21 @@ public class InquiryService {
         return DetailInquiryResDto.from(inquiry);
     }
 
+    @Transactional(readOnly = true)
     public PagingAdminInquiryListResDto adminInquiryList(Pageable pageable, Long lastInquiryId, String keyword) {
         return inquiryRepository.findAdminInquiryList(pageable, lastInquiryId, keyword);
     }
 
+    @Transactional
     public AnswerInquiryResDto answerInquiry(Long inquiryId, AnswerInquiryReqDto reqDto) {
         Inquiry inquiry = getInquiry(inquiryId);
-        inquiry.answer(reqDto.getContent());
+
+        if(inquiry.getInquiryAnswerType() == InquiryAnswerType.ANSWER_WAITING) {
+            inquiry.answer(reqDto.getContent());
+        } else {
+            throw new CustomException(ErrorCode.ALREADY_WRITTEN_ANSWER);
+        }
+
 
         return new AnswerInquiryResDto("답변이 정상적으로 작성되었습니다.");
     }
