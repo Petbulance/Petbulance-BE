@@ -115,4 +115,8 @@ public class InquiryService {
 
         return DetailInquiryResDto.from(inquiry);
     }
+
+    public PagingAdminInquiryListResDto adminInquiryList(Pageable pageable, Long lastInquiryId) {
+        return inquiryRepository.findAdminInquiryList(pageable, lastInquiryId);
+    }
 }

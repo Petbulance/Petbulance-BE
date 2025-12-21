@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.inquiry.entity;
 
 import com.example.Petbulance_BE.domain.inquiry.dto.request.UpdateInquiryReqDto;
+import com.example.Petbulance_BE.domain.inquiry.type.InquiryAnswerType;
 import com.example.Petbulance_BE.domain.inquiry.type.InquiryType;
 import com.example.Petbulance_BE.domain.inquiry.type.InterestType;
 import com.example.Petbulance_BE.domain.user.entity.Users;
@@ -11,6 +12,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "inquiries")
@@ -56,6 +59,17 @@ public class Inquiry extends BaseTimeEntity{
 
     @Column(nullable = false)
     private Boolean privacyConsent;
+
+    @Column(columnDefinition = "TEXT")
+    @Builder.Default
+    private String answerContent = "";
+
+    @Builder.Default
+    private LocalDateTime answeredAt = null;
+
+    @Enumerated(EnumType.STRING)
+    private InquiryAnswerType inquiryAnswerType;
+
 
     public void update(@Valid UpdateInquiryReqDto dto, InquiryType inquiryType, InterestType interestType) {
         this.type = inquiryType;

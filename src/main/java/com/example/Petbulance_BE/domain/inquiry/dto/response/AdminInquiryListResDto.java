@@ -9,22 +9,22 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
-public class InquiryListResDto {
-    private Long id;
-    private String content;
-    private String type;
-    private String interestType;
+@NoArgsConstructor
+public class AdminInquiryListResDto {
+    private Long inquiryId;
     private InquiryAnswerType inquiryAnswerType;
+    private String companyName;
+    private String managerName;
+    private String content;
     private String createdAt;
 
-    public InquiryListResDto(Long id, String content, String type, String interestType, InquiryAnswerType inquiryAnswerType, LocalDateTime createdAt) {
-        this.id = id;
-        this.content = content;
-        this.type = type;
-        this.interestType = interestType;
+    public AdminInquiryListResDto(Long inquiryId, InquiryAnswerType inquiryAnswerType, String companyName, String managerName, String content, LocalDateTime createdAt) {
+        this.inquiryId = inquiryId;
         this.inquiryAnswerType = inquiryAnswerType;
+        this.companyName = companyName;
+        this.managerName = managerName;
+        this.content = content;
         this.createdAt = TimeUtil.formatCreatedAt(createdAt);
     }
 }
