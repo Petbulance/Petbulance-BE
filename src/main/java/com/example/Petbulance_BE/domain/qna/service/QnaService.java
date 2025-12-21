@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.qna.service;
 
+import com.example.Petbulance_BE.domain.qna.dto.request.AnswerQnaReqDto;
 import com.example.Petbulance_BE.domain.qna.dto.request.CreateQnaReqDto;
 import com.example.Petbulance_BE.domain.qna.dto.request.UpdateQnaReqDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.*;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -87,5 +89,25 @@ public class QnaService {
         if(!qna.getUser().equals(currentUser)) {
             throw new CustomException(ErrorCode.FORBIDDEN_QNA_ACCESS);
         }
+    }
+
+    public PagingAdminQnaListResDto adminQnaList(Long lastQnaId, Pageable pageable) {
+        int pageSize = pageable.getPageSize();
+
+        List<AdminQnaListResDto> rows =
+                qnaRepository.findAdminQnaList(lastQnaId, pageSize + 1);
+
+        boolean hasNext = rows.size() > pageSize;
+        if (hasNext) {
+            rows = rows.subList(0, pageSize);
+        }
+
+        return new PagingAdminQnaListResDto(rows, hasNext);
+    }
+
+    public AnswerQnaResDto answerQna(Long qnaId, @Valid AnswerQnaReqDto reqDto) {
+        Qna qna = getQna(qnaId);
+        qna.answer(reqDto.getContent());
+        return new AnswerQnaResDto("답변이 정상적으로 작성되었습니다.");
     }
 }

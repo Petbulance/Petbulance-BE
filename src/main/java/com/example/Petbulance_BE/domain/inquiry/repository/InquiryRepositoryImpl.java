@@ -1,6 +1,8 @@
 package com.example.Petbulance_BE.domain.inquiry.repository;
 
+import com.example.Petbulance_BE.domain.inquiry.dto.response.AdminInquiryListResDto;
 import com.example.Petbulance_BE.domain.inquiry.dto.response.InquiryListResDto;
+import com.example.Petbulance_BE.domain.inquiry.dto.response.PagingAdminInquiryListResDto;
 import com.example.Petbulance_BE.domain.inquiry.dto.response.PagingInquiryListResDto;
 import com.example.Petbulance_BE.domain.inquiry.entity.QInquiry;
 import com.example.Petbulance_BE.domain.user.entity.Users;
@@ -30,6 +32,7 @@ public class InquiryRepositoryImpl implements InquiryRepositoryCustom{
                         inquiry.content,
                         inquiry.type.stringValue(),
                         inquiry.interestType.stringValue(),
+                        inquiry.inquiryAnswerType,
                         inquiry.createdAt
                 ))
                 .from(inquiry)
@@ -46,4 +49,36 @@ public class InquiryRepositoryImpl implements InquiryRepositoryCustom{
         }
         return new PagingInquiryListResDto(results, hasNext);
     }
+
+    @Override
+    public PagingAdminInquiryListResDto findAdminInquiryList(Pageable pageable, Long lastInquiryId) {
+
+        QInquiry inquiry = QInquiry.inquiry;
+        int limit = pageable.getPageSize() + 1;
+
+        List<AdminInquiryListResDto> results = queryFactory
+                .select(Projections.constructor(
+                        AdminInquiryListResDto.class,
+                        inquiry.id,
+                        inquiry.inquiryAnswerType,
+                        inquiry.companyName,
+                        inquiry.managerName,
+                        inquiry.content,
+                        inquiry.createdAt
+                ))
+                .from(inquiry)
+                .where(lastInquiryId != null ? inquiry.id.lt(lastInquiryId) : null)
+                .orderBy(inquiry.id.desc())
+                .limit(limit)
+                .fetch();
+
+        boolean hasNext = false;
+        if (results.size() > pageable.getPageSize()) {
+            hasNext = true;
+            results = results.subList(0, pageable.getPageSize());
+        }
+
+        return new PagingAdminInquiryListResDto(results, hasNext);
+    }
+
 }

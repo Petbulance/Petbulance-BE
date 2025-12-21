@@ -1,5 +1,7 @@
 package com.example.Petbulance_BE.domain.inquiry.service;
 
+import com.example.Petbulance_BE.domain.inquiry.controller.AnswerInquiryResDto;
+import com.example.Petbulance_BE.domain.inquiry.dto.request.AnswerInquiryReqDto;
 import com.example.Petbulance_BE.domain.inquiry.dto.request.CreateInquiryReqDto;
 import com.example.Petbulance_BE.domain.inquiry.dto.request.UpdateInquiryReqDto;
 import com.example.Petbulance_BE.domain.inquiry.dto.response.*;
@@ -114,5 +116,16 @@ public class InquiryService {
         }
 
         return DetailInquiryResDto.from(inquiry);
+    }
+
+    public PagingAdminInquiryListResDto adminInquiryList(Pageable pageable, Long lastInquiryId) {
+        return inquiryRepository.findAdminInquiryList(pageable, lastInquiryId);
+    }
+
+    public AnswerInquiryResDto answerInquiry(Long inquiryId, AnswerInquiryReqDto reqDto) {
+        Inquiry inquiry = getInquiry(inquiryId);
+        inquiry.answer(reqDto.getContent());
+
+        return new AnswerInquiryResDto("답변이 정상적으로 작성되었습니다.");
     }
 }
