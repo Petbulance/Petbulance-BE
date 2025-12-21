@@ -7,6 +7,7 @@ import com.example.Petbulance_BE.domain.inquiry.dto.response.PagingInquiryListRe
 import com.example.Petbulance_BE.domain.inquiry.entity.QInquiry;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -51,7 +52,11 @@ public class InquiryRepositoryImpl implements InquiryRepositoryCustom{
     }
 
     @Override
-    public PagingAdminInquiryListResDto findAdminInquiryList(Pageable pageable, Long lastInquiryId) {
+    public PagingAdminInquiryListResDto findAdminInquiryList(
+            Pageable pageable,
+            Long lastInquiryId,
+            String keyword
+    ) {
 
         QInquiry inquiry = QInquiry.inquiry;
         int limit = pageable.getPageSize() + 1;
@@ -67,18 +72,33 @@ public class InquiryRepositoryImpl implements InquiryRepositoryCustom{
                         inquiry.createdAt
                 ))
                 .from(inquiry)
-                .where(lastInquiryId != null ? inquiry.id.lt(lastInquiryId) : null)
+                .where(
+                        ltInquiryId(lastInquiryId, inquiry),
+                        containsKeyword(keyword, inquiry)
+                )
                 .orderBy(inquiry.id.desc())
                 .limit(limit)
                 .fetch();
 
-        boolean hasNext = false;
-        if (results.size() > pageable.getPageSize()) {
-            hasNext = true;
+        boolean hasNext = results.size() > pageable.getPageSize();
+        if (hasNext) {
             results = results.subList(0, pageable.getPageSize());
         }
 
         return new PagingAdminInquiryListResDto(results, hasNext);
     }
+
+    private BooleanExpression ltInquiryId(Long lastInquiryId, QInquiry inquiry) {
+        return lastInquiryId == null ? null : inquiry.id.lt(lastInquiryId);
+    }
+
+    private BooleanExpression containsKeyword(String keyword, QInquiry inquiry) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return null;
+        }
+        return inquiry.content.contains(keyword);
+    }
+
+
 
 }

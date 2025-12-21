@@ -7,6 +7,6 @@ import org.springframework.data.domain.Pageable;
 
 public interface InquiryRepositoryCustom {
     PagingInquiryListResDto findInquiryList(Pageable pageable, Long lastInquiryId, Users currentUser);
-    PagingAdminInquiryListResDto findAdminInquiryList(Pageable pageable, Long lastInquiryId);
+    PagingAdminInquiryListResDto findAdminInquiryList(Pageable pageable, Long lastInquiryId, String keyword);
 }
 

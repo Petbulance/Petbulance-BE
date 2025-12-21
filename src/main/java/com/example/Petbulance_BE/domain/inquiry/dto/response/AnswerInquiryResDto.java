@@ -1,4 +1,4 @@
-package com.example.Petbulance_BE.domain.inquiry.controller;
+package com.example.Petbulance_BE.domain.inquiry.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

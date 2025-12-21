@@ -19,9 +19,10 @@ public class AdminQnaController {
 
     @GetMapping
     public PagingAdminQnaListResDto adminQnaList(@RequestParam(required = false) Long lastQnaId,
-                                                 @RequestParam(defaultValue = "10") Integer pageSize) {
+                                                 @RequestParam(defaultValue = "10") Integer pageSize,
+                                                 @RequestParam(required = false) String keyword) {
         Pageable pageable = PageRequest.of(0, pageSize);
-        return qnaService.adminQnaList(lastQnaId, pageable);
+        return qnaService.adminQnaList(lastQnaId, pageable, keyword);
     }
 
     @PatchMapping("/{qnaId}")

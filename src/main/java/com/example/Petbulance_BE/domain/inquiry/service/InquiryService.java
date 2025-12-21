@@ -1,6 +1,6 @@
 package com.example.Petbulance_BE.domain.inquiry.service;
 
-import com.example.Petbulance_BE.domain.inquiry.controller.AnswerInquiryResDto;
+import com.example.Petbulance_BE.domain.inquiry.dto.response.AnswerInquiryResDto;
 import com.example.Petbulance_BE.domain.inquiry.dto.request.AnswerInquiryReqDto;
 import com.example.Petbulance_BE.domain.inquiry.dto.request.CreateInquiryReqDto;
 import com.example.Petbulance_BE.domain.inquiry.dto.request.UpdateInquiryReqDto;
@@ -9,7 +9,6 @@ import com.example.Petbulance_BE.domain.inquiry.entity.Inquiry;
 import com.example.Petbulance_BE.domain.inquiry.repository.InquiryRepository;
 import com.example.Petbulance_BE.domain.inquiry.type.InquiryType;
 import com.example.Petbulance_BE.domain.inquiry.type.InterestType;
-import com.example.Petbulance_BE.domain.notice.dto.response.PagingNoticeListResDto;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
@@ -19,8 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -118,8 +115,8 @@ public class InquiryService {
         return DetailInquiryResDto.from(inquiry);
     }
 
-    public PagingAdminInquiryListResDto adminInquiryList(Pageable pageable, Long lastInquiryId) {
-        return inquiryRepository.findAdminInquiryList(pageable, lastInquiryId);
+    public PagingAdminInquiryListResDto adminInquiryList(Pageable pageable, Long lastInquiryId, String keyword) {
+        return inquiryRepository.findAdminInquiryList(pageable, lastInquiryId, keyword);
     }
 
     public AnswerInquiryResDto answerInquiry(Long inquiryId, AnswerInquiryReqDto reqDto) {
