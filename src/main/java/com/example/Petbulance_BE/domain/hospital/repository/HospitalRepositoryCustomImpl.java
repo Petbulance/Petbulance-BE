@@ -79,6 +79,17 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         NumberExpression<Double> safeDistance =
                 doubleNumberExpression != null ? doubleNumberExpression.coalesce(0.0) : Expressions.asNumber(0.0);
 
+        NumberExpression<Double> ratingSub = Expressions.asNumber(
+                JPAExpressions.select(userReview.overallRating.avg())
+                        .from(userReview)
+                        .where(userReview.hospital.eq(hospital))
+        ).doubleValue().coalesce(0.0);
+
+        NumberExpression<Long> reviewCountSub = Expressions.asNumber(
+                JPAExpressions.select(userReview.count())
+                        .from(userReview)
+                        .where(userReview.hospital.eq(hospital))
+        ).longValue().coalesce(0L);
 
         JPAQuery<HospitalSearchDao> query = queryFactory.select(
                         Projections.fields(HospitalSearchDao.class,
@@ -94,8 +105,8 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                         "group_concat(DISTINCT {0})",
                                         treatmentAnimal.animaType.stringValue()
                                 ).as("treatedAnimalTypes"),
-                                userReview.id.count().as( "reviewCount"),
-                                userReview.overallRating.avg().as("rating"),
+                                reviewCountSub.as("reviewCount"),
+                                ratingSub.as("rating"),
                                 // 월요일
                                 Expressions.timeTemplate(LocalTime.class,
                                         "MAX(CASE WHEN {0} = {1} THEN {2} END)",
@@ -118,7 +129,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                         hospitalWorktime.id.dayOfWeek, "MON", hospitalWorktime.receptionDeadline
                                 ).as("monReceptionDeadline"),
                                 Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
+                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
                                         hospitalWorktime.id.dayOfWeek, "MON", hospitalWorktime.isOpen
                                 ).as("monIsOpen"),
 
@@ -144,10 +155,9 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                         hospitalWorktime.id.dayOfWeek, "TUE", hospitalWorktime.receptionDeadline
                                 ).as("tueReceptionDeadline"),
                                 Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
+                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
                                         hospitalWorktime.id.dayOfWeek, "TUE", hospitalWorktime.isOpen
                                 ).as("tueIsOpen"),
-
                                 // 수요일
                                 Expressions.timeTemplate(LocalTime.class,
                                         "MAX(CASE WHEN {0} = {1} THEN {2} END)",
@@ -170,7 +180,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                         hospitalWorktime.id.dayOfWeek, "WED", hospitalWorktime.receptionDeadline
                                 ).as("wedReceptionDeadline"),
                                 Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
+                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
                                         hospitalWorktime.id.dayOfWeek, "WED", hospitalWorktime.isOpen
                                 ).as("wedIsOpen"),
 
@@ -196,9 +206,9 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                         hospitalWorktime.id.dayOfWeek, "THU", hospitalWorktime.receptionDeadline
                                 ).as("thuReceptionDeadline"),
                                 Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "THU", hospitalWorktime.isOpen
-                                ).as("thuIsOpen"),
+                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
+                                        hospitalWorktime.id.dayOfWeek, "TUE", hospitalWorktime.isOpen
+                                ).as("tueIsOpen"),
 
                                 // 금요일
                                 Expressions.timeTemplate(LocalTime.class,
@@ -222,7 +232,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                         hospitalWorktime.id.dayOfWeek, "FRI", hospitalWorktime.receptionDeadline
                                 ).as("friReceptionDeadline"),
                                 Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
+                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
                                         hospitalWorktime.id.dayOfWeek, "FRI", hospitalWorktime.isOpen
                                 ).as("friIsOpen"),
 
@@ -248,7 +258,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                         hospitalWorktime.id.dayOfWeek, "SAT", hospitalWorktime.receptionDeadline
                                 ).as("satReceptionDeadline"),
                                 Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
+                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
                                         hospitalWorktime.id.dayOfWeek, "SAT", hospitalWorktime.isOpen
                                 ).as("satIsOpen"),
 
@@ -269,8 +279,12 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                         "MAX(CASE WHEN {0} = {1} THEN {2} END)",
                                         hospitalWorktime.id.dayOfWeek, "SUN", hospitalWorktime.breakEndTime
                                 ).as("sunBreakEndTime"),
-                                Expressions.booleanTemplate(
+                                Expressions.timeTemplate(LocalTime.class,
                                         "MAX(CASE WHEN {0} = {1} THEN {2} END)",
+                                        hospitalWorktime.id.dayOfWeek, "SUN", hospitalWorktime.receptionDeadline
+                                ).as("sunReceptionDeadline"),
+                                Expressions.booleanTemplate(
+                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
                                         hospitalWorktime.id.dayOfWeek, "SUN", hospitalWorktime.isOpen
                                 ).as("sunIsOpen")
                         )
@@ -278,14 +292,11 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                 .from(hospital)
                 .leftJoin(hospitalWorktime).on(hospital.eq(hospitalWorktime.hospital))
                 .leftJoin(treatmentAnimal).on(hospital.eq(treatmentAnimal.hospital))
-                .leftJoin(userReview).on(hospital.eq(userReview.hospital))
                 .where(likeQ(q), likeRegion(region), withinBounds(bounds), filterByAnimalArray(animalArray), openNowFilter)
                 .groupBy(hospital.id);
 
-        NumberExpression<Double> safeAvgRating = userReview.overallRating.avg().coalesce(0.0);
-
-        NumberExpression<Long> safeReviewCount = userReview.id.count().coalesce(0L);
-
+        NumberPath<Long> reviewCountPath = Expressions.numberPath(Long.class, "reviewCount");
+        NumberPath<Double> ratingPath = Expressions.numberPath(Double.class, "rating");
 
         // 정렬 조건 처리
         if ("distance".equalsIgnoreCase(dto.getSortBy())) {
@@ -302,21 +313,21 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
 
             if (dto.getCursorRating() != null && dto.getCursorId() != null) {
                 query.having(
-                        safeAvgRating.lt(dto.getCursorRating())
-                                .or(safeAvgRating.eq(dto.getCursorRating()).and(hospital.id.gt(dto.getCursorId())))
+                        ratingPath.lt(dto.getCursorRating())
+                                .or(ratingPath.eq(dto.getCursorRating()).and(hospital.id.gt(dto.getCursorId())))
                 );
             }
-            query.orderBy(safeAvgRating.desc(), hospital.id.asc());
+            query.orderBy(ratingPath.desc(), hospital.id.asc());
 
         } else if ("reviewCount".equalsIgnoreCase(dto.getSortBy())) {
 
             if (dto.getCursorReviewCount() != null && dto.getCursorId() != null) {
                 query.having(
-                        safeReviewCount.lt(dto.getCursorReviewCount())
-                                .or(safeReviewCount.eq(dto.getCursorReviewCount()).and(hospital.id.gt(dto.getCursorId())))
+                        reviewCountPath.lt(dto.getCursorReviewCount())
+                                .or(reviewCountPath.eq(dto.getCursorReviewCount()).and(hospital.id.gt(dto.getCursorId())))
                 );
             }
-            query.orderBy(safeReviewCount.desc(), hospital.id.asc());
+            query.orderBy(reviewCountPath.desc(), hospital.id.asc());
 
         } else {
             if (dto.getCursorId() != null) {
@@ -808,6 +819,5 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
             default -> "UNKNOWN";
         };
     }
-
 
 }
