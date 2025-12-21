@@ -27,9 +27,6 @@ public class InquiryService {
 
     @Transactional
     public CreateInquiryResDto createInquiry(CreateInquiryReqDto dto) {
-        InquiryType inquiryType = InquiryType.fromString(dto.getType());
-        InterestType interestType = InterestType.fromString(dto.getInterestType());
-
         // 연락처 한개 이상 입력되었는지
         if(dto.getEmail().isEmpty() && dto.getPhone().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_CONTACT_INFO);
@@ -39,13 +36,13 @@ public class InquiryService {
         inquiryRepository.save(
                 Inquiry.builder()
                         .user(currentUser)
-                        .type(inquiryType)
+                        .type(dto.getType())
                         .companyName(dto.getCompanyName())
                         .managerName(dto.getManagerName())
                         .managerPosition(dto.getManagerPosition())
                         .phone(dto.getPhone())
                         .email(dto.getEmail())
-                        .interestType(interestType)
+                        .interestType(dto.getInterestType())
                         .content(dto.getContent())
                         .privacyConsent(dto.isPrivacyConsent())
                         .build()
@@ -56,10 +53,6 @@ public class InquiryService {
 
     @Transactional
     public UpdateInquiryResDto updateInquiry(@Valid UpdateInquiryReqDto dto, Long inquiryId) {
-        // enum타입 올바른지 확인
-        InquiryType inquiryType = InquiryType.fromString(dto.getType());
-        InterestType interestType = InterestType.fromString(dto.getInterestType());
-
         // 연락처 한개 이상 입력되었는지
         if(dto.getEmail().isEmpty() && dto.getPhone().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_CONTACT_INFO);
@@ -71,7 +64,7 @@ public class InquiryService {
         if(currentUser != null) {
             verifyInquiryUser(inquiry, currentUser);
         }
-        inquiry.update(dto, inquiryType, interestType);
+        inquiry.update(dto, dto.getType(), dto.getInterestType());
 
         return new UpdateInquiryResDto("광고/제휴 문의가 정상적으로 수정되었습니다.");
     }

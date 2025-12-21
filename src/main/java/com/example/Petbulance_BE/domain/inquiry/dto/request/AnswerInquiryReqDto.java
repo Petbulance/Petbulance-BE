@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AnswerInquiryReqDto {
-    @NotBlank
+    @NotBlank(message = "게시글 내용(content)은 필수입니다.")
     private String content;
 }
