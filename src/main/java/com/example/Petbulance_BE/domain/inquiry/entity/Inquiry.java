@@ -4,10 +4,12 @@ import com.example.Petbulance_BE.domain.inquiry.dto.request.UpdateInquiryReqDto;
 import com.example.Petbulance_BE.domain.inquiry.type.InquiryAnswerType;
 import com.example.Petbulance_BE.domain.inquiry.type.InquiryType;
 import com.example.Petbulance_BE.domain.inquiry.type.InterestType;
+import com.example.Petbulance_BE.domain.qna.type.QnaStatus;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -80,5 +82,11 @@ public class Inquiry extends BaseTimeEntity{
         this.email = dto.getEmail();
         this.interestType = interestType;
         this.content = dto.getContent();
+    }
+
+    public void answer(@NotBlank String content) {
+        this.answerContent = content;
+        this.inquiryAnswerType = InquiryAnswerType.ANSWER_COMPLETED;
+        this.answeredAt = LocalDateTime.now();
     }
 }
