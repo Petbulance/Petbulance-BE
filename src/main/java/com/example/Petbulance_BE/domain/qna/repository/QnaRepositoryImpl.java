@@ -1,12 +1,15 @@
 package com.example.Petbulance_BE.domain.qna.repository;
 
 import com.example.Petbulance_BE.domain.notice.dto.response.PagingNoticeListResDto;
+import com.example.Petbulance_BE.domain.qna.dto.response.AdminQnaListResDto;
+import com.example.Petbulance_BE.domain.qna.dto.response.PagingAdminQnaListResDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.PagingQnaListResDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.QnaListResDto;
 import com.example.Petbulance_BE.domain.qna.entity.QQna;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -50,4 +53,52 @@ public class QnaRepositoryImpl implements QnaRepositoryCustom{
 
         return new PagingQnaListResDto(results, hasNext);
     }
+
+    @Override
+    public PagingAdminQnaListResDto adminQnaList(Long lastQnaId, Pageable pageable, String keyword) {
+
+        QQna qna = QQna.qna;
+
+        int limit = pageable.getPageSize() + 1;
+
+        List<AdminQnaListResDto> rows = queryFactory
+                .select(Projections.constructor(
+                        AdminQnaListResDto.class,
+                        qna.id,
+                        qna.status,
+                        qna.title,
+                        qna.user.nickname,
+                        qna.createdAt
+                ))
+                .from(qna)
+                .where(
+                        ltQnaId(lastQnaId, qna),
+                        containsKeyword(keyword, qna)
+                )
+                .orderBy(qna.id.desc())
+                .limit(limit)
+                .fetch();
+
+        boolean hasNext = false;
+        if (rows.size() > pageable.getPageSize()) {
+            hasNext = true;
+            rows = rows.subList(0, pageable.getPageSize());
+        }
+
+        return new PagingAdminQnaListResDto(rows, hasNext);
+    }
+
+    private BooleanExpression ltQnaId(Long lastQnaId, QQna qna) {
+        return lastQnaId == null ? null : qna.id.lt(lastQnaId);
+    }
+
+    private BooleanExpression containsKeyword(String keyword, QQna qna) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        return qna.title.contains(keyword);
+        // 필요하면 ↓ 확장 가능
+        // .or(qna.content.contains(keyword))
+    }
+
 }

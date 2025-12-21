@@ -1,11 +1,8 @@
 package com.example.Petbulance_BE.domain.inquiry.controller;
 
 import com.example.Petbulance_BE.domain.inquiry.dto.request.AnswerInquiryReqDto;
-import com.example.Petbulance_BE.domain.inquiry.dto.request.CreateInquiryReqDto;
-import com.example.Petbulance_BE.domain.inquiry.dto.request.UpdateInquiryReqDto;
 import com.example.Petbulance_BE.domain.inquiry.dto.response.*;
 import com.example.Petbulance_BE.domain.inquiry.service.InquiryService;
-import com.example.Petbulance_BE.domain.qna.dto.request.AnswerQnaReqDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -21,9 +18,10 @@ public class AdminInquiryController {
 
     @GetMapping
     public PagingAdminInquiryListResDto adminInquiryList(@RequestParam(required = false) Long lastInquiryId,
-                                               @RequestParam(defaultValue = "10") int pageSize) {
+                                                         @RequestParam(defaultValue = "10") int pageSize,
+                                                         @RequestParam(required = false) String keyword) {
         Pageable pageable = PageRequest.of(0, pageSize);
-        return inquiryService.adminInquiryList(pageable, lastInquiryId);
+        return inquiryService.adminInquiryList(pageable, lastInquiryId, keyword);
     }
 
     @GetMapping("/{inquiryId}")

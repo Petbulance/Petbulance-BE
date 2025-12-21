@@ -91,18 +91,8 @@ public class QnaService {
         }
     }
 
-    public PagingAdminQnaListResDto adminQnaList(Long lastQnaId, Pageable pageable) {
-        int pageSize = pageable.getPageSize();
-
-        List<AdminQnaListResDto> rows =
-                qnaRepository.findAdminQnaList(lastQnaId, pageSize + 1);
-
-        boolean hasNext = rows.size() > pageSize;
-        if (hasNext) {
-            rows = rows.subList(0, pageSize);
-        }
-
-        return new PagingAdminQnaListResDto(rows, hasNext);
+    public PagingAdminQnaListResDto adminQnaList(Long lastQnaId, Pageable pageable, String keyword) {
+        return qnaRepository.adminQnaList(lastQnaId, pageable, keyword);
     }
 
     public AnswerQnaResDto answerQna(Long qnaId, @Valid AnswerQnaReqDto reqDto) {
