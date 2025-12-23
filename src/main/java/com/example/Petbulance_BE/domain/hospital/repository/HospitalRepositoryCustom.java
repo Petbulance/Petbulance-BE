@@ -1,7 +1,7 @@
 package com.example.Petbulance_BE.domain.hospital.repository;
 
 import com.example.Petbulance_BE.domain.hospital.dto.req.HospitalSearchReqDto;
-import com.example.Petbulance_BE.domain.hospital.dto.HospitalSearchDao;
+import com.example.Petbulance_BE.domain.hospital.dto.HospitalSearchDto;
 import com.example.Petbulance_BE.domain.hospital.dto.res.DetailHospitalResDto;
 import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalMatchingResDto;
 
@@ -11,7 +11,7 @@ import java.util.List;
 
 
 public interface HospitalRepositoryCustom {
-    List<HospitalSearchDao> searchHospitals(HospitalSearchReqDto dto);
+    List<HospitalSearchDto> searchHospitals(HospitalSearchReqDto dto);
     List<HospitalMatchingResDto> findMatchingHospitals(
             String species,
             String filter,

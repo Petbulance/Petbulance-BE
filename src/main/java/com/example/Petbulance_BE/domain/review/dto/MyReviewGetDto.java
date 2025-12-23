@@ -1,4 +1,4 @@
-package com.example.Petbulance_BE.domain.review.dto.dao;
+package com.example.Petbulance_BE.domain.review.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 @Setter
-public class MyReviewGetDao {
+public class MyReviewGetDto {
 
-    public MyReviewGetDao(Long id, String hospitalName, String hospitalImage,
+    public MyReviewGetDto(Long id, String hospitalName, String hospitalImage,
                           LocalDateTime createdAt, Boolean receiptCheck,
                           Integer likeCount, String reviewContent) {
         this.id = id;

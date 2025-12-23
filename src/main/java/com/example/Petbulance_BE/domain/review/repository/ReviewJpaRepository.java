@@ -1,7 +1,7 @@
 package com.example.Petbulance_BE.domain.review.repository;
 
 import com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto;
-import com.example.Petbulance_BE.domain.review.dto.dao.MyReviewGetDao;
+import com.example.Petbulance_BE.domain.review.dto.MyReviewGetDto;
 import com.example.Petbulance_BE.domain.review.entity.UserReview;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import org.springframework.data.domain.Page;
@@ -130,7 +130,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     Optional<UserReview> findByUserId(@Param("user") Users user, @Param("reviewId") Long reviewId);
 
     @Query(value = """
-            SELECT new com.example.Petbulance_BE.domain.review.dto.dao.MyReviewGetDao(
+            SELECT new com.example.Petbulance_BE.domain.review.dto.MyReviewGetDto(
             r.id,
             r.hospital.name,
             r.hospital.image,
@@ -145,6 +145,6 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
             AND (:cursorId IS NULL OR r.id < :cursorId)
             order by r.id DESC 
             """)
-    List<MyReviewGetDao> findByUserIdAndCursorId(@Param("user") Users user, @Param("cursorId") Long cursorId, Pageable pageable);
+    List<MyReviewGetDto> findByUserIdAndCursorId(@Param("user") Users user, @Param("cursorId") Long cursorId, Pageable pageable);
 
 }

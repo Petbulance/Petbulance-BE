@@ -1,6 +1,5 @@
 package com.example.Petbulance_BE.domain.hospital.dto.res;
 
-import com.example.Petbulance_BE.domain.hospital.dto.HospitalSearchDao;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
