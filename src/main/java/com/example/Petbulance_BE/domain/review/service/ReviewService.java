@@ -5,7 +5,7 @@ import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
 import com.example.Petbulance_BE.domain.review.aop.DailyLimit;
 import com.example.Petbulance_BE.domain.review.dto.*;
-import com.example.Petbulance_BE.domain.review.dto.dao.MyReviewGetDao;
+import com.example.Petbulance_BE.domain.review.dto.MyReviewGetDto;
 import com.example.Petbulance_BE.domain.review.dto.req.FilterReqDto;
 import com.example.Petbulance_BE.domain.review.dto.req.ReviewImageCheckReqDto;
 import com.example.Petbulance_BE.domain.review.dto.req.ReviewSaveReqDto;
@@ -39,10 +39,13 @@ import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
 import java.net.URL;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
 import java.util.*;
 
 @Service
@@ -69,11 +72,23 @@ public class ReviewService {
     @Value("${geo.api.key}")
     private String geoKey;
 
+    private static final DateTimeFormatter FLEXIBLE_FORMATTER = new DateTimeFormatterBuilder()
+            .appendPattern("yyyy-MM-dd")
+            .optionalStart()
+            .appendPattern(" HH:mm")
+            .optionalStart()
+            .appendPattern(":ss")
+            .optionalEnd()
+            .optionalEnd()
+            .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+            .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+            .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
+            .toFormatter();
 
     @DailyLimit
     public Mono<ReceiptResDto> receiptExtractProcess(MultipartFile image) {
 
-        log.info("🚀 [{}] 요청 시작", Thread.currentThread().getName());
+        //log.info("🚀 [{}] 요청 시작", Thread.currentThread().getName());
 
          return getExtractedDataMono(image)
 //                 .doOnSubscribe(s ->
@@ -82,30 +97,16 @@ public class ReviewService {
 //                         log.info("✅ [{}] Gemini 응답 수신", Thread.currentThread().getName()))
                  .flatMap(extractedData -> {
 
-             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-             DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
-             LocalDateTime paymentDateTime;
-
              String address = extractedData.address();
              String addressType = extractedData.addressType();
              String time = extractedData.paymentTime();
              Long price = extractedData.totalAmount();
 
-             try {
-                 // 시간 정보 있는 경우
-                 paymentDateTime = LocalDateTime.parse(time, dtf);
-             } catch (DateTimeParseException e) {
-                 // 시간 정보 없는 경우, LocalDate로 변환 후 00:00:00으로 처리
-                 LocalDate dateOnly = LocalDate.parse(time, df);
-                 paymentDateTime = dateOnly.atStartOfDay();
-             }
-
              if(address == null || address.isEmpty()) {
                  return Mono.error(new CustomException(ErrorCode.NO_ADDRESS_FOUND));
              }
 
-             LocalDateTime finalPaymentDateTime = paymentDateTime;
+             LocalDateTime finalPaymentDateTime = LocalDateTime.parse(extractedData.paymentTime().trim(), FLEXIBLE_FORMATTER);
 
              return geocodeAddress(address, addressType)
 //                     .doOnSubscribe(s ->
@@ -483,13 +484,13 @@ public class ReviewService {
 
         Pageable pageable = PageRequest.of(0,size+1);
 
-        List<MyReviewGetDao> list = reviewJpaRepository.findByUserIdAndCursorId(currentUser, cursorId, pageable);
+        List<MyReviewGetDto> list = reviewJpaRepository.findByUserIdAndCursorId(currentUser, cursorId, pageable);
 
         Boolean hasNext = list.size() > size;
 
         Long nextCursorId = null;
 
-        List<MyReviewGetDao> limitedList = hasNext ? list.subList(0, size): list;
+        List<MyReviewGetDto> limitedList = hasNext ? list.subList(0, size): list;
 
         nextCursorId = hasNext ? limitedList.get(limitedList.size()-1).getId() : null;
 

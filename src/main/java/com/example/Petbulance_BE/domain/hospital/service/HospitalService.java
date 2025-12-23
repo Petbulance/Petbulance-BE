@@ -11,8 +11,6 @@ import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.type.AnimalType;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -31,12 +29,12 @@ public class HospitalService {
     public HospitalSearchResDto searchHospitalsProcess(HospitalSearchReqDto hospitalSearchReqDto) {
 
         // 1. DB에서 조회 (limit + 1로 한 개 더 가져와서 hasNext 체크)
-        List<HospitalSearchDao> hospitalSearchDaos = hospitalRepository.searchHospitals(hospitalSearchReqDto);
+        List<HospitalSearchDto> hospitalSearchDtos = hospitalRepository.searchHospitals(hospitalSearchReqDto);
 
         // 2. hasNext 처리
-        boolean hasNext = hospitalSearchDaos.size() > hospitalSearchReqDto.getSize();
+        boolean hasNext = hospitalSearchDtos.size() > hospitalSearchReqDto.getSize();
         if (hasNext) {
-            hospitalSearchDaos = hospitalSearchDaos.subList(0, hospitalSearchReqDto.getSize());
+            hospitalSearchDtos = hospitalSearchDtos.subList(0, hospitalSearchReqDto.getSize());
         }
 
         DayOfWeek today = LocalDate.now().getDayOfWeek();
@@ -46,7 +44,7 @@ public class HospitalService {
         int todayIndex = Arrays.asList(dayOrder).indexOf(dayPrefix);
 
         // 3. DTO 매핑
-        List<HospitalsResDto> content = hospitalSearchDaos.stream()
+        List<HospitalsResDto> content = hospitalSearchDtos.stream()
                 .map(hs -> {
                     boolean isOpenNow = false;
                     LocalTime openTimeToday = null;
@@ -177,8 +175,8 @@ public class HospitalService {
         Double cursorRating = null;
         Long cursorReviewCount = null;
 
-        if (!hospitalSearchDaos.isEmpty()) {
-            HospitalSearchDao last = hospitalSearchDaos.get(hospitalSearchDaos.size() - 1);
+        if (!hospitalSearchDtos.isEmpty()) {
+            HospitalSearchDto last = hospitalSearchDtos.get(hospitalSearchDtos.size() - 1);
 
             // 정렬 기준에 따라 cursor 필드만 채움
             switch (hospitalSearchReqDto.getSortBy().toLowerCase()) {

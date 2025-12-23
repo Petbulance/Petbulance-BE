@@ -1,6 +1,6 @@
 package com.example.Petbulance_BE.domain.hospital.repository;
 
-import com.example.Petbulance_BE.domain.hospital.dto.HospitalSearchDao;
+import com.example.Petbulance_BE.domain.hospital.dto.HospitalSearchDto;
 import com.example.Petbulance_BE.domain.hospital.dto.req.HospitalSearchReqDto;
 import com.example.Petbulance_BE.domain.hospital.dto.res.DetailHospitalResDto;
 import com.example.Petbulance_BE.domain.hospital.dto.res.HospitalMatchingResDto;
@@ -57,7 +57,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<HospitalSearchDao> searchHospitals(HospitalSearchReqDto dto) {
+    public List<HospitalSearchDto> searchHospitals(HospitalSearchReqDto dto) {
         String q = dto.getQ(); //병원 검색어
         String region = dto.getRegion(); //지역 검색어 ex)서울특별시강남구, 서울특별시
         Double lat = dto.getLat(); //위도 37.1
@@ -91,8 +91,8 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                         .where(userReview.hospital.eq(hospital))
         ).longValue().coalesce(0L);
 
-        JPAQuery<HospitalSearchDao> query = queryFactory.select(
-                        Projections.fields(HospitalSearchDao.class,
+        JPAQuery<HospitalSearchDto> query = queryFactory.select(
+                        Projections.fields(HospitalSearchDto.class,
                                 hospital.id.as("id"),
                                 hospital.name.as("name"),
                                 hospital.lat.as("lat"),
@@ -336,7 +336,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
             query.orderBy(hospital.id.asc());
         }
 
-        List<HospitalSearchDao> result = query.offset(0).limit(dto.getSize()+1).fetch();
+        List<HospitalSearchDto> result = query.offset(0).limit(dto.getSize()+1).fetch();
         return result;
 
     }
