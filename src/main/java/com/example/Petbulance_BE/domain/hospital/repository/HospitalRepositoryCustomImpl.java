@@ -58,39 +58,17 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
 
     @Override
     public List<HospitalSearchDto> searchHospitals(HospitalSearchReqDto dto) {
-        String q = dto.getQ(); //병원 검색어
-        String region = dto.getRegion(); //지역 검색어 ex)서울특별시강남구, 서울특별시
-        Double lat = dto.getLat(); //위도 37.1
-        Double lng = dto.getLng(); //경도 16.5
-        Double[] bounds = dto.getBounds(); //minLat,minLng,maxLat,maxLng
-        String[] animalArray = dto.getAnimalArray(); //동물종 ['FISH', 'BIRDS']
-        Boolean openNow = dto.getOpenNow(); //현재 운영중인 곳만 true
-
+        // 1. 기초 데이터 및 환경 변수 설정
         DayOfWeek today = LocalDate.now().getDayOfWeek();
         String todayStr = today.toString().substring(0, 3).toUpperCase();
         LocalTime now = LocalTime.now();
 
-        BooleanExpression openNowFilter = getBooleanExpression(openNow, todayStr, now);
-
-        NumberExpression<Double> doubleNumberExpression = calculateDistance(lat, lng);
-
-        //결과가 쿼리가 반환되어 null은 아니지만 db에서 누락, 잘못된 값이 있을때 쿼리의 결과가 null이 나올 수 있음 그래서 .coalesce(0.0)
-        //아예 lat,lng가 존재하지 않으면 쿼리가 아닌 null이 반환 그럴때 Expressions.asNumber(0.0);
+        // 거리 계산 식 (Null Safe)
+        NumberExpression<Double> doubleNumberExpression = calculateDistance(dto.getLat(), dto.getLng());
         NumberExpression<Double> safeDistance =
                 doubleNumberExpression != null ? doubleNumberExpression.coalesce(0.0) : Expressions.asNumber(0.0);
 
-        NumberExpression<Double> ratingSub = Expressions.asNumber(
-                JPAExpressions.select(userReview.overallRating.avg())
-                        .from(userReview)
-                        .where(userReview.hospital.eq(hospital))
-        ).doubleValue().coalesce(0.0);
-
-        NumberExpression<Long> reviewCountSub = Expressions.asNumber(
-                JPAExpressions.select(userReview.count())
-                        .from(userReview)
-                        .where(userReview.hospital.eq(hospital))
-        ).longValue().coalesce(0L);
-
+        // 2. 메인 쿼리: 검색 및 정렬 (무거운 CASE WHEN 제거)
         JPAQuery<HospitalSearchDto> query = queryFactory.select(
                         Projections.fields(HospitalSearchDto.class,
                                 hospital.id.as("id"),
@@ -99,313 +77,194 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                 hospital.lng.as("lng"),
                                 hospital.phoneNumber.as("phoneNumber"),
                                 hospital.url.as("url"),
-                                doubleNumberExpression != null ? doubleNumberExpression.as("distanceMeters")  //numberTemplate기반
-                                        : ExpressionUtils.as(Expressions.constant(0.0), "distanceMeters"),
-                                Expressions.stringTemplate(
-                                        "group_concat(DISTINCT {0})",
-                                        treatmentAnimal.animaType.stringValue()
-                                ).as("treatedAnimalTypes"),
-                                reviewCountSub.as("reviewCount"),
-                                ratingSub.as("rating"),
-                                // 월요일
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "MON", hospitalWorktime.openTime
-                                ).as("monOpenTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "MON", hospitalWorktime.closeTime
-                                ).as("monCloseTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "MON", hospitalWorktime.breakStartTime
-                                ).as("monBreakStartTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "MON", hospitalWorktime.breakEndTime
-                                ).as("monBreakEndTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "MON", hospitalWorktime.receptionDeadline
-                                ).as("monReceptionDeadline"),
-                                Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
-                                        hospitalWorktime.id.dayOfWeek, "MON", hospitalWorktime.isOpen
-                                ).as("monIsOpen"),
-
-                                // 화요일
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "TUE", hospitalWorktime.openTime
-                                ).as("tueOpenTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "TUE", hospitalWorktime.closeTime
-                                ).as("tueCloseTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "TUE", hospitalWorktime.breakStartTime
-                                ).as("tueBreakStartTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "TUE", hospitalWorktime.breakEndTime
-                                ).as("tueBreakEndTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "TUE", hospitalWorktime.receptionDeadline
-                                ).as("tueReceptionDeadline"),
-                                Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
-                                        hospitalWorktime.id.dayOfWeek, "TUE", hospitalWorktime.isOpen
-                                ).as("tueIsOpen"),
-                                // 수요일
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "WED", hospitalWorktime.openTime
-                                ).as("wedOpenTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "WED", hospitalWorktime.closeTime
-                                ).as("wedCloseTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "WED", hospitalWorktime.breakStartTime
-                                ).as("wedBreakStartTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "WED", hospitalWorktime.breakEndTime
-                                ).as("wedBreakEndTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "WED", hospitalWorktime.receptionDeadline
-                                ).as("wedReceptionDeadline"),
-                                Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
-                                        hospitalWorktime.id.dayOfWeek, "WED", hospitalWorktime.isOpen
-                                ).as("wedIsOpen"),
-
-                                // 목요일
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "THU", hospitalWorktime.openTime
-                                ).as("thuOpenTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "THU", hospitalWorktime.closeTime
-                                ).as("thuCloseTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "THU", hospitalWorktime.breakStartTime
-                                ).as("thuBreakStartTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "THU", hospitalWorktime.breakEndTime
-                                ).as("thuBreakEndTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "THU", hospitalWorktime.receptionDeadline
-                                ).as("thuReceptionDeadline"),
-                                Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
-                                        hospitalWorktime.id.dayOfWeek, "TUE", hospitalWorktime.isOpen
-                                ).as("tueIsOpen"),
-
-                                // 금요일
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "FRI", hospitalWorktime.openTime
-                                ).as("friOpenTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "FRI", hospitalWorktime.closeTime
-                                ).as("friCloseTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "FRI", hospitalWorktime.breakStartTime
-                                ).as("friBreakStartTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "FRI", hospitalWorktime.breakEndTime
-                                ).as("friBreakEndTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "FRI", hospitalWorktime.receptionDeadline
-                                ).as("friReceptionDeadline"),
-                                Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
-                                        hospitalWorktime.id.dayOfWeek, "FRI", hospitalWorktime.isOpen
-                                ).as("friIsOpen"),
-
-                                // 토요일
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "SAT", hospitalWorktime.openTime
-                                ).as("satOpenTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "SAT", hospitalWorktime.closeTime
-                                ).as("satCloseTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "SAT", hospitalWorktime.breakStartTime
-                                ).as("satBreakStartTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "SAT", hospitalWorktime.breakEndTime
-                                ).as("satBreakEndTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "SAT", hospitalWorktime.receptionDeadline
-                                ).as("satReceptionDeadline"),
-                                Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
-                                        hospitalWorktime.id.dayOfWeek, "SAT", hospitalWorktime.isOpen
-                                ).as("satIsOpen"),
-
-                                // 일요일
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "SUN", hospitalWorktime.openTime
-                                ).as("sunOpenTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "SUN", hospitalWorktime.closeTime
-                                ).as("sunCloseTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "SUN", hospitalWorktime.breakStartTime
-                                ).as("sunBreakStartTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "SUN", hospitalWorktime.breakEndTime
-                                ).as("sunBreakEndTime"),
-                                Expressions.timeTemplate(LocalTime.class,
-                                        "MAX(CASE WHEN {0} = {1} THEN {2} END)",
-                                        hospitalWorktime.id.dayOfWeek, "SUN", hospitalWorktime.receptionDeadline
-                                ).as("sunReceptionDeadline"),
-                                Expressions.booleanTemplate(
-                                        "MAX(CASE WHEN {0} = {1} AND {2} = true THEN 1 ELSE 0 END) = 1",
-                                        hospitalWorktime.id.dayOfWeek, "SUN", hospitalWorktime.isOpen
-                                ).as("sunIsOpen")
+                                safeDistance.as("distanceMeters"),
+                                getReviewCountSub().as("reviewCount"),
+                                getRatingSub().as("rating")
                         )
                 )
                 .from(hospital)
-                .leftJoin(hospitalWorktime).on(hospital.eq(hospitalWorktime.hospital))
-                .leftJoin(treatmentAnimal).on(hospital.eq(treatmentAnimal.hospital))
-                .where(likeQ(q), likeRegion(region), withinBounds(bounds), filterByAnimalArray(animalArray), openNowFilter)
-                .groupBy(hospital.id);
+                .where(
+                        likeQ(dto.getQ()),
+                        likeRegion(dto.getRegion()),
+                        withinBounds(dto.getBounds()),
+                        filterByAnimalArray(dto.getAnimalArray()),
+                        getBooleanExpression(dto.getOpenNow(), todayStr, now)
+                );
 
+        // 3. 정렬 및 커서 페이징 처리 (별도 메소드로 분리)
+        applySortingAndCursor(query, dto, safeDistance);
+
+        // 4. 리스트 조회 (Size + 1)
+        List<HospitalSearchDto> results = query.offset(0).limit(dto.getSize() + 1).fetch();
+
+        if (results.isEmpty()) return results;
+
+        // 5. 지연 채우기 (Post-Fetching)
+        // 조회된 ID 리스트에 대해서만 추가 정보를 채움
+        List<Long> hospitalIds = results.stream().map(HospitalSearchDto::getId).toList();
+        fillWeeklyWorktimes(results, hospitalIds); // 7일치 운영시간 매핑
+        fillAnimalTypes(results, hospitalIds);     // 동물종 매핑
+
+        return results;
+    }
+
+    //1 정렬 및 커서 페이징
+    private void applySortingAndCursor(JPAQuery<HospitalSearchDto> query, HospitalSearchReqDto dto, NumberExpression<Double> safeDistance) {
+        String sortBy = dto.getSortBy();
+        Long cId = dto.getCursorId();
         NumberPath<Long> reviewCountPath = Expressions.numberPath(Long.class, "reviewCount");
         NumberPath<Double> ratingPath = Expressions.numberPath(Double.class, "rating");
 
-        // 정렬 조건 처리
-        if ("distance".equalsIgnoreCase(dto.getSortBy())) {
-
-            if (dto.getCursorDistance() != null && dto.getCursorId() != null) {
-                query.where(
-                        safeDistance.gt(dto.getCursorDistance())
-                                .or(safeDistance.eq(dto.getCursorDistance()).and(hospital.id.gt(dto.getCursorId())))
-                );
+        if ("distance".equalsIgnoreCase(sortBy)) {
+            if (dto.getCursorDistance() != null && cId != null) {
+                query.where(safeDistance.gt(dto.getCursorDistance())
+                        .or(safeDistance.eq(dto.getCursorDistance()).and(hospital.id.gt(cId))));
             }
             query.orderBy(safeDistance.asc(), hospital.id.asc());
-
-        } else if ("rating".equalsIgnoreCase(dto.getSortBy())) {
-
-            if (dto.getCursorRating() != null && dto.getCursorId() != null) {
-                query.having(
-                        ratingPath.lt(dto.getCursorRating())
-                                .or(ratingPath.eq(dto.getCursorRating()).and(hospital.id.gt(dto.getCursorId())))
-                );
+        }
+        else if ("rating".equalsIgnoreCase(sortBy)) {
+            if (dto.getCursorRating() != null && cId != null) {
+                query.having(ratingPath.lt(dto.getCursorRating())
+                        .or(ratingPath.eq(dto.getCursorRating()).and(hospital.id.gt(cId))));
             }
             query.orderBy(ratingPath.desc(), hospital.id.asc());
-
-        } else if ("reviewCount".equalsIgnoreCase(dto.getSortBy())) {
-
-            if (dto.getCursorReviewCount() != null && dto.getCursorId() != null) {
-                query.having(
-                        reviewCountPath.lt(dto.getCursorReviewCount())
-                                .or(reviewCountPath.eq(dto.getCursorReviewCount()).and(hospital.id.gt(dto.getCursorId())))
-                );
+        }
+        else if ("reviewCount".equalsIgnoreCase(sortBy)) {
+            if (dto.getCursorReviewCount() != null && cId != null) {
+                query.having(reviewCountPath.lt(dto.getCursorReviewCount())
+                        .or(reviewCountPath.eq(dto.getCursorReviewCount()).and(hospital.id.gt(cId))));
             }
             query.orderBy(reviewCountPath.desc(), hospital.id.asc());
-
-        } else {
-            if (dto.getCursorId() != null) {
-                query.where(hospital.id.gt(dto.getCursorId()));
-            }
+        }
+        else {
+            if (cId != null) query.where(hospital.id.gt(cId));
             query.orderBy(hospital.id.asc());
         }
-
-        List<HospitalSearchDto> result = query.offset(0).limit(dto.getSize()+1).fetch();
-        return result;
-
     }
 
-    // 현재 영업중
-    private static BooleanExpression getBooleanExpression(Boolean openNow, String todayStr, LocalTime now) {
-        BooleanExpression openNowFilter = null;
-        if (Boolean.TRUE.equals(openNow)) {
-            // openNow == true 일 때만 현재 영업 중인 병원만 필터링
-            openNowFilter = hospitalWorktime.id.dayOfWeek.eq(todayStr)
-                    .and(hospitalWorktime.isOpen.isTrue())
-                    .and(hospitalWorktime.openTime.loe(now))
-                    .and(hospitalWorktime.closeTime.goe(now));
+    //2 7일치 운영시간 채우기
+    private void fillWeeklyWorktimes(List<HospitalSearchDto> results, List<Long> ids) {
+        List<HospitalWorktime> worktimes = queryFactory
+                .selectFrom(hospitalWorktime)
+                .where(hospitalWorktime.hospital.id.in(ids))
+                .fetch();
+
+        Map<Long, List<HospitalWorktime>> worktimeMap = worktimes.stream()
+                .collect(Collectors.groupingBy(w -> w.getHospital().getId()));
+
+        results.forEach(dto -> {
+            List<HospitalWorktime> times = worktimeMap.getOrDefault(dto.getId(), Collections.emptyList());
+            for (HospitalWorktime wt : times) {
+                assignDayTime(dto, wt); // 요일별로 필드 매핑
+            }
+        });
+    }
+
+    private void assignDayTime(HospitalSearchDto dto, HospitalWorktime wt) {
+        String day = wt.getId().getDayOfWeek();
+        switch (day) {
+            case "MON" -> {
+                dto.setMonOpenTime(wt.getOpenTime()); dto.setMonCloseTime(wt.getCloseTime());
+                dto.setMonBreakStartTime(wt.getBreakStartTime()); dto.setMonBreakEndTime(wt.getBreakEndTime());
+                dto.setMonReceptionDeadline(wt.getReceptionDeadline()); dto.setMonIsOpen(wt.getIsOpen());
+            }
+            case "TUE" -> {
+                dto.setTueOpenTime(wt.getOpenTime()); dto.setTueCloseTime(wt.getCloseTime());
+                dto.setTueBreakStartTime(wt.getBreakStartTime()); dto.setTueBreakEndTime(wt.getBreakEndTime());
+                dto.setTueReceptionDeadline(wt.getReceptionDeadline()); dto.setTueIsOpen(wt.getIsOpen());
+            }
+            case "WED" -> {
+                dto.setWedOpenTime(wt.getOpenTime()); dto.setWedCloseTime(wt.getCloseTime());
+                dto.setWedBreakStartTime(wt.getBreakStartTime()); dto.setWedBreakEndTime(wt.getBreakEndTime());
+                dto.setWedReceptionDeadline(wt.getReceptionDeadline()); dto.setWedIsOpen(wt.getIsOpen());
+            }
+            case "THU" -> {
+                dto.setThuOpenTime(wt.getOpenTime()); dto.setThuCloseTime(wt.getCloseTime());
+                dto.setThuBreakStartTime(wt.getBreakStartTime()); dto.setThuBreakEndTime(wt.getBreakEndTime());
+                dto.setThuReceptionDeadline(wt.getReceptionDeadline()); dto.setThuIsOpen(wt.getIsOpen());
+            }
+            case "FRI" -> {
+                dto.setFriOpenTime(wt.getOpenTime()); dto.setFriCloseTime(wt.getCloseTime());
+                dto.setFriBreakStartTime(wt.getBreakStartTime()); dto.setFriBreakEndTime(wt.getBreakEndTime());
+                dto.setFriReceptionDeadline(wt.getReceptionDeadline()); dto.setFriIsOpen(wt.getIsOpen());
+            }
+            case "SAT" -> {
+                dto.setSatOpenTime(wt.getOpenTime()); dto.setSatCloseTime(wt.getCloseTime());
+                dto.setSatBreakStartTime(wt.getBreakStartTime()); dto.setSatBreakEndTime(wt.getBreakEndTime());
+                dto.setSatReceptionDeadline(wt.getReceptionDeadline()); dto.setSatIsOpen(wt.getIsOpen());
+            }
+            case "SUN" -> {
+                dto.setSunOpenTime(wt.getOpenTime()); dto.setSunCloseTime(wt.getCloseTime());
+                dto.setSunBreakStartTime(wt.getBreakStartTime()); dto.setSunBreakEndTime(wt.getBreakEndTime());
+                dto.setSunReceptionDeadline(wt.getReceptionDeadline()); dto.setSunIsOpen(wt.getIsOpen());
+            }
         }
-        return openNowFilter;
     }
 
+    //3 동물 타입 채우기
+    private void fillAnimalTypes(List<HospitalSearchDto> results, List<Long> ids) {
+        List<Tuple> types = queryFactory
+                .select(treatmentAnimal.hospital.id, treatmentAnimal.animaType)
+                .from(treatmentAnimal)
+                .where(treatmentAnimal.hospital.id.in(ids))
+                .fetch();
 
-    // 이름 검색
+        Map<Long, String> typeMap = types.stream()
+                .collect(Collectors.groupingBy(
+                        t -> t.get(treatmentAnimal.hospital.id),
+                        Collectors.mapping(t -> t.get(treatmentAnimal.animaType).toString(), Collectors.joining(","))
+                ));
+
+        results.forEach(dto -> dto.setTreatedAnimalTypes(typeMap.get(dto.getId())));
+    }
+
+    private NumberExpression<Long> getReviewCountSub() {
+        return Expressions.asNumber(JPAExpressions.select(userReview.count()).from(userReview).where(userReview.hospital.eq(hospital))).longValue().coalesce(0L);
+    }
+
+    private NumberExpression<Double> getRatingSub() {
+        return Expressions.asNumber(JPAExpressions.select(userReview.overallRating.avg()).from(userReview).where(userReview.hospital.eq(hospital))).doubleValue().coalesce(0.0);
+    }
+
+    private BooleanExpression getBooleanExpression(Boolean openNow, String todayStr, LocalTime now) {
+        if (!Boolean.TRUE.equals(openNow)) return null;
+        return hospital.id.in(
+                JPAExpressions.select(hospitalWorktime.hospital.id)
+                        .from(hospitalWorktime)
+                        .where(hospitalWorktime.id.dayOfWeek.eq(todayStr)
+                                .and(hospitalWorktime.isOpen.isTrue())
+                                .and(hospitalWorktime.openTime.loe(now))
+                                .and(hospitalWorktime.closeTime.goe(now)))
+        );
+    }
+
     private BooleanExpression likeQ(String q) {
-        if(StringUtils.hasText(q)){
-            return hospital.name.like("%"+q+"%");
-        }
-        return null;
+        return StringUtils.hasText(q) ? hospital.name.contains(q) : null;
     }
 
-    // 지역 검색
     private BooleanExpression likeRegion(String region) {
-        if(StringUtils.hasText(region)) {
-            // 공백 제거 후 LIKE
-            return Expressions.stringTemplate(
-                    "REPLACE({0}, ' ', '')", hospital.address
-            ).like(region + "%");
-        }
-        return null;
+        if (!StringUtils.hasText(region)) return null;
+        return Expressions.stringTemplate("REPLACE({0}, ' ', '')", hospital.address).like(region + "%");
     }
 
-    // 동물 타입 필터링
     private BooleanExpression filterByAnimalArray(String[] animalArray) {
         if (animalArray == null || animalArray.length == 0) return null;
-
-        BooleanExpression in = hospital.id.in(
-                JPAExpressions
-                        .select(treatmentAnimal.hospital.id)
+        return hospital.id.in(
+                JPAExpressions.select(treatmentAnimal.hospital.id)
                         .from(treatmentAnimal)
                         .where(treatmentAnimal.animaType.stringValue().in(animalArray))
-
         );
-        return in;
     }
 
-    // 지도 bounds 필터링 minLat,minLng,maxLat,maxLng
     private BooleanExpression withinBounds(Double[] bounds) {
-        if(bounds == null || bounds.length != 4) return null;
-
-        return hospital.lat.between(bounds[0], bounds[2])
-                .and(hospital.lng.between(bounds[1], bounds[3]));
+        if (bounds == null || bounds.length != 4) return null;
+        return hospital.lat.between(bounds[0], bounds[2]).and(hospital.lng.between(bounds[1], bounds[3]));
     }
 
-    // 거리 계산
     private NumberExpression<Double> calculateDistance(Double lat, Double lng) {
         if (lat == null || lng == null) return null;
-
-        return Expressions.numberTemplate(
-                Double.class,
-                "ST_Distance_Sphere({0}, ST_GeomFromText({1}, 4326))",
-                hospital.location,
-                "POINT(" + lat + " " + lng + ")"
-        );
+        return Expressions.numberTemplate(Double.class, "ST_Distance_Sphere({0}, ST_GeomFromText({1}, 4326))",
+                hospital.location, "POINT(" + lat + " " + lng + ")");
     }
 
     @Override
