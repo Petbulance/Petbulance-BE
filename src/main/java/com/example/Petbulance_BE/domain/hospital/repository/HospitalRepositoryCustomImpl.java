@@ -204,7 +204,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
     //3 동물 타입 채우기
     private void fillAnimalTypes(List<HospitalSearchDto> results, List<Long> ids) {
         List<Tuple> types = queryFactory
-                .select(treatmentAnimal.hospital.id, treatmentAnimal.animaType)
+                .select(treatmentAnimal.hospital.id, treatmentAnimal.animalType)
                 .from(treatmentAnimal)
                 .where(treatmentAnimal.hospital.id.in(ids))
                 .fetch();
@@ -212,7 +212,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         Map<Long, String> typeMap = types.stream()
                 .collect(Collectors.groupingBy(
                         t -> t.get(treatmentAnimal.hospital.id),
-                        Collectors.mapping(t -> t.get(treatmentAnimal.animaType).toString(), Collectors.joining(","))
+                        Collectors.mapping(t -> t.get(treatmentAnimal.animalType).toString(), Collectors.joining(","))
                 ));
 
         results.forEach(dto -> dto.setTreatedAnimalTypes(typeMap.get(dto.getId())));
@@ -252,7 +252,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         return hospital.id.in(
                 JPAExpressions.select(treatmentAnimal.hospital.id)
                         .from(treatmentAnimal)
-                        .where(treatmentAnimal.animaType.stringValue().in(animalArray))
+                        .where(treatmentAnimal.animalType.stringValue().in(animalArray))
         );
     }
 
@@ -357,7 +357,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         BooleanExpression speciesCheck= null;
 
         if(species != null){
-            speciesCheck =  treat.animaType.eq(AnimalType.valueOf(species));
+            speciesCheck =  treat.animalType.eq(AnimalType.valueOf(species));
         }
 
         // -----------------------------
@@ -418,7 +418,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                 .collect(Collectors.groupingBy(
                         ta -> ta.getHospital().getId(),
                         Collectors.mapping(
-                                ta -> ta.getAnimaType().getDescription(),
+                                ta -> ta.getAnimalType().getDescription(),
                                 Collectors.toList()
                         )
                 ));
@@ -527,7 +527,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         // 2) 치료 가능 동물 조회
         // ======================
         List<String> acceptedAnimals = queryFactory
-                .select(t.animaType)
+                .select(t.animalType)
                 .from(t)
                 .where(t.hospital.id.eq(hospitalId))
                 .fetch()

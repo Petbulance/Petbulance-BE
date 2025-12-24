@@ -473,8 +473,8 @@ public class ReviewService {
 
     public MyReviewGetResDto myReviewGetProcess(Long cursorId, int size){
         //3a7a6eba-f107-42b5-8e2d-4536a94a17bf
-//        String jwt = jwtUtil.createJwt("3a7a6eba-f107-42b5-8e2d-4536a94a17bf", "access", "ROLE_CLIENT", "GOOGLE");
-//        log.info("{}", jwt);
+        String jwt = jwtUtil.createJwt("3a7a6eba-f107-42b5-8e2d-4536a94a17bf", "access", "ROLE_CLIENT", "GOOGLE");
+        log.info("{}", jwt);
 
         Users currentUser = userUtil.getCurrentUser();
 

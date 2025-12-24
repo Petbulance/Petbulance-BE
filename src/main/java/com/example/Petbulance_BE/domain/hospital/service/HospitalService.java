@@ -216,7 +216,7 @@ public class HospitalService {
         Hospital hospital = hospitalRepository.findDetailHospital(hospitalId).orElseThrow(()->new CustomException(ErrorCode.NOT_FOUND_HOSPITAL));
 
         List<String> animalTypes = hospital.getTreatmentAnimals().stream().map(t ->
-            t.getAnimaType().name()
+            t.getAnimalType().name()
         ).toList();
 
         Set<HospitalWorktime> hospitalWorktimes = hospital.getHospitalWorktimes();
@@ -295,7 +295,7 @@ public class HospitalService {
         // 3. 나머지 로직은 그대로
         List<String> list = hospital.getTreatmentAnimals().stream()
                 .sorted((a, b) -> Long.compare(a.getId(), b.getId()))
-                .map(t->t.getAnimaType().name())
+                .map(t->t.getAnimalType().name())
                 .toList();
 
         LocalTime now = LocalTime.now();

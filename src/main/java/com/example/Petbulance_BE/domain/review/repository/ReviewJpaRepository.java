@@ -59,9 +59,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     @Query(value = """
     SELECT r
     FROM UserReview r
-    JOIN FETCH r.user u 
-    LEFT JOIN r.images i
-    LEFT JOIN r.likes l 
+    JOIN FETCH r.user u
     WHERE r.hospital.id = :hospitalId
     AND (:imageOnly = FALSE OR EXISTS (SELECT 1 FROM UserReviewImage i WHERE i.review = r))
     AND (:cursorId IS NULL OR r.id < :cursorId)
@@ -80,9 +78,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     @Query(value = """
     SELECT r
     FROM UserReview r
-    JOIN FETCH r.user u 
-    LEFT JOIN r.images i
-    LEFT JOIN r.likes l 
+    JOIN FETCH r.user u
     WHERE r.hospital.id = :hospitalId
     AND (:imageOnly = FALSE OR EXISTS (SELECT 1 FROM UserReviewImage i WHERE i.review = r))
     AND (:cursorRating IS NULL OR
@@ -105,9 +101,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     @Query(value = """
     SELECT r
     FROM UserReview r
-    JOIN FETCH r.user u 
-    LEFT JOIN r.images i
-    LEFT JOIN r.likes l 
+    JOIN FETCH r.user u
     WHERE r.hospital.id = :hospitalId
     AND (:imageOnly = FALSE OR EXISTS (SELECT 1 FROM UserReviewImage i WHERE i.review = r))
     AND (:cursorLikeCount IS NULL OR
@@ -146,5 +140,5 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
             order by r.id DESC 
             """)
     List<MyReviewGetDto> findByUserIdAndCursorId(@Param("user") Users user, @Param("cursorId") Long cursorId, Pageable pageable);
-
+//fetch join 카테시안 곱 문제 해결
 }
