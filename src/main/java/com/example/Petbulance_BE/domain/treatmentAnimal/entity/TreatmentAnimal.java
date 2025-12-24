@@ -25,6 +25,6 @@ public class TreatmentAnimal extends BaseTimeEntity {
     Hospital hospital;
 
     @Enumerated(EnumType.STRING)
-    private AnimalType animaType;
+    private AnimalType animalType;
 
 }
