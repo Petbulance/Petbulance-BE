@@ -67,6 +67,7 @@ public class QnaRepositoryImpl implements QnaRepositoryCustom{
                         qna.id,
                         qna.status,
                         qna.title,
+                        qna.content,
                         qna.user.nickname,
                         qna.createdAt
                 ))
