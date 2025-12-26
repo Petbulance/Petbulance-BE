@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "userSettings")
+@Table(name = "user_settings")
 @Getter
 @Setter
 @Builder

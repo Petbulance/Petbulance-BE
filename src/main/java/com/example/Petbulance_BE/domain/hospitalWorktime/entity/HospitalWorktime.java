@@ -9,7 +9,7 @@ import java.time.LocalTime;
 
 @Entity
 @Getter
-@Table(name = "hospitalworktimes")
+@Table(name = "hospital_worktimes")
 public class HospitalWorktime extends BaseTimeEntity {
 
     @EmbeddedId

@@ -73,6 +73,23 @@ public class Users extends BaseTimeEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<History> histories;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private String termsServiceVersion = "";       // 서비스 이용약관
+
+    @Column(nullable = false)
+    @Builder.Default
+    private String termsPrivacyVersion = "";       // 개인정보 처리방침
+
+    @Column(nullable = false)
+    @Builder.Default
+    private String termsLocationVersion = "";     // 위치기반 서비스
+
+    @Column(nullable = false)
+    @Builder.Default
+    private String termsMarketingVersion = "";   // 마케팅 정보 수신
+
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
