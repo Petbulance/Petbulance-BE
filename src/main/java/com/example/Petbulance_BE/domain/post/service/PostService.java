@@ -2,6 +2,7 @@ package com.example.Petbulance_BE.domain.post.service;
 
 import com.example.Petbulance_BE.domain.board.entity.Board;
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
+import com.example.Petbulance_BE.domain.dashboard.service.DashboardMetricRedisService;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.request.UpdatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.*;
@@ -19,6 +20,7 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.TimeUtil;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +40,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PostService {
     private final PostRepository postRepository;
     private final BoardRepository boardRepository;
@@ -46,6 +49,7 @@ public class PostService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final PostLikeRepository postLikeRepository;
     private final RecentService recentService;
+    private final DashboardMetricRedisService dashboardMetricRedisService;
 
     private static final String CACHE_KEY_FORMAT = "post::inquiry::%d";
 
@@ -74,6 +78,12 @@ public class PostService {
                 .deleted(false)
                 .imageNum(Optional.ofNullable(dto.getImageUrls()).orElse(List.of()).size())
                 .build()); // 게시글 저장
+
+        try {
+            dashboardMetricRedisService.incrementTodayPostCreated();
+        } catch (Exception e) {
+            log.warn("Failed to increment post_created_count", e);
+        }
 
         savePostImages(savedPost, dto.getImageUrls()); // 게시글 첨부 이미지 저장
 

@@ -9,46 +9,47 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DashBoardSummaryResDto {
-    private TodaySignupDto todaySignup;
-    private NewReviewDto newReview;
-    private CommunityReportDto communityReport;
-    private UnansweredInquiryDto unansweredInquiry;
+
+    private SignUpResDto signUp;
+    private HospitalSearchResDto hospitalSearch;
+    private ReviewResDto review;
+    private PostResDto post;
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public class TodaySignupDto {
+    public static class SignUpResDto {
 
-        private int count;
-        private int changeRate;
-        private ChangeType changeType;
+        private int todaySignupCount;
+        private double signupChangeRate; // %
+        private ChangeType signupTrend;  // UP / DOWN / SAME
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public class NewReviewDto {
-
-        private int count;
-        private int changeRate;
-        private ChangeType changeType;
+    public static class HospitalSearchResDto {
+        private int todayHospitalSearchCount;
+        private double hospitalSearchChangeRate;
+        private ChangeType hospitalSearchTrend;
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public class CommunityReportDto {
-
-        private int count;
-        private int newCount;
+    public static class ReviewResDto {
+        private int todayReviewCount;
+        private double reviewChangeRate;
+        private ChangeType reviewTrend;
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public class UnansweredInquiryDto {
-
-        private int count;
-        private int newCount;
+    public static class PostResDto {
+        private int todayPostCount;
+        private double postChangeRate;
+        private ChangeType postTrend;
     }
 }
+

@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.global.common.auth.service;
 
+import com.example.Petbulance_BE.domain.dashboard.service.DashboardMetricRedisService;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.userEmail.entity.UserEmails;
@@ -26,9 +27,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
-import java.util.Random;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -41,6 +39,7 @@ public class AuthService {
     private final FirebaseTokenService firebaseTokenService;
     private final RestTemplate restTemplate = new RestTemplate();
     private final RandomNicknameGenerator randomNicknameGenerator;
+    private DashboardMetricRedisService dashboardMetricRedisService;
 
     public LoginResponseDto loginService(LoginRequestDto dto) {
         String provider = dto.getProvider().toUpperCase();
@@ -68,6 +67,10 @@ public class AuthService {
                     isNewUser[0] = true;
                     return createNewUser(provider, email);
                 });
+
+        if (isNewUser[0]) {
+            dashboardMetricRedisService.incrementTodaySignup();
+        }
 
         LoginResponseDto response = createLoginResponse(user, provider);
         response.setIsNewUser(isNewUser[0]);
