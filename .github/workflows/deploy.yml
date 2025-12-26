@@ -1,4 +1,4 @@
-name: Deploy To EC2
+name: Deploy To EC2 via SSM (Docker)
 
 on:
   push:
@@ -19,47 +19,56 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Create application.yml
-        run: echo "${{ secrets.APPLICATION_YML }}" > ./src/main/resources/application.yml
+      - name: Create application-prod.yml
+        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application-prod.yml
 
       - name: Create firebase.json
         run: echo "${{ secrets.FILEBASE_JSON }}" > ./src/main/resources/petbulance-b316f-firebase-adminsdk-fbsvc-8c92a7aab5.json
 
-      - name: Grant execute permission for Gradlew
+      - name: gradlew에 실행 권한 부여
         run: chmod +x ./gradlew
 
-      - name: Build Spring Boot Project
-        run: ./gradlew clean build -x test
+      - name: Build Spring Boot
+        run: ./gradlew clean build
 
-      - name: Rename JAR File
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-northeast-2
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        run: docker build -t petbulance .
+
+      - name: Tag Docker image
+        run: docker tag petbulance:latest 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
+
+      - name: Push Docker image to ECR
+        run: docker push 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
+
+      - name: Deploy to EC2 via SSM
         run: |
-          find ./build/libs -name "*SNAPSHOT.jar" -exec mv {} project.jar \;
+          aws ssm send-command \
+            --instance-ids "i-0102a3e18a61b4b83" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy Petbulance" \
+            --parameters commands="
+              sudo docker stop petbulance || true;
+              sudo docker rm petbulance || true;
 
-      - name: Copy JAR to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          source: "project.jar"
-          target: "/home/ubuntu/Petbulance-Server/tobe"
+              aws ecr get-login-password --region ap-northeast-2 \
+                | sudo docker login --username AWS --password-stdin 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com;
 
-      - name: Connect to EC2 & Deploy
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script_stop: true
-          script: |
-            sudo fuser -k -n tcp 8080 || true
+              sudo docker pull 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest;
 
-            rm -rf /home/ubuntu/Petbulance-Server/current
-            mkdir -p /home/ubuntu/Petbulance-Server/current
-
-            mv /home/ubuntu/Petbulance-Server/tobe/project.jar /home/ubuntu/Petbulance-Server/current/project.jar
-            cd /home/ubuntu/Petbulance-Server/current
-
-            nohup java -jar project.jar > output.log 2>&1 &
-
-            rm -rf /home/ubuntu/Petbulance-Server/tobe
+              sudo docker run -d \
+                --name petbulance \
+                -e SPRING_PROFILES_ACTIVE=prod \
+                -p 8080:8080 \
+                276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
+            " \
+            --output text
