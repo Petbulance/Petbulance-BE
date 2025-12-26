@@ -14,6 +14,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "treatment_animals")
 public class TreatmentAnimal extends BaseTimeEntity {
 
     @Id
