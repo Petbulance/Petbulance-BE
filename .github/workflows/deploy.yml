@@ -65,12 +65,7 @@ jobs:
 
                 "sudo docker pull 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest",
 
-                "sudo docker run -d \
-                  --name petbulance \
-                  -e SPRING_PROFILES_ACTIVE=prod \
-                  -e FILEBASE_JSON=${FILEBASE_JSON} \
-                  -p 8080:8080 \
-                  276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest"
+                "sudo docker run -d --name petbulance -e SPRING_PROFILES_ACTIVE=prod -p 8080:8080 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest"
               ]
             }' \
             --output text
