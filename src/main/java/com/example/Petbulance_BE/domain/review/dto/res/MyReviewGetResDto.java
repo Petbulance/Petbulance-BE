@@ -1,6 +1,6 @@
 package com.example.Petbulance_BE.domain.review.dto.res;
 
-import com.example.Petbulance_BE.domain.review.dto.dao.MyReviewGetDao;
+import com.example.Petbulance_BE.domain.review.dto.MyReviewGetDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,7 +14,7 @@ import java.util.List;
 @Setter
 public class MyReviewGetResDto {
 
-    private List<MyReviewGetDao> list;
+    private List<MyReviewGetDto> list;
 
     private Long nextCursorId;
 

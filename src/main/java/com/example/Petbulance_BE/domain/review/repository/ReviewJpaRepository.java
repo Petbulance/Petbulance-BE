@@ -1,7 +1,7 @@
 package com.example.Petbulance_BE.domain.review.repository;
 
 import com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto;
-import com.example.Petbulance_BE.domain.review.dto.dao.MyReviewGetDao;
+import com.example.Petbulance_BE.domain.review.dto.MyReviewGetDto;
 import com.example.Petbulance_BE.domain.review.entity.UserReview;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import org.springframework.data.domain.Page;
@@ -59,9 +59,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     @Query(value = """
     SELECT r
     FROM UserReview r
-    JOIN FETCH r.user u 
-    LEFT JOIN r.images i
-    LEFT JOIN r.likes l 
+    JOIN FETCH r.user u
     WHERE r.hospital.id = :hospitalId
     AND (:imageOnly = FALSE OR EXISTS (SELECT 1 FROM UserReviewImage i WHERE i.review = r))
     AND (:cursorId IS NULL OR r.id < :cursorId)
@@ -80,9 +78,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     @Query(value = """
     SELECT r
     FROM UserReview r
-    JOIN FETCH r.user u 
-    LEFT JOIN r.images i
-    LEFT JOIN r.likes l 
+    JOIN FETCH r.user u
     WHERE r.hospital.id = :hospitalId
     AND (:imageOnly = FALSE OR EXISTS (SELECT 1 FROM UserReviewImage i WHERE i.review = r))
     AND (:cursorRating IS NULL OR
@@ -105,9 +101,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     @Query(value = """
     SELECT r
     FROM UserReview r
-    JOIN FETCH r.user u 
-    LEFT JOIN r.images i
-    LEFT JOIN r.likes l 
+    JOIN FETCH r.user u
     WHERE r.hospital.id = :hospitalId
     AND (:imageOnly = FALSE OR EXISTS (SELECT 1 FROM UserReviewImage i WHERE i.review = r))
     AND (:cursorLikeCount IS NULL OR
@@ -130,7 +124,7 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     Optional<UserReview> findByUserId(@Param("user") Users user, @Param("reviewId") Long reviewId);
 
     @Query(value = """
-            SELECT new com.example.Petbulance_BE.domain.review.dto.dao.MyReviewGetDao(
+            SELECT new com.example.Petbulance_BE.domain.review.dto.MyReviewGetDto(
             r.id,
             r.hospital.name,
             r.hospital.image,
@@ -145,6 +139,6 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
             AND (:cursorId IS NULL OR r.id < :cursorId)
             order by r.id DESC 
             """)
-    List<MyReviewGetDao> findByUserIdAndCursorId(@Param("user") Users user, @Param("cursorId") Long cursorId, Pageable pageable);
-
+    List<MyReviewGetDto> findByUserIdAndCursorId(@Param("user") Users user, @Param("cursorId") Long cursorId, Pageable pageable);
+//fetch join 카테시안 곱 문제 해결
 }

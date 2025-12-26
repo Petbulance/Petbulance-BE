@@ -46,12 +46,12 @@ public class HospitalService {
         }
 
         // 1. DB에서 조회 (limit + 1로 한 개 더 가져와서 hasNext 체크)
-        List<HospitalSearchDao> hospitalSearchDaos = hospitalRepository.searchHospitals(hospitalSearchReqDto);
+        List<HospitalSearchDto> hospitalSearchDtos = hospitalRepository.searchHospitals(hospitalSearchReqDto);
 
         // 2. hasNext 처리
-        boolean hasNext = hospitalSearchDaos.size() > hospitalSearchReqDto.getSize();
+        boolean hasNext = hospitalSearchDtos.size() > hospitalSearchReqDto.getSize();
         if (hasNext) {
-            hospitalSearchDaos = hospitalSearchDaos.subList(0, hospitalSearchReqDto.getSize());
+            hospitalSearchDtos = hospitalSearchDtos.subList(0, hospitalSearchReqDto.getSize());
         }
 
         DayOfWeek today = LocalDate.now().getDayOfWeek();
@@ -61,7 +61,7 @@ public class HospitalService {
         int todayIndex = Arrays.asList(dayOrder).indexOf(dayPrefix);
 
         // 3. DTO 매핑
-        List<HospitalsResDto> content = hospitalSearchDaos.stream()
+        List<HospitalsResDto> content = hospitalSearchDtos.stream()
                 .map(hs -> {
                     boolean isOpenNow = false;
                     LocalTime openTimeToday = null;
@@ -192,8 +192,8 @@ public class HospitalService {
         Double cursorRating = null;
         Long cursorReviewCount = null;
 
-        if (!hospitalSearchDaos.isEmpty()) {
-            HospitalSearchDao last = hospitalSearchDaos.get(hospitalSearchDaos.size() - 1);
+        if (!hospitalSearchDtos.isEmpty()) {
+            HospitalSearchDto last = hospitalSearchDtos.get(hospitalSearchDtos.size() - 1);
 
             // 정렬 기준에 따라 cursor 필드만 채움
             switch (hospitalSearchReqDto.getSortBy().toLowerCase()) {
@@ -233,7 +233,7 @@ public class HospitalService {
         Hospital hospital = hospitalRepository.findDetailHospital(hospitalId).orElseThrow(()->new CustomException(ErrorCode.NOT_FOUND_HOSPITAL));
 
         List<String> animalTypes = hospital.getTreatmentAnimals().stream().map(t ->
-            t.getAnimaType().name()
+            t.getAnimalType().name()
         ).toList();
 
         Set<HospitalWorktime> hospitalWorktimes = hospital.getHospitalWorktimes();
@@ -312,7 +312,7 @@ public class HospitalService {
         // 3. 나머지 로직은 그대로
         List<String> list = hospital.getTreatmentAnimals().stream()
                 .sorted((a, b) -> Long.compare(a.getId(), b.getId()))
-                .map(t->t.getAnimaType().name())
+                .map(t->t.getAnimalType().name())
                 .toList();
 
         LocalTime now = LocalTime.now();
