@@ -15,10 +15,11 @@ public class AdminQnaListResDto {
     private Long qnaId;
     private QnaStatus status;
     private String title;
+    private String content;
     private String writerNickname;
     private String createdAt;
 
-    public AdminQnaListResDto(Long qnaId, QnaStatus status, String title, String writerNickname, LocalDateTime createdAt) {
+    public AdminQnaListResDto(Long qnaId, QnaStatus status, String title, String content, String writerNickname, LocalDateTime createdAt) {
         this.qnaId = qnaId;
         this.status = status;
         this.title = title;

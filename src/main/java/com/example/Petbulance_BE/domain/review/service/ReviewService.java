@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.review.service;
 
+import com.example.Petbulance_BE.domain.dashboard.service.DashboardMetricRedisService;
 import com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto;
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
@@ -62,6 +63,7 @@ public class ReviewService {
     private final S3Service s3Service;
     private final ReviewImageJpaRepository reviewImageJpaRepository;
     private final ReviewLikeJpaRepository reviewLikeJpaRepository;
+    private final DashboardMetricRedisService dashboardMetricRedisService;
 
     @Value("${gemini.api.url-with-key}")
     private String genimiApiUrl;
@@ -405,6 +407,12 @@ public class ReviewService {
                 .build();
 
         reviewJpaRepository.save(userReview);
+
+        try {
+            dashboardMetricRedisService.incrementTodayReviewCreated();
+        } catch (Exception e) {
+            log.warn("Failed to increment review_created_count", e);
+        }
 
         List<ReviewSaveResDto.UrlAndId> list = new LinkedList<>();
 

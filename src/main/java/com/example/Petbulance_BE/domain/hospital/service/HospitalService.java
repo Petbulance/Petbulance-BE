@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.hospital.service;
 
+import com.example.Petbulance_BE.domain.dashboard.service.DashboardMetricRedisService;
 import com.example.Petbulance_BE.domain.hospital.dto.*;
 import com.example.Petbulance_BE.domain.hospital.dto.req.HospitalSearchReqDto;
 import com.example.Petbulance_BE.domain.hospital.dto.res.*;
@@ -11,6 +12,9 @@ import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.type.AnimalType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -20,13 +24,26 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HospitalService {
 
     private final HospitalJpaRepository hospitalRepository;
+    private final DashboardMetricRedisService dashboardMetricRedisService;
 
     public HospitalSearchResDto searchHospitalsProcess(HospitalSearchReqDto hospitalSearchReqDto) {
+
+        if (hospitalSearchReqDto.getQ() != null
+                && !hospitalSearchReqDto.getQ().isBlank()
+                && hospitalSearchReqDto.getCursorId() == null) {
+
+            try {
+                dashboardMetricRedisService.incrementTodayHospitalSearch();
+            } catch (Exception e) {
+                log.warn("Failed to increment hospital_search_count", e);
+            }
+        }
 
         // 1. DB에서 조회 (limit + 1로 한 개 더 가져와서 hasNext 체크)
         List<HospitalSearchDto> hospitalSearchDtos = hospitalRepository.searchHospitals(hospitalSearchReqDto);
