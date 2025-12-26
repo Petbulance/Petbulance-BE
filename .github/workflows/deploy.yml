@@ -23,12 +23,15 @@ jobs:
         run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application-prod.yml
 
       - name: Create firebase.json
-        run: echo "${{ secrets.FILEBASE_JSON }}" > ./src/main/resources/petbulance-b316f-firebase-adminsdk-fbsvc-8c92a7aab5.json
+        run: |
+          cat << 'EOF' > ./src/main/resources/petbulance-b316f-firebase-adminsdk-fbsvc-8c92a7aab5.json
+          ${{ secrets.FILEBASE_JSON }}
+          EOF
 
-      - name: gradlew에 실행 권한 부여
+      - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
 
-      - name: Build Spring Boot
+      - name: Build Spring Boot (skip tests)
         run: ./gradlew clean build -x test
 
       - name: Configure AWS credentials
@@ -69,4 +72,3 @@ jobs:
               ]
             }' \
             --output text
-
