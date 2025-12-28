@@ -1,7 +1,8 @@
 package com.example.Petbulance_BE.domain.notice.service;
 
 import com.example.Petbulance_BE.domain.notice.dto.request.CreateNoticeReqDto;
-import com.example.Petbulance_BE.domain.notice.dto.response.CreateNoticeResDto;
+import com.example.Petbulance_BE.domain.notice.dto.request.UpdateNoticeReqDto;
+import com.example.Petbulance_BE.domain.notice.dto.response.NoticeResDto;
 import com.example.Petbulance_BE.domain.notice.dto.response.DetailNoticeResDto;
 import com.example.Petbulance_BE.domain.notice.dto.response.PagingAdminNoticeListResDto;
 import com.example.Petbulance_BE.domain.notice.dto.response.PagingNoticeListResDto;
@@ -13,7 +14,6 @@ import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,12 +57,15 @@ public class NoticeService {
     }
 
     @Transactional
-    public CreateNoticeResDto createNotice(@Valid CreateNoticeReqDto reqDto) {
+    public NoticeResDto createNotice(@Valid CreateNoticeReqDto reqDto) {
 
         Notice notice = Notice.builder()
                 .noticeStatus(reqDto.getNoticeStatus())
+                .postStatus(reqDto.getPostStatus())
                 .title(reqDto.getTitle())
                 .content(reqDto.getContent())
+                .postStartDate(reqDto.getStartDate())
+                .postEndDate(reqDto.getEndDate())
                 .build();
 
         if (reqDto.getFileUrl() != null) {
@@ -77,7 +80,21 @@ public class NoticeService {
 
         noticeRepository.save(notice);
 
-        return new CreateNoticeResDto("공지사항이 정상적으로 작성되었습니다.");
+        return new NoticeResDto("공지사항이 정상적으로 작성되었습니다.");
     }
 
+
+    public NoticeResDto updateNotice(Long noticeId, @Valid UpdateNoticeReqDto reqDto) {
+        Notice notice = noticeRepository.findById(noticeId).orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
+        notice.update(reqDto);
+
+        // 파일 수정 관련 로직 (나중에)
+
+        return new NoticeResDto("공지사항이 정상적으로 수정되었습니다.");
+    }
+
+    @Transactional(readOnly = true)
+    public PagingAdminNoticeListResDto adminNoticeList(int page, int size) {
+        return noticeRepository.adminNoticeList(page, size);
+    }
 }

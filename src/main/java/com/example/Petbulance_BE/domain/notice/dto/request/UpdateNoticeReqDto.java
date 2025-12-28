@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateNoticeReqDto {
+public class UpdateNoticeReqDto {
     private NoticeStatus noticeStatus;
     private PostStatus postStatus;
 
