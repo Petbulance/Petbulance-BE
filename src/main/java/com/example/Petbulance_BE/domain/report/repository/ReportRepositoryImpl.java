@@ -6,7 +6,9 @@ import com.example.Petbulance_BE.domain.report.dto.response.PagingReportListResD
 import com.example.Petbulance_BE.domain.report.dto.response.ReportListResDto;
 
 import com.example.Petbulance_BE.domain.report.entity.QReport;
+import com.example.Petbulance_BE.domain.report.entity.Report;
 import com.example.Petbulance_BE.domain.report.type.ReportType;
+import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
@@ -15,6 +17,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -24,55 +27,89 @@ public class ReportRepositoryImpl implements ReportRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public PagingReportListResDto reportList(Long lastReportId, Integer pageSize) {
+    public PagingReportListResDto findPagingReports(int page, int size) {
+        QReport report = QReport.report;
+        QPost post = QPost.post;
+        QPostComment comment = QPostComment.postComment;
+        QUsers postUser = QUsers.users;
+        QUsers commentUser = QUsers.users;
 
-        QReport r = QReport.report;
-        QPost p = QPost.post;
-        QPostComment c = QPostComment.postComment;
+        long offset = (long) (page - 1) * size;
 
-        List<ReportListResDto> rows = queryFactory
-                .select(Projections.constructor(
-                        ReportListResDto.class,
-                        r.reportId,
-
-                        // 신고 유형 (String)
-                        new CaseBuilder()
-                                .when(r.postId.isNotNull()).then(ReportType.POST.name())
-                                .when(r.commentId.isNotNull()).then(ReportType.COMMENT.name())
-                                .otherwise(ReportType.USER.name()),
-
-                        // content
-                        new CaseBuilder()
-                                .when(r.postId.isNotNull()).then(p.content)
-                                .when(r.commentId.isNotNull()).then(c.content)
-                                .otherwise(Expressions.nullExpression()),
-
-                        r.postId,
-                        r.commentId,
-                        r.reportReason,
-                        r.reporter.nickname,
-                        r.targetUser.nickname,
-                        r.status,
-                        r.actionType,
-                        r.createdAt
-                ))
-                .from(r)
-                .leftJoin(p).on(r.postId.eq(p.id))
-                .leftJoin(c).on(r.commentId.eq(c.id))
-                .where(ltReportId(lastReportId, r))
-                .orderBy(r.reportId.desc())
-                .limit(pageSize + 1)
+        List<Long> ids = queryFactory
+                .select(report.reportId)
+                .from(report)
+                .orderBy(report.reportId.desc())
+                .offset(offset)
+                .limit(size)
                 .fetch();
 
-        boolean hasNext = rows.size() > pageSize;
-        if (hasNext) {
-            rows = rows.subList(0, pageSize);
+        System.out.println("ids: " +  ids);
+
+        if (ids.isEmpty()) {
+            return new PagingReportListResDto(
+                    List.of(), page, size, 0, 0, false, page > 1
+            );
         }
 
-        return new PagingReportListResDto(rows, hasNext);
+        List<ReportListResDto> content = queryFactory
+                .select(
+                        Projections.constructor(
+                                ReportListResDto.class,
+                                report.reportId,
+                                report.reportType,
+
+                                Projections.constructor(
+                                        ReportListResDto.PostDto.class,
+                                        post.title,
+                                        postUser.nickname,
+                                        post.createdAt
+                                ),
+
+                                Projections.constructor(
+                                        ReportListResDto.CommentDto.class,
+                                        comment.content,
+                                        commentUser.nickname,
+                                        comment.createdAt
+                                ),
+
+                                report.createdAt,
+                                report.status,
+                                report.actionType
+                        )
+                )
+                .from(report)
+                .leftJoin(post).on(report.postId.eq(post.id))
+                .leftJoin(postUser).on(post.user.id.eq(postUser.id))
+                .leftJoin(comment).on(report.commentId.eq(comment.id))
+                .leftJoin(commentUser).on(comment.user.id.eq(commentUser.id))
+                .where(report.reportId.in(ids))
+                .orderBy(report.reportId.desc())
+                .fetch();
+
+
+
+
+
+        long totalElements = queryFactory
+                .select(report.reportId.count())
+                .from(report)
+                .fetchOne();
+
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+
+        boolean hasNext = page < totalPages;
+        boolean hasPrev = page > 1;
+
+        return new PagingReportListResDto(
+                content,
+                page,
+                size,
+                totalPages,
+                totalElements,
+                hasNext,
+                hasPrev
+        );
     }
 
-    private BooleanExpression ltReportId(Long lastReportId, QReport r) {
-        return lastReportId == null ? null : r.reportId.lt(lastReportId);
-    }
 }

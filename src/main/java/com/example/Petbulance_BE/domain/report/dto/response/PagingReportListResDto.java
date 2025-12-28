@@ -10,6 +10,15 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PagingReportListResDto {
+
     private List<ReportListResDto> content;
+
+    private int page;
+    private int size;
+
+    private int totalPages;
+    private long totalElements;
+
     private boolean hasNext;
+    private boolean hasPrev;
 }

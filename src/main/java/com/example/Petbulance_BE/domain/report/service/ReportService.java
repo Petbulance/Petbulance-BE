@@ -9,11 +9,10 @@ import com.example.Petbulance_BE.domain.report.dto.request.ReportCreateReqDto;
 import com.example.Petbulance_BE.domain.report.dto.response.PagingReportListResDto;
 import com.example.Petbulance_BE.domain.report.dto.response.ReportActionResDto;
 import com.example.Petbulance_BE.domain.report.dto.response.ReportCreateResDto;
-import com.example.Petbulance_BE.domain.report.entity.CommentReport;
-import com.example.Petbulance_BE.domain.report.entity.PostReport;
 import com.example.Petbulance_BE.domain.report.entity.Report;
-import com.example.Petbulance_BE.domain.report.entity.UserReport;
 import com.example.Petbulance_BE.domain.report.repository.ReportRepository;
+import com.example.Petbulance_BE.domain.report.type.ReportStatus;
+import com.example.Petbulance_BE.domain.report.type.ReportType;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -21,11 +20,12 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReportService {
     private final ReportRepository reportRepository;
     private final PostRepository postRepository;
@@ -33,71 +33,49 @@ public class ReportService {
     private final UsersJpaRepository usersJpaRepository;
 
     public ReportCreateResDto createReport(@Valid ReportCreateReqDto reqDto) {
+
+        Users reporter = UserUtil.getCurrentUser();
         Report report;
-        Users reporter = UserUtil.getCurrentUser(); // 신고자
 
         switch (reqDto.getReportType()) {
 
-            case POST -> { // 신고 유형이 게시글 유형이라면
+            case POST -> {
                 Post post = postRepository.findById(reqDto.getPostId())
                         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-                report = createPostReport(reporter, post, reqDto);
+                report = Report.builder()
+                        .reportReason(reqDto.getReportReason())
+                        .reporter(reporter)
+                        .reportType(ReportType.POST)
+                        .status(post.isDeleted() ? ReportStatus.DELETED : ReportStatus.PUBLISHED)
+                        .postId(post.getId())
+                        .build();
             }
 
             case COMMENT -> {
                 PostComment comment = postCommentRepository.findById(reqDto.getCommentId())
                         .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
-                report = createCommentReport(reporter, comment, reqDto);
+                report = Report.builder()
+                        .reportReason(reqDto.getReportReason())
+                        .reporter(reporter)
+                        .reportType(ReportType.COMMENT)
+                        .status(comment.getDeleted() ? ReportStatus.DELETED : ReportStatus.PUBLISHED)
+                        .commentId(comment.getId())
+                        .build();
             }
 
-            case USER -> {
-                Users targetUser = usersJpaRepository
-                        .findByNickname(reqDto.getTargetUserNickname())
-                        .orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
-
-                report = createUserReport(reporter, targetUser, reqDto);
-            }
-
-            default -> throw new IllegalStateException("잘못된 신고 타입");
+            default -> throw new IllegalStateException("잘못된 신고 타입입니다.");
         }
 
         reportRepository.save(report);
 
-        return new ReportCreateResDto("신고가 정상적으로 접수되었습니다");
+        return new ReportCreateResDto("신고가 정상적으로 접수되었습니다.");
     }
 
-    private PostReport createPostReport(Users reporter, Post post, ReportCreateReqDto req) {
-        return PostReport.builder()
-                .reportReason(req.getReportReason())
-                .reporter(reporter)
-                .targetUser(post.getUser()) // 게시글 작성자가 신고 대상자가 됨
-                .postId(post.getId())
-                .build();
-    }
-
-    private CommentReport createCommentReport(Users reporter, PostComment comment, ReportCreateReqDto req) {
-        return CommentReport.builder()
-                .reportReason(req.getReportReason())
-                .reporter(reporter)
-                .targetUser(comment.getUser())
-                .commentId(comment.getId())
-                .build();
-    }
-
-    private UserReport createUserReport(Users reporter, Users targetUser, ReportCreateReqDto req) {
-        return UserReport.builder()
-                .reportReason(req.getReportReason())
-                .reporter(reporter)
-                .targetUser(targetUser)
-                .build();
-    }
-
-    @Transactional(readOnly = true)
-    public PagingReportListResDto reportList(Long lastReportId, Integer pageSize) {
-        int size = (pageSize == null || pageSize <= 0) ? 20 : pageSize;
-        return reportRepository.reportList(lastReportId, size);
+    public PagingReportListResDto reportList(int page, int size) {
+        log.info("page={}, size={}", page, size);
+        return reportRepository.findPagingReports(page, size);
     }
 
     public ReportActionResDto processReport(Long reportId, ReportActionReqDto reqDto) {
