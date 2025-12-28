@@ -12,6 +12,7 @@ import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.post.type.Category;
 import com.example.Petbulance_BE.domain.recent.service.RecentService;
+import com.example.Petbulance_BE.domain.report.aop.communityBan.CheckCommunityAvailable;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -46,6 +47,7 @@ public class PostCommentService {
             key = "#currentUser.id + '_0'",
             condition = "#keyword == null"
     )
+    @CheckCommunityAvailable
     public PostCommentResDto createPostComment(Long postId, CreatePostCommentReqDto dto) {
         // parentId와 mentionUserNickname 간의 관계 검증
         if (dto.getParentId() == null && dto.getMentionUserNickname() != null) {
@@ -96,6 +98,7 @@ public class PostCommentService {
             condition = "#keyword == null"
     )
     @Transactional(readOnly = true)
+    @CheckCommunityAvailable
     public PostCommentResDto updatePostComment(Long commentId, UpdatePostCommentReqDto dto) {
         if (dto.getContent() == null || dto.getContent().isBlank()) {
             throw new CustomException(ErrorCode.EMPTY_COMMENT_CONTENT);
@@ -113,6 +116,7 @@ public class PostCommentService {
             key = "#currentUser.id + '_0'",
             condition = "#keyword == null"
     )
+    @CheckCommunityAvailable
     public DelCommentResDto deletePostComment(Long commentId) {
         /* 상위 댓글을 삭제하려는 경우
             (1) 자식댓글이 존재하면 -> deleted를 true로
@@ -145,6 +149,7 @@ public class PostCommentService {
             key = "#currentUser.id + '_0'",
             condition = "#keyword == null"
     )
+    @CheckCommunityAvailable
     public BulkDeleteCommentResDto deletePostComments(List<Long> commentIds) {
 
         Users currentUser = UserUtil.getCurrentUser();
@@ -239,6 +244,7 @@ public class PostCommentService {
     }
 
     @Transactional(readOnly = true)
+    @CheckCommunityAvailable
     public PagingPostCommentListResDto postCommentList(Long postId,Long lastParentCommentId, Long lastCommentId, Pageable pageable) {
         Users currentUser = UserUtil.getCurrentUser(); // 현재 댓글을 조회하는 사용자
         Post post = findPostById(postId); // 현재 조회하는 댓글이 달린 게시글
@@ -265,6 +271,7 @@ public class PostCommentService {
     }
 
     @Transactional(readOnly = true)
+    @CheckCommunityAvailable
     public SearchPostCommentListResDto searchPostCommentList(String keyword, String searchScope, Long lastCommentId, Integer pageSize, List<String> category, Long boardId) {
         if(keyword.length() < 2) {
             throw new CustomException(ErrorCode.INVALID_SEARCH_KEYWORD);
@@ -306,6 +313,7 @@ public class PostCommentService {
             condition = "#keyword == null",
             unless = "#result == null"
     )
+    @CheckCommunityAvailable
     public PagingMyCommentListResDto myCommentList(String keyword, Long lastCommentId, Pageable pageable) {
         Users currentUser = UserUtil.getCurrentUser();
         return postCommentRepository.findMyCommentList(currentUser, keyword, lastCommentId, pageable);

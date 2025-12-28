@@ -1,6 +1,6 @@
 package com.example.Petbulance_BE.domain.report.type;
 
 public enum ReportStatus {
-    PUBLISHED,      // 게시 중
+    REPORTED,      //  신고됨
     DELETED         // 삭제됨
 }

@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.stereotype.Component;
 
 import java.util.*;
 
@@ -128,7 +127,7 @@ public class ReportInitializer implements ApplicationRunner {
                             .reportReason(reasons.get(random.nextInt(reasons.size())))
                             .reporter(reporter)
                             .reportType(ReportType.POST)
-                            .status(ReportStatus.PUBLISHED)
+                            .status(ReportStatus.REPORTED)
                             .actionType(randomAction())
                             .postId(target.getId())
                             .build()
@@ -145,7 +144,7 @@ public class ReportInitializer implements ApplicationRunner {
                             .reportReason(reasons.get(random.nextInt(reasons.size())))
                             .reporter(reporter)
                             .reportType(ReportType.COMMENT)
-                            .status(ReportStatus.PUBLISHED)
+                            .status(ReportStatus.REPORTED)
                             .actionType(randomAction())
                             .commentId(target.getId())
                             .build()

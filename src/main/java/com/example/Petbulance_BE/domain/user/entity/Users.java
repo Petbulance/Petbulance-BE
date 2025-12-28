@@ -11,6 +11,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -89,6 +90,11 @@ public class Users extends BaseTimeEntity {
     @Builder.Default
     private String termsMarketingVersion = "";   // 마케팅 정보 수신
 
+    @Column(name = "community_ban_until")
+    private LocalDateTime communityBanUntil;
+
+    @Column(name = "review_ban_until")
+    private LocalDateTime reviewBanUntil;
 
     @Override
     public boolean equals(Object o) {
@@ -96,6 +102,26 @@ public class Users extends BaseTimeEntity {
         if (!(o instanceof Users)) return false;
         Users user = (Users) o;
         return Objects.equals(id, user.id);
+    }
+
+    public boolean isCommunityBanned() {
+        return communityBanUntil != null && communityBanUntil.isAfter(LocalDateTime.now());
+    }
+
+    public void banCommunityUntil(LocalDateTime until) {
+        this.communityBanUntil = until;
+    }
+
+    public void clearCommunityBan() {
+        this.communityBanUntil = null;
+    }
+
+    public void banReviewUntil(LocalDateTime until) {
+        this.reviewBanUntil = until;
+    }
+
+    public void clearReviewBan() {
+        this.reviewBanUntil = null;
     }
 
 

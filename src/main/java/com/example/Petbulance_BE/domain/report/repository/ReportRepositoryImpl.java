@@ -61,6 +61,7 @@ public class ReportRepositoryImpl implements ReportRepositoryCustom {
 
                                 Projections.constructor(
                                         ReportListResDto.PostDto.class,
+                                        post.id,
                                         post.title,
                                         postUser.nickname,
                                         post.createdAt
@@ -68,6 +69,7 @@ public class ReportRepositoryImpl implements ReportRepositoryCustom {
 
                                 Projections.constructor(
                                         ReportListResDto.CommentDto.class,
+                                        comment.id,
                                         comment.content,
                                         commentUser.nickname,
                                         comment.createdAt

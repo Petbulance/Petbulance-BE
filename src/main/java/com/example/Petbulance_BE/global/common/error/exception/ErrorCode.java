@@ -81,7 +81,9 @@ public enum ErrorCode {
     ALREADY_WRITTEN_ANSWER(HttpStatus.BAD_REQUEST, "이미 답변이 작성된 문의 입니다." ),
     NOT_FOUND_TERM(HttpStatus.BAD_REQUEST, "요청하신 약관을 찾을 수 없습니다."),
     REQUIRED_TERMS_MISSING(HttpStatus.BAD_REQUEST, "필수 약관에 대한 동의가 부족합니다."),
-    NOT_FOUND_AGREE(HttpStatus.BAD_REQUEST, "해당 약관에 동의한 기록이 없습니다.");
+    NOT_FOUND_AGREE(HttpStatus.BAD_REQUEST, "해당 약관에 동의한 기록이 없습니다."),
+    NOT_FOUND_REPORT(HttpStatus.NOT_FOUND, "존재하지 않는 신고입니다." ),
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "유효하지 않은 요청입니다.");
 
     private final HttpStatus status;
     private final String message;

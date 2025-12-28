@@ -26,11 +26,13 @@ public class ReportListResDto {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class PostDto {
+        private Long postId;
         private String title;
         private String writerNickname;
         private String createdAt;
 
-        public PostDto(String title, String writerNickname, LocalDateTime localDateTime) {
+        public PostDto(Long postId, String title, String writerNickname, LocalDateTime localDateTime) {
+            this.postId = postId;
             this.title = title;
             this.writerNickname = writerNickname;
             this.createdAt = TimeUtil.formatCreatedAt(localDateTime);
@@ -41,11 +43,13 @@ public class ReportListResDto {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class CommentDto {
+        private Long commentId;
         private String content;
         private String writerNickname;
         private String createdAt;
 
-        public CommentDto(String content, String writerNickname, LocalDateTime localDateTime) {
+        public CommentDto(Long commentId, String content, String writerNickname, LocalDateTime localDateTime) {
+            this.commentId = commentId;
             this.content = content;
             this.writerNickname = writerNickname;
             this.createdAt = TimeUtil.formatCreatedAt(localDateTime);

@@ -31,6 +31,10 @@ public class Report {
     @JoinColumn(name = "reporter_id", nullable = false)
     private Users reporter; // 신고자
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "target_user_id", nullable = false)
+    private Users targetUser; // 신고 대상자
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ReportType reportType;
@@ -54,14 +58,24 @@ public class Report {
     @Builder.Default
     private Long commentId = null;
 
+    @Builder.Default
+    private boolean processed = false;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
 
     // 조치가 취해질 때
-    public void complete(ReportActionType actionType) {
-        this.actionType = actionType;
+    public void publish() {
+        this.processed = true;
+        this.actionType = ReportActionType.PUBLISH;
+    }
+
+    public void deleteAction(ReportActionType reportActionType) {
+        this.processed = true;
+        this.actionType = reportActionType;
+        this.status = ReportStatus.DELETED;
     }
 }
 
