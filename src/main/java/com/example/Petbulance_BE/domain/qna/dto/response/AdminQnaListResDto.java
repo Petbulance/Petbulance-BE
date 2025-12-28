@@ -23,6 +23,7 @@ public class AdminQnaListResDto {
         this.qnaId = qnaId;
         this.status = status;
         this.title = title;
+        this.content = content;
         this.writerNickname = writerNickname;
         this.createdAt = TimeUtil.formatCreatedAt(createdAt);
     }

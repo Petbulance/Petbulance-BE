@@ -39,7 +39,7 @@ public class ReportRepositoryImpl implements ReportRepositoryCustom {
         List<Long> ids = queryFactory
                 .select(report.reportId)
                 .from(report)
-                .orderBy(report.reportId.desc())
+                .orderBy(report.createdAt.desc(), report.reportId.desc())
                 .offset(offset)
                 .limit(size)
                 .fetch();
@@ -86,7 +86,7 @@ public class ReportRepositoryImpl implements ReportRepositoryCustom {
                 .leftJoin(comment).on(report.commentId.eq(comment.id))
                 .leftJoin(commentUser).on(comment.user.id.eq(commentUser.id))
                 .where(report.reportId.in(ids))
-                .orderBy(report.reportId.desc())
+                .orderBy(report.createdAt.desc(), report.reportId.desc())
                 .fetch();
 
 

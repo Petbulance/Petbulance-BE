@@ -25,6 +25,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -80,6 +81,7 @@ public class ReportService {
         return new ReportCreateResDto("신고가 정상적으로 접수되었습니다.");
     }
 
+    @Transactional(readOnly = true)
     public PagingReportListResDto reportList(int page, int size) {
         log.info("page={}, size={}", page, size);
         return reportRepository.findPagingReports(page, size);

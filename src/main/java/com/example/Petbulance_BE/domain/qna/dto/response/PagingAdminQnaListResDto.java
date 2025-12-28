@@ -11,5 +11,13 @@ import java.util.List;
 @NoArgsConstructor
 public class PagingAdminQnaListResDto {
     private List<AdminQnaListResDto> content;
+
+    private int page;
+    private int size;
+
+    private int totalPages;
+    private long totalElements;
+
     private boolean hasNext;
+    private boolean hasPrev;
 }
