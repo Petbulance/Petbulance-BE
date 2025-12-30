@@ -1,7 +1,4 @@
 spring:
-  profiles:
-    active: prod
-
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${DB_HOST}/petbulance?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
