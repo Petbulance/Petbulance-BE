@@ -11,5 +11,13 @@ import java.util.List;
 @NoArgsConstructor
 public class PagingAdminInquiryListResDto {
     private List<AdminInquiryListResDto> content;
+
+    private int page;
+    private int size;
+
+    private int totalPages;
+    private long totalElements;
+
     private boolean hasNext;
+    private boolean hasPrev;
 }

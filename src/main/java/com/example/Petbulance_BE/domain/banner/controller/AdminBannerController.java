@@ -1,13 +1,11 @@
 package com.example.Petbulance_BE.domain.banner.controller;
 
 import com.example.Petbulance_BE.domain.banner.dto.request.CreateBannerReqDto;
-import com.example.Petbulance_BE.domain.banner.dto.response.CreateBannerResDto;
+import com.example.Petbulance_BE.domain.banner.dto.response.BannerResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.PagingAdminBannerListResDto;
 import com.example.Petbulance_BE.domain.banner.service.BannerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,14 +15,13 @@ public class AdminBannerController {
     private BannerService bannerService;
 
     @GetMapping
-    public PagingAdminBannerListResDto adminBannerList(@RequestParam(required = false) Long lastBannerId,
-                                                       @RequestParam(defaultValue = "10") int pageSize) {
-        Pageable pageable = PageRequest.of(0, pageSize);
-        return bannerService.adminNoticeList(lastBannerId, pageable);
+    public PagingAdminBannerListResDto adminBannerList(@RequestParam(defaultValue = "1") int page,
+                                                       @RequestParam(defaultValue = "20") int size) {
+        return bannerService.adminNoticeList(page, size);
     }
 
     @PostMapping
-    public CreateBannerResDto createBanner(@RequestBody @Valid CreateBannerReqDto reqDto) {
+    public BannerResDto createBanner(@RequestBody @Valid CreateBannerReqDto reqDto) {
         return bannerService.createBanner(reqDto);
     }
 }

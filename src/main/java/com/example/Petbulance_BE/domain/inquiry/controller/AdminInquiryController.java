@@ -17,11 +17,9 @@ public class AdminInquiryController {
 
 
     @GetMapping
-    public PagingAdminInquiryListResDto adminInquiryList(@RequestParam(required = false) Long lastInquiryId,
-                                                         @RequestParam(defaultValue = "10") int pageSize,
-                                                         @RequestParam(required = false) String keyword) {
-        Pageable pageable = PageRequest.of(0, pageSize);
-        return inquiryService.adminInquiryList(pageable, lastInquiryId, keyword);
+    public PagingAdminInquiryListResDto adminInquiryList(@RequestParam(defaultValue = "1") int page,
+                                                         @RequestParam(defaultValue = "20") int size) {
+        return inquiryService.adminInquiryList(page, size);
     }
 
     @GetMapping("/{inquiryId}")
