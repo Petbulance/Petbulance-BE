@@ -61,14 +61,15 @@ jobs:
             --comment "Deploy Petbulance" \
             --parameters '{
               "commands": [
+                "PWD=$(aws ecr get-login-password --region ap-northeast-2)",
+                "echo $PWD | sudo docker login --username AWS --password-stdin 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com",
+
                 "sudo docker stop petbulance || true",
                 "sudo docker rm petbulance || true",
 
-                "aws ecr get-login-password --region ap-northeast-2 | sudo docker login --username AWS --password-stdin 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com",
-
                 "sudo docker pull 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest",
 
-                "sudo docker run -d --name petbulance -e SPRING_PROFILES_ACTIVE=prod -p 8080:8080 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest"
+                "sudo docker run -d --name petbulance --restart=always -e SPRING_PROFILES_ACTIVE=prod -p 8080:8080 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest"
               ]
             }' \
             --output text
