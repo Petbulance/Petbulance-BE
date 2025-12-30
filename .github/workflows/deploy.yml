@@ -55,10 +55,16 @@ jobs:
 
       - name: Deploy to EC2 via SSM
         run: |
-          aws ssm send-command \
+          COMMAND_ID=$(aws ssm send-command \
             --instance-ids "i-0102a3e18a61b4b83" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy Petbulance" \
             --parameters file://ssm-commands.json \
-            --output text
+            --query "Command.CommandId" \
+            --output text)
+          
+          echo "COMMAND_ID=${COMMAND_ID}"
+          
+          aws ssm wait command-executed --command-id "$COMMAND_ID"
+     
 
