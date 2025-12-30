@@ -87,7 +87,7 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
                 "https://temppet.netlify.app",
-                "http://localhost:3000"
+                "http://localhost:5173"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
