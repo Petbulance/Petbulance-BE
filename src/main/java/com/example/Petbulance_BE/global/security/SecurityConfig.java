@@ -47,7 +47,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationConfiguration authenticationConfiguration) throws Exception {
 
         http
-                .cors(withDefaults());
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         http
                 .csrf((auth)->auth.disable());
         http
@@ -91,7 +91,8 @@ public class SecurityConfig {
                 "http://127.0.0.1:*",
                 "https://127.0.0.1:*",
                 "https://*.petbulance.com",   // 운영 도메인(예시)
-                "http://*.petbulance.com"
+                "http://*.petbulance.com",
+                "http://localhost:5173"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
