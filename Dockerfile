@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk
+FROM eclipse-temurin:17-jdk
 
 COPY build/libs/app.jar app.jar
 
