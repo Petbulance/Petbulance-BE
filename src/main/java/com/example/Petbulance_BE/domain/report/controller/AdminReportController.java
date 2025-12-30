@@ -14,12 +14,15 @@ public class AdminReportController {
     private final ReportService reportService;
 
     @GetMapping
-    public PagingReportListResDto reportList(@RequestParam(required = false) Long lastReportId,
-                                             @RequestParam(defaultValue = "10") Integer pageSize) {
-        return reportService.reportList(lastReportId, pageSize);
+    public PagingReportListResDto reportList(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return reportService.reportList(page, size);
     }
 
-    @PatchMapping()
+
+    @PatchMapping
     public ReportActionResDto processReport(@PathVariable Long reportId,
                                             @RequestBody ReportActionReqDto reqDto) {
         return reportService.processReport(reportId, reqDto);

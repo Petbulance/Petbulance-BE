@@ -6,6 +6,9 @@ import com.example.Petbulance_BE.domain.notice.dto.response.PagingAdminNoticeLis
 import com.example.Petbulance_BE.domain.notice.dto.response.PagingNoticeListResDto;
 import com.example.Petbulance_BE.domain.notice.entity.Notice;
 import com.example.Petbulance_BE.domain.notice.entity.QNotice;
+import com.example.Petbulance_BE.domain.notice.type.PostStatus;
+import com.example.Petbulance_BE.domain.qna.dto.response.AdminQnaListResDto;
+import com.example.Petbulance_BE.domain.qna.dto.response.PagingAdminQnaListResDto;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -41,6 +44,9 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
                             )
             );
         }
+
+        // 현재 게시중인 상태의 공지사항만 조회 가능하게
+        whereBuilder.and(n.postStatus.eq(PostStatus.ACTIVE));
 
         List<NoticeListResDto> results = queryFactory
                 .select(Projections.constructor(
@@ -112,6 +118,63 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
                 )
                 .orderBy(n.createdAt.asc(), n.id.asc())
                 .fetchFirst();
+    }
+
+    @Override
+    public PagingAdminNoticeListResDto adminNoticeList(int page, int size) {
+        QNotice notice = QNotice.notice;
+
+        long offset = (long) (page - 1) * size;
+
+        List<Long> ids = queryFactory
+                .select(notice.id)
+                .from(notice)
+                .orderBy(notice.createdAt.desc(), notice.id.desc())
+                .offset(offset)
+                .limit(size)
+                .fetch();
+
+        if (ids.isEmpty()) {
+            return new PagingAdminNoticeListResDto(
+                    List.of(), page, size, 0, 0, false, page > 1
+            );
+        }
+
+        List<AdminNoticeListResDto> content = queryFactory
+                .select(
+                        Projections.constructor(
+                                AdminNoticeListResDto.class,
+                                notice.id,
+                                notice.title,
+                                notice.noticeStatus,
+                                notice.postStatus,
+                                notice.createdAt
+                        )
+                )
+                .from(notice)
+                .where(notice.id.in(ids))
+                .orderBy(notice.createdAt.desc(), notice.id.desc())
+                .fetch();
+
+        long totalElements = queryFactory
+                .select(notice.id.count())
+                .from(notice)
+                .fetchOne();
+
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+
+        boolean hasNext = page < totalPages;
+        boolean hasPrev = page > 1;
+
+        return new PagingAdminNoticeListResDto(
+                content,
+                page,
+                size,
+                totalPages,
+                totalElements,
+                hasNext,
+                hasPrev
+        );
     }
 
 }

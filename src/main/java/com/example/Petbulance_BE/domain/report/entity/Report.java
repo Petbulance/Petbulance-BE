@@ -2,23 +2,23 @@ package com.example.Petbulance_BE.domain.report.entity;
 
 import com.example.Petbulance_BE.domain.report.type.ReportActionType;
 import com.example.Petbulance_BE.domain.report.type.ReportStatus;
+import com.example.Petbulance_BE.domain.report.type.ReportType;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
-@SuperBuilder
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "report")
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "dtype")
-public abstract class Report {
+public class Report {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,43 +29,53 @@ public abstract class Report {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reporter_id", nullable = false)
-    private Users reporter;
+    private Users reporter; // 신고자
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "target_user_id", nullable = false)
-    private Users targetUser;
+    private Users targetUser; // 신고 대상자
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    @Builder.Default
-    private ReportStatus status = ReportStatus.WAITING;
+    private ReportType reportType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ReportStatus status;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private ReportActionType actionType = null;
 
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    private LocalDateTime processedAt;
+    private LocalDateTime createdAt; // 신고 날짜
 
     @Column(name = "post_id")
-    private Long postId;
+    @Builder.Default
+    private Long postId = null;
 
     @Column(name = "comment_id")
-    private Long commentId;
+    @Builder.Default
+    private Long commentId = null;
+
+    @Builder.Default
+    private boolean processed = false;
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.status = ReportStatus.WAITING;
     }
 
     // 조치가 취해질 때
-    public void complete(ReportActionType actionType) {
-        this.status = ReportStatus.COMPLETED;
-        this.actionType = actionType;
-        this.processedAt = LocalDateTime.now();
+    public void publish() {
+        this.processed = true;
+        this.actionType = ReportActionType.PUBLISH;
+    }
+
+    public void deleteAction(ReportActionType reportActionType) {
+        this.processed = true;
+        this.actionType = reportActionType;
+        this.status = ReportStatus.DELETED;
     }
 }
 

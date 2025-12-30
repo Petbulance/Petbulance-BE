@@ -6,6 +6,7 @@ import com.example.Petbulance_BE.domain.qna.dto.response.PagingAdminQnaListResDt
 import com.example.Petbulance_BE.domain.qna.dto.response.PagingQnaListResDto;
 import com.example.Petbulance_BE.domain.qna.dto.response.QnaListResDto;
 import com.example.Petbulance_BE.domain.qna.entity.QQna;
+import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
@@ -55,51 +56,66 @@ public class QnaRepositoryImpl implements QnaRepositoryCustom{
     }
 
     @Override
-    public PagingAdminQnaListResDto adminQnaList(Long lastQnaId, Pageable pageable, String keyword) {
-
+    public PagingAdminQnaListResDto adminQnaList(int page, int size) {
         QQna qna = QQna.qna;
+        QUsers user = QUsers.users;
 
-        int limit = pageable.getPageSize() + 1;
+        long offset = (long) (page - 1) * size;
 
-        List<AdminQnaListResDto> rows = queryFactory
-                .select(Projections.constructor(
-                        AdminQnaListResDto.class,
-                        qna.id,
-                        qna.status,
-                        qna.title,
-                        qna.content,
-                        qna.user.nickname,
-                        qna.createdAt
-                ))
+        // 1) id 목록 가져오기
+        List<Long> ids = queryFactory
+                .select(qna.id)
                 .from(qna)
-                .where(
-                        ltQnaId(lastQnaId, qna),
-                        containsKeyword(keyword, qna)
-                )
-                .orderBy(qna.id.desc())
-                .limit(limit)
+                .orderBy(qna.createdAt.desc(), qna.id.desc())
+                .offset(offset)
+                .limit(size)
                 .fetch();
 
-        boolean hasNext = false;
-        if (rows.size() > pageable.getPageSize()) {
-            hasNext = true;
-            rows = rows.subList(0, pageable.getPageSize());
+        if (ids.isEmpty()) {
+            return new PagingAdminQnaListResDto(
+                    List.of(), page, size, 0, 0, false, page > 1
+            );
         }
 
-        return new PagingAdminQnaListResDto(rows, hasNext);
-    }
+        //  2) 실제 데이터 조회
+        List<AdminQnaListResDto> content = queryFactory
+                .select(
+                        Projections.constructor(
+                                AdminQnaListResDto.class,
+                                qna.id,
+                                qna.status,
+                                qna.title,
+                                qna.content,
+                                user.nickname,
+                                qna.createdAt
+                        )
+                )
+                .from(qna)
+                .join(user).on(qna.user.eq(user))
+                .where(qna.id.in(ids))
+                .orderBy(qna.createdAt.desc(), qna.id.desc())
+                .fetch();
 
-    private BooleanExpression ltQnaId(Long lastQnaId, QQna qna) {
-        return lastQnaId == null ? null : qna.id.lt(lastQnaId);
-    }
+        // 🔹 3) 전체 개수
+        long totalElements = queryFactory
+                .select(qna.id.count())
+                .from(qna)
+                .fetchOne();
 
-    private BooleanExpression containsKeyword(String keyword, QQna qna) {
-        if (keyword == null || keyword.isBlank()) {
-            return null;
-        }
-        return qna.title.contains(keyword);
-        // 필요하면 ↓ 확장 가능
-        // .or(qna.content.contains(keyword))
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+
+        boolean hasNext = page < totalPages;
+        boolean hasPrev = page > 1;
+
+        return new PagingAdminQnaListResDto(
+                content,
+                page,
+                size,
+                totalPages,
+                totalElements,
+                hasNext,
+                hasPrev
+        );
     }
 
 }

@@ -7,6 +7,7 @@ import com.example.Petbulance_BE.domain.post.entity.PostLikeCount;
 import com.example.Petbulance_BE.domain.post.repository.PostLikeCountRepository;
 import com.example.Petbulance_BE.domain.post.repository.PostLikeRepository;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
+import com.example.Petbulance_BE.domain.report.aop.communityBan.CheckCommunityAvailable;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
@@ -25,6 +26,7 @@ public class PostLikeService {
     private final PostLikeCountRepository postLikeCountRepository;
 
     @Transactional
+    @CheckCommunityAvailable
     public PostLikeDto postLike(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
@@ -68,6 +70,7 @@ public class PostLikeService {
     }
 
     @Transactional
+    @CheckCommunityAvailable
     public PostLikeDto postUnlike(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));

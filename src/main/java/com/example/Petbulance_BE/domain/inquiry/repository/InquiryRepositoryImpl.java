@@ -5,6 +5,10 @@ import com.example.Petbulance_BE.domain.inquiry.dto.response.InquiryListResDto;
 import com.example.Petbulance_BE.domain.inquiry.dto.response.PagingAdminInquiryListResDto;
 import com.example.Petbulance_BE.domain.inquiry.dto.response.PagingInquiryListResDto;
 import com.example.Petbulance_BE.domain.inquiry.entity.QInquiry;
+import com.example.Petbulance_BE.domain.qna.dto.response.AdminQnaListResDto;
+import com.example.Petbulance_BE.domain.qna.dto.response.PagingAdminQnaListResDto;
+import com.example.Petbulance_BE.domain.qna.entity.QQna;
+import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -52,53 +56,65 @@ public class InquiryRepositoryImpl implements InquiryRepositoryCustom{
     }
 
     @Override
-    public PagingAdminInquiryListResDto findAdminInquiryList(
-            Pageable pageable,
-            Long lastInquiryId,
-            String keyword
-    ) {
-
+    public PagingAdminInquiryListResDto findAdminInquiryList(int page, int size) {
         QInquiry inquiry = QInquiry.inquiry;
-        int limit = pageable.getPageSize() + 1;
 
-        List<AdminInquiryListResDto> results = queryFactory
-                .select(Projections.constructor(
-                        AdminInquiryListResDto.class,
-                        inquiry.id,
-                        inquiry.inquiryAnswerType,
-                        inquiry.companyName,
-                        inquiry.managerName,
-                        inquiry.content,
-                        inquiry.createdAt
-                ))
+        long offset = (long) (page - 1) * size;
+
+        // 1) id 목록 가져오기
+        List<Long> ids = queryFactory
+                .select(inquiry.id)
                 .from(inquiry)
-                .where(
-                        ltInquiryId(lastInquiryId, inquiry),
-                        containsKeyword(keyword, inquiry)
-                )
-                .orderBy(inquiry.id.desc())
-                .limit(limit)
+                .orderBy(inquiry.createdAt.desc(), inquiry.id.desc())
+                .offset(offset)
+                .limit(size)
                 .fetch();
 
-        boolean hasNext = results.size() > pageable.getPageSize();
-        if (hasNext) {
-            results = results.subList(0, pageable.getPageSize());
+        if (ids.isEmpty()) {
+            return new PagingAdminInquiryListResDto(
+                    List.of(), page, size, 0, 0, false, page > 1
+            );
         }
 
-        return new PagingAdminInquiryListResDto(results, hasNext);
-    }
+        //  2) 실제 데이터 조회
+        List<AdminInquiryListResDto> content = queryFactory
+                .select(
+                        Projections.constructor(
+                                AdminInquiryListResDto.class,
+                                inquiry.id,
+                                inquiry.inquiryAnswerType,
+                                inquiry.companyName,
+                                inquiry.managerName,
+                                inquiry.content,
+                                inquiry.createdAt
+                        )
+                )
+                .from(inquiry)
+                .where(inquiry.id.in(ids))
+                .orderBy(inquiry.createdAt.desc(), inquiry.id.desc())
+                .fetch();
 
-    private BooleanExpression ltInquiryId(Long lastInquiryId, QInquiry inquiry) {
-        return lastInquiryId == null ? null : inquiry.id.lt(lastInquiryId);
-    }
+        // 🔹 3) 전체 개수
+        long totalElements = queryFactory
+                .select(inquiry.id.count())
+                .from(inquiry)
+                .fetchOne();
 
-    private BooleanExpression containsKeyword(String keyword, QInquiry inquiry) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return null;
-        }
-        return inquiry.content.contains(keyword);
-    }
+        int totalPages = (int) Math.ceil((double) totalElements / size);
 
+        boolean hasNext = page < totalPages;
+        boolean hasPrev = page > 1;
+
+        return new PagingAdminInquiryListResDto(
+                content,
+                page,
+                size,
+                totalPages,
+                totalElements,
+                hasNext,
+                hasPrev
+        );
+    }
 
 
 }

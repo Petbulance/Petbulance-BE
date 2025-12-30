@@ -14,6 +14,7 @@ import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.post.repository.PostViewCountRepository;
 import com.example.Petbulance_BE.domain.post.type.Category;
 import com.example.Petbulance_BE.domain.recent.service.RecentService;
+import com.example.Petbulance_BE.domain.report.aop.communityBan.CheckCommunityAvailable;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
@@ -59,6 +60,7 @@ public class PostService {
             condition = "#keyword == null"
     )
     @Transactional
+    @CheckCommunityAvailable
     public CreatePostResDto createPost(CreatePostReqDto dto) {
         if (dto.getImageUrls() != null && dto.getImageUrls().size() > 10) {
             throw new CustomException(ErrorCode.EXCEEDED_MAX_IMAGE_COUNT);
@@ -105,6 +107,7 @@ public class PostService {
             condition = "#keyword == null"
     )
     @Transactional
+    @CheckCommunityAvailable
     public UpdatePostResDto updatePost(Long postId, UpdatePostReqDto dto) {
         Post post = validateVisiblePost(postId); // postId를 이용하여 게시글을 찾고 숨겨지거나 삭제된 게시글의 경우 예외 발생
 
@@ -131,6 +134,7 @@ public class PostService {
     }
 
     @Transactional
+    @CheckCommunityAvailable
     public void updatePostImages(Post post, UpdatePostReqDto dto) {
         List<PostImage> existingImages = postImageRepository.findByPost(post); // 해당 게시글의 첨부된 이미지 조회
         /*
@@ -178,6 +182,7 @@ public class PostService {
             condition = "#keyword == null"
     )
     @Transactional
+    @CheckCommunityAvailable
     public DeletePostResDto deletePost(Long postId) {
         Post post = validateVisiblePost(postId);
 
@@ -200,6 +205,7 @@ public class PostService {
             condition = "#keyword == null"
     )
     @Transactional
+    @CheckCommunityAvailable
     public BulkDeletePostResDto deletePosts(List<Long> postIds) {
 
         // 1. 게시글 리스트 조회
@@ -244,6 +250,7 @@ public class PostService {
 
 
     @Transactional(readOnly = true)
+    @CheckCommunityAvailable
     public DetailPostResDto detailPost(Long postId) {
         Post post = validateVisiblePost(postId); // 숨김 게시글이나 삭제된 게시글 볼 수 없음
 
@@ -288,6 +295,7 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
+    @CheckCommunityAvailable
     public PagingPostListResDto postList(Long boardId, String category, String sort, Long lastPostId, Integer pageSize) {
 
         // 카테고리/정렬/게시판 검증
@@ -342,6 +350,7 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
+    @CheckCommunityAvailable
     public PagingPostSearchListResDto postSearchList(Long boardId, List<String> category, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
         Category.convertToCategoryList(category);
         validateSortCondition(sort);
@@ -400,6 +409,7 @@ public class PostService {
             condition = "#keyword == null"
     )
     @Transactional(readOnly = true)
+    @CheckCommunityAvailable
     public PagingMyPostListResDto myPostList(String keyword, Long lastPostId, Pageable pageable) {
         Users currentUser = UserUtil.getCurrentUser();
 

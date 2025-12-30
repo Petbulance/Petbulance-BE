@@ -97,10 +97,6 @@ public class QnaService {
         }
     }
 
-    @Transactional(readOnly = true)
-    public PagingAdminQnaListResDto adminQnaList(Long lastQnaId, Pageable pageable, String keyword) {
-        return qnaRepository.adminQnaList(lastQnaId, pageable, keyword);
-    }
 
     @Transactional
     public AnswerQnaResDto answerQna(Long qnaId, @Valid AnswerQnaReqDto reqDto) {
@@ -113,5 +109,10 @@ public class QnaService {
         }
 
         return new AnswerQnaResDto("답변이 정상적으로 작성되었습니다.");
+    }
+
+    @Transactional(readOnly = true)
+    public PagingAdminQnaListResDto adminQnaList(int page, int size) {
+        return qnaRepository.adminQnaList(page, size);
     }
 }

@@ -7,6 +7,5 @@ import org.springframework.data.domain.Pageable;
 
 public interface QnaRepositoryCustom {
     PagingQnaListResDto findQnaList(Users currentUser, Long lastQnaId, Pageable pageable);
-    PagingAdminQnaListResDto adminQnaList(Long lastQnaId, Pageable pageable, String keyword);
-
+    PagingAdminQnaListResDto adminQnaList(int page, int size);
 }

@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ReportCreateReqDto {
     @NotNull
-    private ReportType reportType;   // POST, COMMENT, USER
+    private ReportType reportType;   // POST, COMMENT
 
     @NotBlank
     private String reportReason;
@@ -22,7 +22,4 @@ public class ReportCreateReqDto {
 
     // 댓글 신고용
     private Long commentId;
-
-    // 사용자 신고용
-    private String targetUserNickname;
 }

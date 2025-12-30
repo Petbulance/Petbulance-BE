@@ -110,10 +110,6 @@ public class InquiryService {
         return DetailInquiryResDto.from(inquiry);
     }
 
-    @Transactional(readOnly = true)
-    public PagingAdminInquiryListResDto adminInquiryList(Pageable pageable, Long lastInquiryId, String keyword) {
-        return inquiryRepository.findAdminInquiryList(pageable, lastInquiryId, keyword);
-    }
 
     @Transactional
     public AnswerInquiryResDto answerInquiry(Long inquiryId, AnswerInquiryReqDto reqDto) {
@@ -127,5 +123,9 @@ public class InquiryService {
 
 
         return new AnswerInquiryResDto("답변이 정상적으로 작성되었습니다.");
+    }
+
+    public PagingAdminInquiryListResDto adminInquiryList(int page, int size) {
+        return inquiryRepository.findAdminInquiryList(page, size);
     }
 }

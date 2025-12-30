@@ -11,5 +11,5 @@ public interface NoticeRepositoryCustom {
     PagingNoticeListResDto findNoticeList(Long lastNoticeId, LocalDateTime lastCreatedAt, Pageable pageable);
     Notice findPreviousNotice(Long noticeId);
     Notice findNextNotice(Long noticeId);
-
+    PagingAdminNoticeListResDto adminNoticeList(int page, int size);
 }
