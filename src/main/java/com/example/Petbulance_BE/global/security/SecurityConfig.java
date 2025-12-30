@@ -1,14 +1,9 @@
 package com.example.Petbulance_BE.global.security;
 
-import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
-import com.example.Petbulance_BE.global.common.redisRepository.RefreshTokenRepository;
 import com.example.Petbulance_BE.global.filter.JWTFilter;
 import com.example.Petbulance_BE.global.filter.LogoutFilter;
-import com.example.Petbulance_BE.global.oauth2.custom.CustomOAuth2User;
-import com.example.Petbulance_BE.global.util.JWTUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,10 +13,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsConfigurationSource;
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 
 import java.util.List;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -48,6 +46,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationConfiguration authenticationConfiguration) throws Exception {
 
+        http
+                .cors(withDefaults());
         http
                 .csrf((auth)->auth.disable());
         http
