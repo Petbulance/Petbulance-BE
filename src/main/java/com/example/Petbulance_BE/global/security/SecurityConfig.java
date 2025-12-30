@@ -85,21 +85,24 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:*",
-                "https://localhost:*",
-                "http://127.0.0.1:*",
-                "https://127.0.0.1:*",
-                "https://*.petbulance.com",   // 운영 도메인(예시)
-                "http://*.petbulance.com",
-                "http://localhost:5173"
-        ));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
+
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:5173",
+                "http://localhost:5173/",
+                "http://127.0.0.1:5173/",
+                "https://127.0.0.1:5173"
+        ));
+
+        configuration.setAllowedMethods(List.of(
+                "GET","POST","PUT","PATCH","DELETE","OPTIONS"
+        ));
+
+        configuration.setAllowedHeaders(List.of("*"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 }
