@@ -26,17 +26,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-          cache: 'gradle'
-
-
-      - name: Create application-prod.yml
-        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application-prod.yml
-
-      - name: Create firebase.json
-        run: |
-          cat << 'EOF' > ./src/main/resources/petbulance-b316f-firebase-adminsdk-fbsvc-8c92a7aab5.json
-          ${{ secrets.FILEBASE_JSON }}
-          EOF
 
       - name: Grant gradle permission
         run: chmod +x ./gradlew

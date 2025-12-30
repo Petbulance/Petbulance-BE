@@ -3,23 +3,30 @@ package com.example.Petbulance_BE.global.firebase;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import org.springframework.core.io.ClassPathResource;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 
+@Configuration
 @Profile("prod")
 public class FirebaseInitializer {
 
-    public static void initialize() throws IOException {
+    @Value("${FIREBASE_CREDENTIALS}")
+    private String firebaseCredentials;
 
-        InputStream serviceAccount =
-                new ClassPathResource("petbulance-b316f-firebase-adminsdk-fbsvc-8c92a7aab5.json")
-                        .getInputStream();
+    @PostConstruct
+    public void initialize() throws Exception {
+
+        GoogleCredentials credentials =
+                GoogleCredentials.fromStream(
+                        new ByteArrayInputStream(firebaseCredentials.getBytes())
+                );
 
         FirebaseOptions options = FirebaseOptions.builder()
-                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                .setCredentials(credentials)
                 .build();
 
         if (FirebaseApp.getApps().isEmpty()) {
