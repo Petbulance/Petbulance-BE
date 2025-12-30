@@ -55,24 +55,25 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          # SSH config
           cat <<EOF >> ~/.ssh/config
           Host bastion
             HostName ${{ secrets.BASTION_HOST }}
             User ${{ secrets.SSH_USERNAME }}
             IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
 
           Host private
             HostName ${{ secrets.EC2_PRIVATE_HOST }}
             User ${{ secrets.SSH_USERNAME }}
             IdentityFile ~/.ssh/id_rsa
             ProxyJump bastion
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
           EOF
 
           chmod 600 ~/.ssh/config
-
-          ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
-          ssh-keyscan -H ${{ secrets.EC2_PRIVATE_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts || true
 
 
       - name: Deploy via Bastion → Private
