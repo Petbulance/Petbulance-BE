@@ -47,7 +47,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationConfiguration authenticationConfiguration) throws Exception {
 
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()));
         http
                 .csrf((auth)->auth.disable());
         http
