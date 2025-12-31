@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -16,7 +17,8 @@ import java.util.List;
 import java.util.Random;
 
 @Slf4j
-//@Component
+@Component
+@Profile("prod")
 @RequiredArgsConstructor
 public class QnaInitializer implements ApplicationRunner {
 
@@ -36,7 +38,7 @@ public class QnaInitializer implements ApplicationRunner {
 
         List<Users> users = List.of(user1, user2);
 
-        for (int i = 1; i <= 40; i++) {
+        for (int i = 1; i <= 10; i++) {
 
             Users writer = users.get(random.nextInt(users.size()));
 
