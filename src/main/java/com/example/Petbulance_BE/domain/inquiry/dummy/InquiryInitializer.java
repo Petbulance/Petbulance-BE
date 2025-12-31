@@ -19,7 +19,8 @@ import java.util.Random;
 
 
 @Slf4j
-//@Component
+@Component
+@Profile("prod")
 @RequiredArgsConstructor
 public class InquiryInitializer implements ApplicationRunner {
 
@@ -49,7 +50,7 @@ public class InquiryInitializer implements ApplicationRunner {
         InterestType[] interestTypes = InterestType.values();
         InquiryAnswerType[] answerTypes = InquiryAnswerType.values();
 
-        for (int i = 1; i <= 40; i++) {
+        for (int i = 1; i <= 10; i++) {
 
             Users writer = users.get(random.nextInt(users.size()));
 
