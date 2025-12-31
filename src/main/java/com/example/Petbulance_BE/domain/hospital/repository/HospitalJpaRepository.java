@@ -1,6 +1,8 @@
 package com.example.Petbulance_BE.domain.hospital.repository;
 
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -58,4 +60,6 @@ public interface HospitalJpaRepository extends JpaRepository<Hospital, Long>, Ho
 
     @Query("select h FROM Hospital  h WHERE h.name LIKE CONCAT(:hospitalName, '%')")
     List<Hospital> findByNameStartsWith(String hospitalName);
+
+    Page<Hospital> findByNameContaining(Pageable pageable, String name);
 }
