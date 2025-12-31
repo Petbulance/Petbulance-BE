@@ -15,7 +15,7 @@ import java.time.LocalDate;
 import java.util.Random;
 
 @Slf4j
-@Component
+//@Component
 @Profile("prod")
 @RequiredArgsConstructor
 public class NoticeInitializer implements ApplicationRunner {

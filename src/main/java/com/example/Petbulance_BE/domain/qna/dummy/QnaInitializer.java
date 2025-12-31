@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.Random;
 
 @Slf4j
-@Component
+//@Component
 @Profile({"local", "dev"})     // 🚨 운영(prod)에서는 절대 안 돌도록!
 @RequiredArgsConstructor
 public class QnaInitializer implements ApplicationRunner {

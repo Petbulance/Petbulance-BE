@@ -19,7 +19,7 @@ import java.util.Random;
 
 
 @Slf4j
-@Component
+//@Component
 @Profile("prod")
 @RequiredArgsConstructor
 public class InquiryInitializer implements ApplicationRunner {
