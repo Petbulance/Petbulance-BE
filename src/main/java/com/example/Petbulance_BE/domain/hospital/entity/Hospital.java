@@ -59,20 +59,17 @@ public class Hospital extends BaseTimeEntity {
     //일대다 다중 페치조인은 list불가 set으로 지정
     @Builder.Default
     @OneToMany(mappedBy = "hospital")
-    @OrderBy("id ASC ")
     private Set<UserReview> userReviews = new HashSet<>();
 
     @Builder.Default
-    @OrderBy("id ASC")
     @OneToMany(mappedBy = "hospital", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<HospitalWorktime> hospitalWorktimes = new HashSet<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "hospital", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    @OrderBy("id ASC")
     private Set<TreatmentAnimal> treatmentAnimals = new HashSet<>();
 
-    @OneToMany(mappedBy = "hospital")
+    @OneToMany(mappedBy = "hospital", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @Builder.Default
     @OrderBy("id ASC")
     private Set<Tag> tags = new HashSet<>();

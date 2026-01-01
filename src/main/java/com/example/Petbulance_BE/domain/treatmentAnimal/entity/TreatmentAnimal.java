@@ -4,16 +4,14 @@ import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import com.example.Petbulance_BE.global.common.type.AnimalType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Table(name = "treatment_animals")
 public class TreatmentAnimal extends BaseTimeEntity {
 

@@ -1,12 +1,16 @@
 package com.example.Petbulance_BE.domain.hospitalWorktime.entity;
 
 import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 public class HospitalWorktimeKey implements Serializable {
 
