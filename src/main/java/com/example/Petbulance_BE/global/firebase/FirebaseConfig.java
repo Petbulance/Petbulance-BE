@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Profile;
 import java.io.IOException;
 
 @Configuration
-@Profile("prod")
+//@Profile("prod")
 public class FirebaseConfig {
     @PostConstruct
     public void init() throws IOException{

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -15,6 +16,7 @@ import java.util.Random;
 
 @Slf4j
 //@Component
+@Profile("prod")
 @RequiredArgsConstructor
 public class NoticeInitializer implements ApplicationRunner {
 
@@ -35,7 +37,7 @@ public class NoticeInitializer implements ApplicationRunner {
         NoticeStatus[] noticeStatuses = NoticeStatus.values();
         PostStatus[] postStatuses = PostStatus.values();
 
-        for (int i = 1; i <= 40; i++) {
+        for (int i = 1; i <= 10; i++) {
 
             LocalDate start = LocalDate.now().minusDays(random.nextInt(10));
             LocalDate end = start.plusDays(random.nextInt(10) + 1);
