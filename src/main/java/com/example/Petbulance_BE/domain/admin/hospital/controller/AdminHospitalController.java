@@ -40,7 +40,12 @@ public class AdminHospitalController {
 
     @PutMapping("/update/{id}")
     public Long updateHospital(@RequestBody AdminSaveHospitalReqDto adminSaveHospitalReqDto, @PathVariable Long id) {
-        return adminHospitalService.updateHospitalProcess()
+        return adminHospitalService.updateHospitalProcess(id, adminSaveHospitalReqDto);
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public boolean deleteHospital(@PathVariable Long id) {
+        return adminHospitalService.deleteHospitalProcess(id);
     }
 
 }

@@ -143,4 +143,75 @@ public class AdminHospitalService {
         return hospital.getId();
 
     }
+
+    @Transactional
+    public Long updateHospitalProcess(Long id, AdminSaveHospitalReqDto ah) {
+
+        Hospital hospital = hospitalJpaRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_HOSPITAL));
+
+        GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+        Point point = geometryFactory.createPoint(new Coordinate(ah.getLon(), ah.getLat()));
+
+        hospital.setName(ah.getHospitalName());
+        hospital.setAddress(ah.getAddress());
+        hospital.setStreetAddress(ah.getStreetAddress());
+        hospital.setPhoneNumber(ah.getPhoneNumber());
+        hospital.setLat(ah.getLat());
+        hospital.setLng(ah.getLon());
+        hospital.setLocation(point);
+        hospital.setUrl(ah.getUrl());
+        hospital.setImage(ah.getImage());
+        hospital.setInformation(ah.getInformation());
+        hospital.setNighCare(ah.getNight());
+        hospital.setTwentyFourHours(ah.getTwentyFour());
+
+
+        hospitalWorktimeJpaRepository.deleteByHospital(hospital);
+        List<HospitalWorktime> worktimeList = ah.getOperationTimes().stream().map(time ->
+                HospitalWorktime.builder()
+                        .id(new HospitalWorktimeKey(hospital.getId(), time.getDayOfWeek()))
+                        .isOpen(time.getIsOpen())
+                        .openTime(time.getOpenTime())
+                        .closeTime(time.getCloseTime())
+                        .breakStartTime(time.getStartBreakTime())
+                        .breakEndTime(time.getEndBreakTime())
+                        .receptionDeadline(time.getDeadLineTime())
+                        .hospital(hospital)
+                        .build()
+        ).toList();
+        hospitalWorktimeJpaRepository.saveAll(worktimeList);
+
+        treatmentAnimalJpaRepository.deleteByHospital(hospital);
+        List<TreatmentAnimal> animalList = ah.getAnimalTypes().stream().map(animal ->
+                TreatmentAnimal.builder()
+                        .animalType(animal)
+                        .hospital(hospital)
+                        .build()
+        ).toList();
+        treatmentAnimalJpaRepository.saveAll(animalList);
+
+        tagJpaRepository.deleteByHospital(hospital);
+        List<Tag> tagsList = ah.getTags().stream().map(tag ->
+                Tag.builder()
+                        .hospital(hospital)
+                        .tag(tag.replace("#", "").trim())
+                        .build()
+        ).toList();
+        tagJpaRepository.saveAll(tagsList);
+
+        return hospital.getId();
+    }
+
+    @Transactional
+    public boolean deleteHospitalProcess(Long id) {
+
+        Long i = hospitalJpaRepository.deleteHospitalById(id);
+
+        if(i>0){
+            return true;
+        }else {
+            return false;
+        }
+    }
 }
