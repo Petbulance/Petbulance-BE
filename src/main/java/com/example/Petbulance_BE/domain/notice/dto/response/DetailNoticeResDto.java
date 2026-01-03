@@ -49,14 +49,12 @@ public class DetailNoticeResDto {
         private Long fileId;
         private String fileName;
         private String fileUrl;
-        private String fileType;
 
         public static AttachmentDto from(NoticeFile f) {
             return AttachmentDto.builder()
                     .fileId(f.getId())
                     .fileName(f.getFileName())
                     .fileUrl(f.getFileUrl())
-                    .fileType(f.getFileType())
                     .build();
         }
     }

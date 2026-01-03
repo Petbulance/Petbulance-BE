@@ -23,5 +23,4 @@ public class NoticeFile extends BaseTimeEntity{
 
     private String fileUrl;
     private String fileName;
-    private String fileType;
 }
