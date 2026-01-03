@@ -25,20 +25,12 @@ public class UpdateNoticeReqDto {
     private String content;
 
     // 새로 추가될 파일들
-    private List<NoticeFileReqDto> addFiles;
+    private List<String> addFiles;
 
     // 삭제할 파일 id 목록
     private List<Long> deleteFileIds;
 
     private LocalDate startDate;
     private LocalDate endDate;
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public class NoticeFileReqDto {
-        private String filename;
-        private String contentType;
-    }
 }
 

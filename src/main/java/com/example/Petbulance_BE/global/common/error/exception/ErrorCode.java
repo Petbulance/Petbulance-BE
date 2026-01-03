@@ -84,7 +84,8 @@ public enum ErrorCode {
     NOT_FOUND_AGREE(HttpStatus.BAD_REQUEST, "해당 약관에 동의한 기록이 없습니다."),
     NOT_FOUND_REPORT(HttpStatus.NOT_FOUND, "존재하지 않는 신고입니다." ),
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "유효하지 않은 요청입니다."),
-    MAX_FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "첨부파일은 최대 5개까지 등록할 수 있습니다." );
+    MAX_FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "첨부파일은 최대 5개까지 등록할 수 있습니다." ),
+    FAIL_FILE_UPLOAD(HttpStatus.BAD_REQUEST, "파일 업로드에 실패하였습니다.");
 
     private final HttpStatus status;
     private final String message;

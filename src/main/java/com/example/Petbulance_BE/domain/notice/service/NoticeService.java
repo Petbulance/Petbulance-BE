@@ -1,19 +1,15 @@
 package com.example.Petbulance_BE.domain.notice.service;
 
+import com.example.Petbulance_BE.domain.notice.dto.request.AddFileReqDto;
 import com.example.Petbulance_BE.domain.notice.dto.request.CreateNoticeReqDto;
 import com.example.Petbulance_BE.domain.notice.dto.request.NoticeImageCheckReqDto;
 import com.example.Petbulance_BE.domain.notice.dto.request.UpdateNoticeReqDto;
-import com.example.Petbulance_BE.domain.notice.dto.response.NoticeResDto;
-import com.example.Petbulance_BE.domain.notice.dto.response.DetailNoticeResDto;
-import com.example.Petbulance_BE.domain.notice.dto.response.PagingAdminNoticeListResDto;
-import com.example.Petbulance_BE.domain.notice.dto.response.PagingNoticeListResDto;
+import com.example.Petbulance_BE.domain.notice.dto.response.*;
 import com.example.Petbulance_BE.domain.notice.entity.Notice;
 import com.example.Petbulance_BE.domain.notice.entity.NoticeFile;
 import com.example.Petbulance_BE.domain.notice.repository.NoticeFileRepository;
 import com.example.Petbulance_BE.domain.notice.repository.NoticeRepository;
-import com.example.Petbulance_BE.domain.review.dto.req.ReviewSaveReqDto;
-import com.example.Petbulance_BE.domain.review.dto.res.ReviewSaveResDto;
-import com.example.Petbulance_BE.domain.review.entity.UserReviewImage;
+import com.example.Petbulance_BE.domain.notice.dto.response.AddFileResDto;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
@@ -71,7 +67,7 @@ public class NoticeService {
 
     @Transactional
     public NoticeResDto createNotice(@Valid CreateNoticeReqDto reqDto) {
-
+        Users currentUser = UserUtil.getCurrentUser();
         List<CreateNoticeReqDto.NoticeFileReqDto> files = reqDto.getFiles();
 
         if(files.size()>5) throw new CustomException(ErrorCode.MAX_FILE_COUNT_EXCEEDED);
@@ -83,6 +79,7 @@ public class NoticeService {
                 .content(reqDto.getContent())
                 .postStartDate(reqDto.getStartDate())
                 .postEndDate(reqDto.getEndDate())
+                .user(currentUser)
                 .build();
 
         List<NoticeResDto.UrlAndId> list = new LinkedList<>();
@@ -105,31 +102,12 @@ public class NoticeService {
 
 
 
-    /*@Transactional
-    public NoticeResDto updateNotice(Long noticeId, UpdateNoticeReqDto reqDto) {
+    @Transactional
+    public UpdateNoticeResDto updateNotice(Long noticeId, UpdateNoticeReqDto reqDto) {
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
 
         notice.update(reqDto);
-
-        if (reqDto.getDeleteFileIds() != null && !reqDto.getDeleteFileIds().isEmpty()) {
-
-            List<NoticeFile> deleteTargets =
-                    noticeFileRepository.findAllById(reqDto.getDeleteFileIds());
-
-            deleteTargets.forEach(file -> {
-
-                // URL → S3 key 변환 (현재 구조 기준)
-                String fileUrl = file.getFileUrl();
-                String key = fileUrl.substring(fileUrl.indexOf("notice/"));
-
-                // 1) S3 삭제
-                s3Service.deleteObject(key);
-
-                // 2) 연관관계 제거(JPA orphanRemoval)
-                notice.removeFile(file);
-            });
-        }
 
         int currentCount = notice.getFiles().size();
         int adding = (reqDto.getAddFiles() == null) ? 0 : reqDto.getAddFiles().size();
@@ -138,23 +116,48 @@ public class NoticeService {
             throw new CustomException(ErrorCode.MAX_FILE_COUNT_EXCEEDED);
         }
 
-        if (reqDto.getAddFiles() != null && !reqDto.getAddFiles().isEmpty()) {
+        // 삭제할 파일이 존재하는 경우
+        if (reqDto.getDeleteFileIds() != null && !reqDto.getDeleteFileIds().isEmpty()) {
+            List<NoticeFile> deleteTargets =
+                    noticeFileRepository.findAllById(reqDto.getDeleteFileIds());
 
-            reqDto.getAddFiles().forEach(dto -> {
-
-                NoticeFile file = NoticeFile.builder()
-                        .fileUrl(dto.getFileUrl())
-                        .fileName(dto.getFileName())
-                        .fileType(dto.getFileType())
-                        .build();
-
-                notice.addFile(file);
+            deleteTargets.forEach(file -> {
+                String key = file.getFileUrl();
+                // 1) S3 삭제
+                s3Service.deleteObject(key);
+                // 2) 연관관계 제거(JPA orphanRemoval)
+                notice.removeFile(file);
             });
         }
 
-        return new NoticeResDto("공지사항이 정상적으로 수정되었습니다.");
+        List<String> keys = reqDto.getAddFiles();
+        Boolean[] exists = new Boolean[reqDto.getAddFiles().size()];
+        Boolean allExists = true;
+
+        for(int i=0; i<exists.length; i++){
+            boolean b = s3Service.doesObjectExist(keys.get(i));
+            if(!b){
+                allExists = false;
+            }
+            exists[i] = b;
+        }
+
+        // 새롭게 추가할 파일들 추가하기
+        if(allExists){ // 모두 다 업로드가 잘되었다면
+            for(String key : keys){
+                NoticeFile noticeFile = NoticeFile.builder()
+                        .fileUrl(s3Service.getObject(key))
+                        .notice(notice)
+                        .fileName(key.split("_", 2)[1])
+                        .build();
+
+                noticeFileRepository.save(noticeFile);
+            }
+        }else{
+            throw new CustomException(ErrorCode.FAIL_FILE_UPLOAD);
+        }
+        return new UpdateNoticeResDto(notice.getId(), "공지사항이 성공적으로 수정되었습니다.");
     }
-*/
 
 
     @Transactional(readOnly = true)
@@ -163,12 +166,11 @@ public class NoticeService {
     }
 
     public void noticeFileSaveCheckProcess(NoticeImageCheckReqDto reqDto) {
-        Users currentUser = UserUtil.getCurrentUser();
-
         Long noticeId = reqDto.getNoticeId();
         List<String> keys = reqDto.getKeys();
 
-        Notice notice = noticeRepository.findByIdAndUserId(noticeId, currentUser.getId());
+        Notice notice = noticeRepository.findById(noticeId)
+                .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
 
         Boolean[] exists = new Boolean[keys.size()];
         Boolean allExists = true;
@@ -202,8 +204,26 @@ public class NoticeService {
                 }
             }
             noticeRepository.deleteById(noticeId);
-            throw new CustomException(ErrorCode.FAIL_IMAGE_UPLOAD);
+            throw new CustomException(ErrorCode.FAIL_FILE_UPLOAD);
         }
 
+    }
+
+    public AddFileResDto addFiles(@Valid AddFileReqDto reqDto) {
+        List<AddFileReqDto.NoticeFileReqDto> files = reqDto.getAddFiles();
+
+        List<AddFileResDto.UrlAndId> list = new LinkedList<>();
+        for(AddFileReqDto.NoticeFileReqDto file : files){
+
+            String filename = file.getFilename();
+            String contentType = file.getContentType();
+
+            String key = "noticeImage/" + UUID.randomUUID() + "_" + filename;
+
+            URL presignedPutUrl = s3Service.createPresignedPutUrl(key, contentType, 300);
+
+            list.add(new AddFileResDto.UrlAndId(presignedPutUrl, key));
+        }
+        return new AddFileResDto(list);
     }
 }

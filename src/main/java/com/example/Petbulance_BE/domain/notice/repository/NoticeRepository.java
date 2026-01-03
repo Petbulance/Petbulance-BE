@@ -1,8 +1,8 @@
 package com.example.Petbulance_BE.domain.notice.repository;
 
 import com.example.Petbulance_BE.domain.notice.entity.Notice;
-import com.example.Petbulance_BE.domain.notice.type.NoticeStatus;
 import com.example.Petbulance_BE.domain.notice.type.PostStatus;
+import com.example.Petbulance_BE.domain.user.entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -20,5 +20,4 @@ public interface NoticeRepository extends JpaRepository<Notice, Long>, NoticeRep
     """)
     int deactivateExpired(LocalDate today, PostStatus status);
 
-    Notice findByIdAndUserId(Long noticeId, String id);
 }
