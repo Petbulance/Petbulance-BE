@@ -19,4 +19,6 @@ public interface NoticeRepository extends JpaRepository<Notice, Long>, NoticeRep
            AND n.postStatus <> :status
     """)
     int deactivateExpired(LocalDate today, PostStatus status);
+
+    Notice findByIdAndUserId(Long noticeId, String id);
 }

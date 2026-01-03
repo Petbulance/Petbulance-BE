@@ -8,23 +8,37 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdateNoticeReqDto {
+
     private NoticeStatus noticeStatus;
     private PostStatus postStatus;
 
     @NotBlank(message = "제목(title)은 필수입니다.")
     private String title;
+
     @NotBlank(message = "내용(content)은 비워둘 수 없습니다.")
     private String content;
 
-    private String fileUrl;
-    private String fileName;
-    private String fileType;
+    // 새로 추가될 파일들
+    private List<NoticeFileReqDto> addFiles;
+
+    // 삭제할 파일 id 목록
+    private List<Long> deleteFileIds;
 
     private LocalDate startDate;
-    private  LocalDate endDate;
+    private LocalDate endDate;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public class NoticeFileReqDto {
+        private String filename;
+        private String contentType;
+    }
 }
+
