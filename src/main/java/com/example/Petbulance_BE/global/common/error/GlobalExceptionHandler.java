@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.global.common.error;
 
+import com.example.Petbulance_BE.domain.report.exception.CommunityBannedException;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.response.GlobalResponse;
@@ -38,6 +39,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(CommunityBannedException.class)
+    public ResponseEntity<?> handleCommunityBanned(CommunityBannedException e) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(Map.of(
+                        "error", "COMMUNITY_BANNED",
+                        "message", e.getMessage(),
+                        "bannedUntil", e.getBannedUntil()
+                ));
+    }
 
 }
 
