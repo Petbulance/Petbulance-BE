@@ -17,8 +17,7 @@ public class NoticeController {
     @GetMapping
     public PagingNoticeListResDto noticeList(@RequestParam(required = false) Long lastNoticeId,
                                              @RequestParam(defaultValue = "10") int pageSize) {
-        Pageable pageable = PageRequest.of(0, pageSize);
-        return noticeService.noticeList(lastNoticeId, pageable);
+        return noticeService.noticeList(lastNoticeId, pageSize);
     }
 
     @GetMapping("/{noticeId}")
