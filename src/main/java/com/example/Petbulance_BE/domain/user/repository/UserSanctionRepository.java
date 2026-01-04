@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface UserSanctionRepository extends JpaRepository<UserSanction, Long> {
     List<UserSanction> findByUserAndActiveIsTrue(Users user);
+    List<UserSanction> findAllByUserAndActiveTrue(Users user);
 }

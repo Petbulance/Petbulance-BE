@@ -39,4 +39,8 @@ public class UserSanction extends BaseTimeEntity {
 
     @Column(name = "is_active", nullable = false)
     private boolean active;
+
+    public void deactivate() {
+        this.active = false;
+    }
 }
