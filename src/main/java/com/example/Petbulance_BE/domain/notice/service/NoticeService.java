@@ -18,6 +18,8 @@ import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,6 +67,7 @@ public class NoticeService {
         return DetailNoticeResDto.from(n, files, prev, next);
     }
 
+    @CacheEvict(value = "adminNotice", allEntries = true)
     @Transactional
     public NoticeResDto createNotice(@Valid CreateNoticeReqDto reqDto) {
         Users currentUser = UserUtil.getCurrentUser();
@@ -101,7 +104,7 @@ public class NoticeService {
     }
 
 
-
+    @CacheEvict(value = "adminNotice", allEntries = true)
     @Transactional
     public UpdateNoticeResDto updateNotice(Long noticeId, UpdateNoticeReqDto reqDto) {
         Notice notice = noticeRepository.findById(noticeId)
@@ -159,7 +162,11 @@ public class NoticeService {
         return new UpdateNoticeResDto(notice.getId(), "공지사항이 성공적으로 수정되었습니다.");
     }
 
-
+    @Cacheable(
+            value = "adminNotice",
+            key = "'page:' + #page + ':size:' + #size",
+            condition = "#page >= 1 && #page <= 5"
+    )
     @Transactional(readOnly = true)
     public PagingAdminNoticeListResDto adminNoticeList(int page, int size) {
         return noticeRepository.adminNoticeList(page, size);
