@@ -61,10 +61,6 @@ public class NoticeService {
         return noticeRepository.adminNoticeList(page, size);
     }
 
-    /* =======================
-     * 생성 / 수정
-     * ======================= */
-
     @CacheEvict(value = "adminNotice", allEntries = true)
     @Transactional
     public NoticeResDto createNotice(@Valid CreateNoticeReqDto reqDto) {
@@ -146,9 +142,32 @@ public class NoticeService {
         return new AddFileResDto(urls);
     }
 
-    /* =======================
-     * 내부 유틸 메서드
-     * ======================= */
+    @Transactional(readOnly = true)
+    public FileDownloadResDto downloadNoticeFile(Long noticeId, Long fileId) {
+
+        NoticeFile file = noticeFileRepository.findById(fileId)
+                .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_FILE_NOT_FOUND));
+
+        if (!file.getNotice().getId().equals(noticeId)) {
+            throw new CustomException(ErrorCode.INVALID_NOTICE_FILE_ACCESS);
+        }
+
+        // S3 key는 URL에서 추출
+        String key = extractKeyFromUrl(file.getFileUrl());
+
+        // presigned GET URL (60초)
+        URL downloadUrl = s3Service.createPresignedGetUrl(key, 60);
+
+        return new FileDownloadResDto(downloadUrl, file.getFileName());
+    }
+
+    // 유틸 메서드
+
+
+    private String extractKeyFromUrl(String fileUrl) {
+        // https://bucket-resized.s3.region.amazonaws.com/noticeImage/uuid_filename
+        return fileUrl.substring(fileUrl.indexOf("noticeImage/"));
+    }
 
     private Notice getNotice(Long noticeId) {
         return noticeRepository.findById(noticeId)
