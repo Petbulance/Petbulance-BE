@@ -18,6 +18,7 @@ import com.example.Petbulance_BE.domain.review.repository.ReviewImageJpaReposito
 import com.example.Petbulance_BE.domain.review.repository.ReviewJpaRepository;
 import com.example.Petbulance_BE.domain.review.repository.ReviewLikeJpaRepository;
 import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.s3.S3Service;
@@ -64,6 +65,7 @@ public class ReviewService {
     private final ReviewImageJpaRepository reviewImageJpaRepository;
     private final ReviewLikeJpaRepository reviewLikeJpaRepository;
     private final DashboardMetricRedisService dashboardMetricRedisService;
+    private final UsersJpaRepository usersJpaRepository;
 
     @Value("${gemini.api.url-with-key}")
     private String genimiApiUrl;
@@ -382,6 +384,18 @@ public class ReviewService {
         if(images.size()>5) throw new CustomException(ErrorCode.IMAGE_COUNT_EXCEEDED);
 
         Users currentUser = userUtil.getCurrentUser();
+
+        Users users = usersJpaRepository.findById(currentUser.getId()).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
+
+        LocalDateTime reviewBanUntil = users.getReviewBanUntil();
+
+        if(reviewBanUntil != null && reviewBanUntil.isAfter(LocalDateTime.now())){
+
+            String formattedDate = reviewBanUntil.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+            throw new CustomException(ErrorCode.BANNED_REVIEW, formattedDate + " 까지 리뷰 작성이 정지되었습니다.");
+        }
+
         Hospital hospital = hospitalJpaRepository.findById(saveReqDto.getHospitalId()).orElseThrow(()-> new CustomException(ErrorCode.NOT_FOUND_HOSPITAL));
 
         Double facilityRating = saveReqDto.getFacilityRating();

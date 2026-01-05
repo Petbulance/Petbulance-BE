@@ -83,7 +83,8 @@ public enum ErrorCode {
     REQUIRED_TERMS_MISSING(HttpStatus.BAD_REQUEST, "필수 약관에 대한 동의가 부족합니다."),
     NOT_FOUND_AGREE(HttpStatus.BAD_REQUEST, "해당 약관에 동의한 기록이 없습니다."),
     NOT_FOUND_REPORT(HttpStatus.NOT_FOUND, "존재하지 않는 신고입니다." ),
-    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "유효하지 않은 요청입니다.");
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "유효하지 않은 요청입니다."),
+    BANNED_REVIEW(HttpStatus.BAD_REQUEST, "리뷰 작성이 제한되었습니다.");
 
     private final HttpStatus status;
     private final String message;

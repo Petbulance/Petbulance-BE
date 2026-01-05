@@ -1,4 +1,4 @@
-package com.example.Petbulance_BE.domain.admin.hospital.dto.page;
+package com.example.Petbulance_BE.domain.admin.page;
 
 import lombok.Getter;
 import org.springframework.data.domain.Page;

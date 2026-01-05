@@ -4,7 +4,7 @@ import com.example.Petbulance_BE.domain.admin.hospital.dto.AdminHospitalDetailRe
 import com.example.Petbulance_BE.domain.admin.hospital.dto.AdminHospitalListResDto;
 import com.example.Petbulance_BE.domain.admin.hospital.dto.AdminSaveHospitalReqDto;
 import com.example.Petbulance_BE.domain.admin.hospital.dto.HospitalWorktimeResDto;
-import com.example.Petbulance_BE.domain.admin.hospital.dto.page.PageResponse;
+import com.example.Petbulance_BE.domain.admin.page.PageResponse;
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.hospital.entity.Tag;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
@@ -16,7 +16,6 @@ import com.example.Petbulance_BE.domain.treatmentAnimal.entity.TreatmentAnimal;
 import com.example.Petbulance_BE.domain.treatmentAnimal.repository.TreatmentAnimalJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
-import com.example.Petbulance_BE.global.common.type.AnimalType;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;

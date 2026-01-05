@@ -2,6 +2,7 @@ package com.example.Petbulance_BE.domain.user.entity;
 
 import com.example.Petbulance_BE.domain.device.entity.Device;
 import com.example.Petbulance_BE.domain.recent.entity.History;
+import com.example.Petbulance_BE.domain.terms.entity.UserAgreementHistory;
 import com.example.Petbulance_BE.domain.userEmail.entity.UserEmails;
 import com.example.Petbulance_BE.domain.userSetting.entity.UserSetting;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
@@ -41,8 +42,14 @@ public class Users extends BaseTimeEntity {
     @Builder.Default
     private Boolean suspended = false;
 
+    @Builder.Default
+    @Setter
+    private Boolean deleted = false;
+
     @Enumerated(EnumType.STRING)
     private Gender gender;
+
+    private String firstLogin; //KAKAO, NAVER, GOOGLE
 
     @Setter
     @Builder.Default
@@ -74,26 +81,15 @@ public class Users extends BaseTimeEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<History> histories;
 
-    @Column(nullable = false)
-    @Builder.Default
-    private String termsServiceVersion = "";       // 서비스 이용약관
-
-    @Column(nullable = false)
-    @Builder.Default
-    private String termsPrivacyVersion = "";       // 개인정보 처리방침
-
-    @Column(nullable = false)
-    @Builder.Default
-    private String termsLocationVersion = "";     // 위치기반 서비스
-
-    @Column(nullable = false)
-    @Builder.Default
-    private String termsMarketingVersion = "";   // 마케팅 정보 수신
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<UserAgreementHistory> userAgreementHistories;
 
     @Column(name = "community_ban_until")
+    @Setter
     private LocalDateTime communityBanUntil;
 
     @Column(name = "review_ban_until")
+    @Setter
     private LocalDateTime reviewBanUntil;
 
     @Override

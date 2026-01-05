@@ -9,6 +9,7 @@ import lombok.*;
 @AllArgsConstructor
 @Getter
 @Builder
+@Setter
 public class UserEmails {
 
     @Id

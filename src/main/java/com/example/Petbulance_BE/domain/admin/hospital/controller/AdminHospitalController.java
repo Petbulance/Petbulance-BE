@@ -3,7 +3,7 @@ package com.example.Petbulance_BE.domain.admin.hospital.controller;
 import com.example.Petbulance_BE.domain.admin.hospital.dto.AdminHospitalDetailResDto;
 import com.example.Petbulance_BE.domain.admin.hospital.dto.AdminHospitalListResDto;
 import com.example.Petbulance_BE.domain.admin.hospital.dto.AdminSaveHospitalReqDto;
-import com.example.Petbulance_BE.domain.admin.hospital.dto.page.PageResponse;
+import com.example.Petbulance_BE.domain.admin.page.PageResponse;
 import com.example.Petbulance_BE.domain.admin.hospital.service.AdminHospitalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
