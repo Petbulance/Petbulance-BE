@@ -39,7 +39,7 @@ public class AuthService {
     private final FirebaseTokenService firebaseTokenService;
     private final RestTemplate restTemplate = new RestTemplate();
     private final RandomNicknameGenerator randomNicknameGenerator;
-    private DashboardMetricRedisService dashboardMetricRedisService;
+    private final DashboardMetricRedisService dashboardMetricRedisService;
 
     public LoginResponseDto loginService(LoginRequestDto dto) {
         String provider = dto.getProvider().toUpperCase();

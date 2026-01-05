@@ -17,6 +17,7 @@ public class JWTUtil {
     private final int expiration;
     private SecretKey SecretKEY;
 
+
     public JWTUtil(@Value("${spring.jwt.secret}") String secretKey, @Value("${spring.jwt.expiration}") int expiration){
         this.secretKey = secretKey;
         this.expiration = expiration;

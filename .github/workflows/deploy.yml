@@ -1,71 +1,96 @@
-name: Deploy to Amazon ECS (Petbulance)
+name: Deploy To EC2 (via Bastion)
 
 on:
   push:
     branches:
       - develop
 
-env:
-  AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY: petbulance
-  ECS_CLUSTER: petbulance-cluster
-  ECS_SERVICE: petbulance-task-service
-  ECS_TASK_DEFINITION: .aws/task-def.json
-  CONTAINER_NAME: petbulance
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Grant gradle permission
-        run: chmod +x ./gradlew
+      - name: Create firebase.json
+        run: |
+          cat << 'EOF' > ./src/main/resources/petbulance-b316f-firebase-adminsdk-fbsvc-8c92a7aab5.json
+          ${{ secrets.FILEBASE_JSON }}
+          EOF
 
-      - name: Build spring (skip tests)
-        run: ./gradlew clean build -x test
+      - name: Create application-prod.yml
+        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application-prod.yml
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - run: chmod +x ./gradlew
+      - run: ./gradlew clean build -x test
+
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
+          aws-region: ap-northeast-2
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Build & push Docker image
-        id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
+      - name: Login to ECR
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          aws ecr get-login-password --region ap-northeast-2 \
+            | docker login --username AWS --password-stdin 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com
 
-      - name: Render ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ${{ env.ECS_TASK_DEFINITION }}
-          container-name: ${{ env.CONTAINER_NAME }}
-          image: ${{ steps.build-image.outputs.image }}
+      - name: Build image
+        run: docker build -t petbulance .
 
-      - name: Deploy to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ env.ECS_SERVICE }}
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
+      - name: Tag image
+        run: docker tag petbulance:latest 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
+
+      - name: Push image
+        run: docker push 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          cat <<EOF >> ~/.ssh/config
+          Host bastion
+            HostName ${{ secrets.BASTION_HOST }}
+            User ${{ secrets.SSH_USERNAME }}
+            IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
+
+          Host private
+            HostName ${{ secrets.EC2_PRIVATE_HOST }}
+            User ${{ secrets.SSH_USERNAME }}
+            IdentityFile ~/.ssh/id_rsa
+            ProxyJump bastion
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
+          EOF
+
+          chmod 600 ~/.ssh/config
+          ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts || true
+
+
+      - name: Deploy via Bastion → Private
+        run: |
+          ssh -o StrictHostKeyChecking=no private "
+            docker stop petbulance || true &&
+            docker rm petbulance || true &&
+
+            aws ecr get-login-password --region ap-northeast-2 \
+              | docker login --username AWS --password-stdin 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com &&
+
+            docker pull 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest &&
+
+            docker run -d \
+              --name petbulance \
+              --restart=always \
+              -e SPRING_PROFILES_ACTIVE=prod \
+              -p 8080:8080 \
+              276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
+          "

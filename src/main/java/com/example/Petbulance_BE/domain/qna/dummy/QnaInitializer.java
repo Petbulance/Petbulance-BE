@@ -9,20 +9,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @Slf4j
 //@Component
+@Profile({"local", "dev"})     // 🚨 운영(prod)에서는 절대 안 돌도록!
 @RequiredArgsConstructor
 public class QnaInitializer implements ApplicationRunner {
 
     private final QnaRepository qnaRepository;
     private final UsersJpaRepository usersJpaRepository;
-
     private final Random random = new Random();
 
     @Override
@@ -30,17 +32,25 @@ public class QnaInitializer implements ApplicationRunner {
 
         log.info("🔹 QNA Dummy 데이터 생성 시작");
 
-        // 유저 2명만 가져온다고 가정
-        Users user1 = usersJpaRepository.findById("user-000001").orElseThrow();
-        Users user2 = usersJpaRepository.findById("user-000002").orElseThrow();
+        // 1️⃣ 유저 조회
+        Optional<Users> user1Opt = usersJpaRepository.findById("user-000001");
+        Optional<Users> user2Opt = usersJpaRepository.findById("user-000002");
+
+        // 2️⃣ 없으면 스킵 (앱은 계속 실행)
+        if (user1Opt.isEmpty() || user2Opt.isEmpty()) {
+            log.warn("🚫 QNA 더미 생성 스킵 — 테스트 유저가 존재하지 않음");
+            return;
+        }
+
+        Users user1 = user1Opt.get();
+        Users user2 = user2Opt.get();
 
         List<Users> users = List.of(user1, user2);
 
-        for (int i = 1; i <= 40; i++) {
+        for (int i = 1; i <= 10; i++) {
 
             Users writer = users.get(random.nextInt(users.size()));
 
-            // 기본 QNA 생성 (답변 전 상태)
             Qna qna = Qna.builder()
                     .user(writer)
                     .title("QNA 테스트 질문 #" + i)
@@ -52,6 +62,6 @@ public class QnaInitializer implements ApplicationRunner {
             qnaRepository.save(qna);
         }
 
-        log.info("✅ QNA 40개 생성 완료");
+        log.info("✅ QNA 10개 생성 완료");
     }
 }

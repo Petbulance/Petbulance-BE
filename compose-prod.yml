@@ -2,6 +2,6 @@ services:
   api-server:
     build:
       context: .
-      dockerfile: ./Dockerfile-prod
+      dockerfile: ./Dockerfile
     ports:
       - "8080:8080"
