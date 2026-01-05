@@ -14,7 +14,7 @@ public class AddFileReqDto {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public class NoticeFileReqDto {
+    public static class NoticeFileReqDto {
         private String filename;
         private String contentType;
     }

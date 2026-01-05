@@ -34,7 +34,7 @@ public class CreateNoticeReqDto {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public class NoticeFileReqDto {
+    public static class NoticeFileReqDto {
         private String filename;
         private String contentType;
     }
