@@ -7,11 +7,10 @@ import com.example.Petbulance_BE.domain.notice.dto.response.PagingNoticeListResD
 import com.example.Petbulance_BE.domain.notice.entity.Notice;
 import com.example.Petbulance_BE.domain.notice.entity.QNotice;
 import com.example.Petbulance_BE.domain.notice.type.PostStatus;
-import com.example.Petbulance_BE.domain.qna.dto.response.AdminQnaListResDto;
-import com.example.Petbulance_BE.domain.qna.dto.response.PagingAdminQnaListResDto;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
-import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
+import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -26,26 +25,26 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
     private final JPAQueryFactory queryFactory;
     QNotice n = QNotice.notice;
 
+
     @Override
-    public PagingNoticeListResDto findNoticeList(
-            Long lastNoticeId,
-            LocalDateTime lastCreatedAt,
-            Pageable pageable
-    ) {
+    public PagingNoticeListResDto findNoticeList(Long lastNoticeId, int pageSize) {
         BooleanBuilder whereBuilder = new BooleanBuilder();
 
-        // 커서 조건 (createdAt → id)
-        if (lastNoticeId != null && lastCreatedAt != null) {
+        if (lastNoticeId != null) {
+            JPQLQuery<LocalDateTime> subCreatedAt = JPAExpressions
+                    .select(n.createdAt)
+                    .from(n)
+                    .where(n.id.eq(lastNoticeId));
+
             whereBuilder.and(
-                    n.createdAt.lt(lastCreatedAt)
+                    n.createdAt.lt(subCreatedAt)
                             .or(
-                                    n.createdAt.eq(lastCreatedAt)
+                                    n.createdAt.eq(subCreatedAt)
                                             .and(n.id.lt(lastNoticeId))
                             )
             );
         }
 
-        // 현재 게시중인 상태의 공지사항만 조회 가능하게
         whereBuilder.and(n.postStatus.eq(PostStatus.ACTIVE));
 
         List<NoticeListResDto> results = queryFactory
@@ -59,14 +58,11 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
                 ))
                 .from(n)
                 .where(whereBuilder)
-                .orderBy(
-                        n.createdAt.desc(),
-                        n.id.desc()
-                )
-                .limit(pageable.getPageSize() + 1)
+                .orderBy(n.createdAt.desc(), n.id.desc())
+                .limit(pageSize + 1)
                 .fetch();
 
-        boolean hasNext = results.size() > pageable.getPageSize();
+        boolean hasNext = results.size() > pageSize;
         if (hasNext) {
             results.remove(results.size() - 1);
         }

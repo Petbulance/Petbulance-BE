@@ -6,6 +6,7 @@ import com.example.Petbulance_BE.domain.report.type.ReportActionType;
 import com.example.Petbulance_BE.domain.user.entity.UserSanction;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UserSanctionRepository;
+import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.user.type.SactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class CommunitySanctionService {
     private static final long DEFAULT_SUSPEND_DAYS = 7L; // 기본 7일 정지
 
     private final UserSanctionRepository userSanctionRepository;
+    private final UsersJpaRepository userRepository;
 
     /**
      * 관리자 페이지에서 report actionType 을 SUSPEND 로 변경했을 때 호출
@@ -71,5 +73,18 @@ public class CommunitySanctionService {
             // 정지 기간 지났으면 자동 해제
             user.clearCommunityBan();
         }
+    }
+
+    public void unbanCommunity(String userId) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자"));
+
+        // 커뮤니티 정지 해제
+        user.clearCommunityBan();
+
+        // 활성화된 커뮤니티 제재 이력 비활성화
+        userSanctionRepository
+                .findAllByUserAndActiveTrue(user)
+                .forEach(sanction -> sanction.deactivate());
     }
 }

@@ -2,6 +2,9 @@ services:
   api-server:
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile-prod  # 빌드할 Dockerfile
     ports:
-      - "8080:8080"
+      - 8080:8080
+    depends_on:
+      cache-server:
+        condition: service_healthy

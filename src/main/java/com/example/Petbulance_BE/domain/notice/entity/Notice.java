@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.notice.entity;
 import com.example.Petbulance_BE.domain.notice.dto.request.UpdateNoticeReqDto;
 import com.example.Petbulance_BE.domain.notice.type.NoticeStatus;
 import com.example.Petbulance_BE.domain.notice.type.PostStatus;
+import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
@@ -26,6 +27,11 @@ public class Notice extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "notice_id")
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private Users user;
+
 
     @Enumerated(EnumType.STRING)
     private NoticeStatus noticeStatus;
