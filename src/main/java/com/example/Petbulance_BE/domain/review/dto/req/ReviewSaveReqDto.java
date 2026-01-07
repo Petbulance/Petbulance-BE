@@ -19,6 +19,8 @@ import java.util.List;
 @AllArgsConstructor
 public class ReviewSaveReqDto {
 
+    private String title;
+
     private Boolean receiptChecked;
 
     @NotNull
@@ -42,8 +44,8 @@ public class ReviewSaveReqDto {
     @NotBlank
     private String DetailAnimalType;
 
-    @NotBlank
-    private String treatmentService;
+    @NotNull
+    private List<ReceiptItem> receiptItems = new ArrayList<>();
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate visitDate;
@@ -62,6 +64,13 @@ public class ReviewSaveReqDto {
         private String filename;
 
         private String contentType;
+    }
+
+    @Getter
+    @Setter
+    public static class ReceiptItem {
+        private String name;
+        private Integer price;
     }
 
 }

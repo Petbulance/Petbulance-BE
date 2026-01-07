@@ -52,6 +52,7 @@ public class GeminiApiDto {
      */
     public record ExtractedData(
             String storeName,
+            List<Item> items,
             Long totalAmount,
             String address,
             String addressType,
@@ -67,4 +68,8 @@ public class GeminiApiDto {
             String message     // status가 "success"이면 null
     ) {}
 
+    public record Item(
+            String name,
+            Integer price
+    ) {}
 }

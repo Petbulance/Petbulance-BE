@@ -49,6 +49,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -105,8 +106,9 @@ public class ReviewService {
              String addressType = extractedData.addressType();
              String time = extractedData.paymentTime();
              Long price = extractedData.totalAmount();
+             List<Item> items = extractedData.items();
 
-             if(address == null || address.isEmpty()) {
+                     if(address == null || address.isEmpty()) {
                  return Mono.error(new CustomException(ErrorCode.NO_ADDRESS_FOUND));
              }
 
@@ -138,6 +140,7 @@ public class ReviewService {
                              .hospitalName(hospital.getName())
                              .visitDateTime(finalPaymentDateTime)
                              .price(price)
+                             .items(items)
                              .build();
                  });
 
@@ -164,7 +167,7 @@ public class ReviewService {
                 .retrieve()
                 .bodyToMono(GeoDto.GeoRootDTO.class)
                 .flatMap(root -> {
-                    if (root == null || root.response() == null || root.response().result().point() == null) {
+                    if (root == null || root.response() == null || root.response().result() == null || root.response().result().point() == null) {
                         log.error("📍 지오코딩 실패 — 결과가 없습니다. 응답: {}", root);
                         return Mono.error(new CustomException(ErrorCode.FAIL_GEOCODING));
                     }
@@ -187,6 +190,9 @@ public class ReviewService {
                 + "3. 동물병원 영수증이 맞다면, 아래 6개 항목을 추출하여 JSON 형식으로 반환하세요."
                 + "   - `{\"status\": \"success\", \"data\": {\"storeName\": \"...\", \"totalAmount\": ..., \"address\": \"...\", \"paymentTime\": \"...\"}}`"
                 + "   - storeName: 매장명 (String)"
+                + "   - items: 영수증에 포함된 개별 구매/진료 항목 리스트 (Array)"
+                + "       - name: 품목명 또는 진료명 (String, 괄호나 대괄호가 있다면 포함해서 전체 이름 추출)"
+                + "       - price: 해당 항목의 가격 (Integer, 숫자만, 콤마 제거)"
                 + "   - totalAmount: 총 결제 금액 (Integer, 숫자만)"
                 + "   - address: '도로명 주소(괄호 안에 있는 값은 포함하지 않음)'. 만약 도로명 주소가 없으면 '지번 주소'를 추출 (String)"
                 + "   - addressType: 'address필드이 값이 도로명 주소라면 (\"road\"), 지번 주소라면 (\"parcel\")을 출력하세요.'"
@@ -402,16 +408,21 @@ public class ReviewService {
         Double expertiseRating = saveReqDto.getExpertiseRating();
         Double kindnessRating = saveReqDto.getKindnessRating();
 
+        String combinedService = saveReqDto.getReceiptItems().stream()
+                .map(item -> item.getName() + "(" + String.format("%,d", item.getPrice()) + "원)")
+                .collect(Collectors.joining(", "));
+
         Double overallRating = (expertiseRating + facilityRating + kindnessRating) / 3;
 
         UserReview userReview = UserReview.builder()
+                .title(saveReqDto.getTitle())
                 .receiptCheck(saveReqDto.getReceiptChecked())
                 .user(currentUser)
                 .hospital(hospital)
                 .visitDate(saveReqDto.getVisitDate())
                 .animalType(saveReqDto.getAnimalType())
                 .detailAnimalType(saveReqDto.getDetailAnimalType())
-                .treatmentService(saveReqDto.getTreatmentService())
+                .treatmentService(combinedService)
                 .reviewContent(saveReqDto.getReviewComment())
                 .expertiseRating(expertiseRating)
                 .kindnessRating(kindnessRating)
