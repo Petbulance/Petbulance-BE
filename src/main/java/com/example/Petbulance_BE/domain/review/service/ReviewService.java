@@ -18,6 +18,7 @@ import com.example.Petbulance_BE.domain.review.repository.ReviewImageJpaReposito
 import com.example.Petbulance_BE.domain.review.repository.ReviewJpaRepository;
 import com.example.Petbulance_BE.domain.review.repository.ReviewLikeJpaRepository;
 import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.s3.S3Service;
@@ -48,6 +49,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -64,6 +66,7 @@ public class ReviewService {
     private final ReviewImageJpaRepository reviewImageJpaRepository;
     private final ReviewLikeJpaRepository reviewLikeJpaRepository;
     private final DashboardMetricRedisService dashboardMetricRedisService;
+    private final UsersJpaRepository usersJpaRepository;
 
     @Value("${gemini.api.url-with-key}")
     private String genimiApiUrl;
@@ -103,8 +106,9 @@ public class ReviewService {
              String addressType = extractedData.addressType();
              String time = extractedData.paymentTime();
              Long price = extractedData.totalAmount();
+             List<Item> items = extractedData.items();
 
-             if(address == null || address.isEmpty()) {
+                     if(address == null || address.isEmpty()) {
                  return Mono.error(new CustomException(ErrorCode.NO_ADDRESS_FOUND));
              }
 
@@ -136,6 +140,7 @@ public class ReviewService {
                              .hospitalName(hospital.getName())
                              .visitDateTime(finalPaymentDateTime)
                              .price(price)
+                             .items(items)
                              .build();
                  });
 
@@ -162,7 +167,7 @@ public class ReviewService {
                 .retrieve()
                 .bodyToMono(GeoDto.GeoRootDTO.class)
                 .flatMap(root -> {
-                    if (root == null || root.response() == null || root.response().result().point() == null) {
+                    if (root == null || root.response() == null || root.response().result() == null || root.response().result().point() == null) {
                         log.error("📍 지오코딩 실패 — 결과가 없습니다. 응답: {}", root);
                         return Mono.error(new CustomException(ErrorCode.FAIL_GEOCODING));
                     }
@@ -185,6 +190,9 @@ public class ReviewService {
                 + "3. 동물병원 영수증이 맞다면, 아래 6개 항목을 추출하여 JSON 형식으로 반환하세요."
                 + "   - `{\"status\": \"success\", \"data\": {\"storeName\": \"...\", \"totalAmount\": ..., \"address\": \"...\", \"paymentTime\": \"...\"}}`"
                 + "   - storeName: 매장명 (String)"
+                + "   - items: 영수증에 포함된 개별 구매/진료 항목 리스트 (Array)"
+                + "       - name: 품목명 또는 진료명 (String, 괄호나 대괄호가 있다면 포함해서 전체 이름 추출)"
+                + "       - price: 해당 항목의 가격 (Integer, 숫자만, 콤마 제거)"
                 + "   - totalAmount: 총 결제 금액 (Integer, 숫자만)"
                 + "   - address: '도로명 주소(괄호 안에 있는 값은 포함하지 않음)'. 만약 도로명 주소가 없으면 '지번 주소'를 추출 (String)"
                 + "   - addressType: 'address필드이 값이 도로명 주소라면 (\"road\"), 지번 주소라면 (\"parcel\")을 출력하세요.'"
@@ -382,22 +390,39 @@ public class ReviewService {
         if(images.size()>5) throw new CustomException(ErrorCode.IMAGE_COUNT_EXCEEDED);
 
         Users currentUser = userUtil.getCurrentUser();
+
+        Users users = usersJpaRepository.findById(currentUser.getId()).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
+
+        LocalDateTime reviewBanUntil = users.getReviewBanUntil();
+
+        if(reviewBanUntil != null && reviewBanUntil.isAfter(LocalDateTime.now())){
+
+            String formattedDate = reviewBanUntil.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+            throw new CustomException(ErrorCode.BANNED_REVIEW, formattedDate + " 까지 리뷰 작성이 정지되었습니다.");
+        }
+
         Hospital hospital = hospitalJpaRepository.findById(saveReqDto.getHospitalId()).orElseThrow(()-> new CustomException(ErrorCode.NOT_FOUND_HOSPITAL));
 
         Double facilityRating = saveReqDto.getFacilityRating();
         Double expertiseRating = saveReqDto.getExpertiseRating();
         Double kindnessRating = saveReqDto.getKindnessRating();
 
+        String combinedService = saveReqDto.getReceiptItems().stream()
+                .map(item -> item.getName() + "(" + String.format("%,d", item.getPrice()) + "원)")
+                .collect(Collectors.joining(", "));
+
         Double overallRating = (expertiseRating + facilityRating + kindnessRating) / 3;
 
         UserReview userReview = UserReview.builder()
+                .title(saveReqDto.getTitle())
                 .receiptCheck(saveReqDto.getReceiptChecked())
                 .user(currentUser)
                 .hospital(hospital)
                 .visitDate(saveReqDto.getVisitDate())
                 .animalType(saveReqDto.getAnimalType())
                 .detailAnimalType(saveReqDto.getDetailAnimalType())
-                .treatmentService(saveReqDto.getTreatmentService())
+                .treatmentService(combinedService)
                 .reviewContent(saveReqDto.getReviewComment())
                 .expertiseRating(expertiseRating)
                 .kindnessRating(kindnessRating)

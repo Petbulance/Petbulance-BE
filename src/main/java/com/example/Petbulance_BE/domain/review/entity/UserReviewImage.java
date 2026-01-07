@@ -9,7 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "userReviewImages")
+@Table(name = "user_review_images")
 public class UserReviewImage {
 
     @Id
@@ -18,7 +18,7 @@ public class UserReviewImage {
 
     private String imageUrl;
 
-    @JoinColumn(name = "reivew_id")
+    @JoinColumn(name = "review_id")
     @ManyToOne(fetch = FetchType.LAZY)
     private UserReview review;
 

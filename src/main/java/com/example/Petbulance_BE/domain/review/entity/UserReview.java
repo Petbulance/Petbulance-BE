@@ -19,12 +19,14 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "userReviews")
+@Table(name = "user_reviews")
 public class UserReview extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    private String title;
 
     private Boolean receiptCheck;
 
@@ -43,6 +45,7 @@ public class UserReview extends BaseTimeEntity {
 
     private String detailAnimalType;
 
+    @Column(columnDefinition = "TEXT")
     private String treatmentService;
 
     private String reviewContent;
@@ -72,6 +75,11 @@ public class UserReview extends BaseTimeEntity {
     @OneToMany(mappedBy = "review", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @Builder.Default
     List<UserReviewLike> likes = new ArrayList<>();
+
+    @BatchSize(size = 10)
+    @OneToMany(mappedBy = "review", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @Builder.Default
+    List<ReviewReport> reviewReports = new ArrayList<>();
 
 
 }

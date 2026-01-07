@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.review.repository;
 
+import com.example.Petbulance_BE.domain.admin.review.dto.AdminReviewResDto;
 import com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto;
 import com.example.Petbulance_BE.domain.review.dto.MyReviewGetDto;
 import com.example.Petbulance_BE.domain.review.entity.UserReview;
@@ -140,5 +141,21 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
             order by r.id DESC 
             """)
     List<MyReviewGetDto> findByUserIdAndCursorId(@Param("user") Users user, @Param("cursorId") Long cursorId, Pageable pageable);
-//fetch join 카테시안 곱 문제 해결
+
+    @Query("SELECT new com.example.Petbulance_BE.domain.admin.review.dto.AdminReviewResDto(" +
+            "ur.id, " +
+            "h.name, " +
+            "u.nickname, " +
+            "ur.createdAt, " +
+            "CASE " +
+            "  WHEN ur.deleted = true THEN 'deleted' " +
+            "  WHEN ur.hidden = true THEN 'hidden' " +
+            "  ELSE 'normal' " +
+            "END, " +
+            "SIZE(ur.reviewReports)) " +
+            "FROM UserReview ur " +
+            "LEFT JOIN ur.hospital h " +
+            "LEFT JOIN ur.user u")
+    Page<AdminReviewResDto> adminGetReviewList(Pageable pageable);
+
 }

@@ -37,6 +37,7 @@ public class UserSanction extends BaseTimeEntity {
     @Column(name = "end_at", nullable = false)
     private LocalDateTime endAt;
 
+    @Setter
     @Column(name = "is_active", nullable = false)
     private boolean active;
 

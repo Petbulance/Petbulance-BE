@@ -144,6 +144,7 @@ public class AuthService {
 
         Users newUser = Users.builder()
                 .nickname(nickname)
+                .firstLogin(provider)
                 .role(Role.ROLE_CLIENT)
                 .build();
 
