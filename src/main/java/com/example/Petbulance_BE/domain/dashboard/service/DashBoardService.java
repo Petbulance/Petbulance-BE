@@ -55,9 +55,11 @@ public class DashBoardService {
                         redisService.getVisitCount(today, VisitType.COMMUNITY)
                 );
 
+        // 커뮤니티 신고
         int reportTotal = (int) reportRepository.count();
         int reportPending = reportRepository.countByProcessedFalse();
 
+        // 고객센터 문의
         int qnaTotal = (int) qnaRepository.count();
         int qnaWaiting =
                 qnaRepository.countByStatus(QnaStatus.ANSWER_WAITING);
