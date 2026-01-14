@@ -84,17 +84,14 @@ public enum ErrorCode {
     NOT_FOUND_AGREE(HttpStatus.BAD_REQUEST, "해당 약관에 동의한 기록이 없습니다."),
     NOT_FOUND_REPORT(HttpStatus.NOT_FOUND, "존재하지 않는 신고입니다." ),
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "유효하지 않은 요청입니다."),
-<<<<<<< HEAD
     BANNED_REVIEW(HttpStatus.BAD_REQUEST, "리뷰 작성이 제한되었습니다."),
-    INVALID_LOGIN_CREDENTIALS(HttpStatus.BAD_REQUEST, "로그인 정보가 잘못되었습니다.");
-
-=======
-    BANNED_REVIEW(HttpStatus.BAD_REQUEST, "리뷰 작성이 제한되었습니다.");
+    INVALID_LOGIN_CREDENTIALS(HttpStatus.BAD_REQUEST, "로그인 정보가 잘못되었습니다."),
+    BANNED_REVIEW(HttpStatus.BAD_REQUEST, "리뷰 작성이 제한되었습니다."),
+    BANNED_REVIEW(HttpStatus.BAD_REQUEST, "리뷰 작성이 제한되었습니다."),
     MAX_FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "첨부파일은 최대 5개까지 등록할 수 있습니다." ),
     FAIL_FILE_UPLOAD(HttpStatus.BAD_REQUEST, "파일 업로드에 실패하였습니다."),
     INVALID_NOTICE_FILE_ACCESS( HttpStatus.FORBIDDEN, "해당 공지사항에 접근할 수 없는 첨부파일입니다."),
     NOTICE_FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 파일이 존재하지 않습니다.");
->>>>>>> 6db93a9f69c9d27f1dd44dfbf8f23d2fee680950
 
     private final HttpStatus status;
     private final String message;
