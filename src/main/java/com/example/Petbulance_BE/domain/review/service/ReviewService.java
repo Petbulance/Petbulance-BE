@@ -32,9 +32,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import com.example.Petbulance_BE.domain.review.dto.GeminiApiDto.*;
 import reactor.core.scheduler.Schedulers;
@@ -584,4 +586,91 @@ public class ReviewService {
         return Map.of("message", "success");
 
     }
+
+    //서비스 코드
+    public Mono<ReceiptResDto> receiptExtractProcessMock(MultipartFile image) {
+
+        String base64Image;
+        try{
+            base64Image = Base64.getEncoder().encodeToString(image.getBytes());
+        } catch (IOException e) {
+            log.error("이미지 변환 실패");
+            throw new RuntimeException(e);
+        }
+
+        log.info("[MOCK TEST] 요청 시작 - Gemini 호출 없이 진행");
+
+
+        // getExtractedDataMono 대신 Mock 메서드 호출
+        return getMockExtractedData()
+                .flatMap(extractedData -> {
+
+                    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+                    LocalDateTime paymentDateTime;
+
+                    String address = extractedData.address();
+                    String addressType = extractedData.addressType();
+                    String time = extractedData.paymentTime();
+                    Long price = extractedData.totalAmount();
+
+                    try {
+                        paymentDateTime = LocalDateTime.parse(time, dtf);
+                    } catch (DateTimeParseException e) {
+                        LocalDate dateOnly = LocalDate.parse(time, df);
+                        paymentDateTime = dateOnly.atStartOfDay();
+                    }
+
+                    if(address == null || address.isEmpty()) {
+                        return Mono.error(new CustomException(ErrorCode.NO_ADDRESS_FOUND));
+                    }
+
+                    LocalDateTime finalPaymentDateTime = paymentDateTime;
+
+                    // 지오코딩 및 DB 조회 로직은 실제 서비스와 똑같이 수행
+                    return geocodeAddress(address, addressType)
+                            .doOnSubscribe(s ->
+                                    //[parallel-8] Gemini API 호출 시작
+                                    log.info("[{}] Gemini API 호출 시작", Thread.currentThread().getName()))
+                            .publishOn(Schedulers.boundedElastic())
+                            .map(point ->{
+                                //[5. DB 조회 직전] 스레드: boundedElastic-29
+                                log.info("[5. DB 조회 직전] 스레드: {}", Thread.currentThread().getName());
+                                double lng = point.x();
+                                double lat = point.y();
+
+                                log.info("x위도{}", lat);
+                                log.info("y경도{}", lng);
+
+                                List<Hospital> nearestHospitals = hospitalJpaRepository.findNearestHospitals(lng, lat,3000);
+                                if(nearestHospitals.isEmpty()) {
+                                    throw new CustomException(ErrorCode.NOT_FOUND_RECEIPT_HOSPITAL);
+                                }
+                                Hospital hospital = nearestHospitals.get(0);
+
+                                return ReceiptResDto.builder()
+                                        .hospitalId(hospital.getId())
+                                        .hospitalName(hospital.getName())
+                                        .visitDateTime(finalPaymentDateTime)
+                                        .price(price)
+                                        .build();
+                            });
+                });
+    }
+
+
+    //테스트용 Mock 데이터 생성기 (1초 딜레이)
+    private Mono<ExtractedData> getMockExtractedData() {
+        return Mono.delay(Duration.ofSeconds(1)) // 1초 Non-blocking 대기
+                .map(ignore -> new ExtractedData(
+                        "테스트 동물병원",
+                        List.of(),
+                        15000L,
+                        "서울특별시 양천구 지양로 7", // 테스트용 고정 주소
+                        "road",
+                        "2025-01-01 12:00:00"
+                ));
+    }
+
 }

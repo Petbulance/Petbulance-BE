@@ -27,7 +27,10 @@ public class Users extends BaseTimeEntity {
     private String id;
 
     @Setter
+    @Column(unique = true)
     private String nickname;
+
+    private String password;
 
     @Setter
     private String profileImage;
