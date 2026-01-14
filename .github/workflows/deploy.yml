@@ -85,6 +85,8 @@ jobs:
             aws ecr get-login-password --region ap-northeast-2 \
               | docker login --username AWS --password-stdin 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com &&
 
+            docker system prune -f &&
+
             docker pull 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest &&
 
             docker run -d \

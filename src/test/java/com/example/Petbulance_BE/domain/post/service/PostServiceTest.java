@@ -55,7 +55,7 @@ class PostServiceTest {
         List<String> imageUrls = List.of("https://cdn.example.com/image1.jpg");
 
         CreatePostReqDto dto = new CreatePostReqDto(
-                1L, "HEALTH", "제목", "내용", imageUrls
+                1L, Category.DAILY, "제목", "내용", imageUrls
         );
 
         Board mockBoard = mock(Board.class);
@@ -88,7 +88,7 @@ class PostServiceTest {
         List<String> imageUrls = List.of();
 
         CreatePostReqDto dto = new CreatePostReqDto(
-                1L, "HEALTH", "제목", "내용", imageUrls
+                1L, Category.DAILY, "제목", "내용", imageUrls
         );
 
         Board mockBoard = mock(Board.class);
@@ -118,7 +118,7 @@ class PostServiceTest {
     void createPostWhenTitleOrContentBlank() {
         // given
         CreatePostReqDto dto = new CreatePostReqDto(
-                1L, "HEALTH", "", "본문 내용", List.of()
+                1L, Category.DAILY, "", "본문 내용", List.of()
         );
 
         // when
@@ -139,7 +139,7 @@ class PostServiceTest {
         }
 
         CreatePostReqDto dto = new CreatePostReqDto(
-                1L, "HEALTH", "제목", "본문 내용", imageUrls
+                1L, Category.DAILY, "제목", "본문 내용", imageUrls
         );
 
         // when
@@ -155,7 +155,7 @@ class PostServiceTest {
     void createPostWhenInvalidBoardOrCategory() {
         // given
         CreatePostReqDto dto = new CreatePostReqDto(
-                999L, "INVALID_CATEGORY", "제목", "본문", List.of()
+                999L, Category.DAILY, "제목", "본문", List.of()
         );
 
         // 게시판 없음

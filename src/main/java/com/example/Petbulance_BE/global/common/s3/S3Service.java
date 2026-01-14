@@ -11,9 +11,12 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -107,5 +110,23 @@ public class S3Service {
         return "https://" + bucket +"-resized" + ".s3." + region + ".amazonaws.com/" + key;
     }
 
+    public URL createPresignedGetUrl(String key, long expireSeconds) {
+
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .build();
+
+        GetObjectPresignRequest presignRequest =
+                GetObjectPresignRequest.builder()
+                        .getObjectRequest(getObjectRequest)
+                        .signatureDuration(Duration.ofSeconds(expireSeconds))
+                        .build();
+
+        PresignedGetObjectRequest presignedRequest =
+                presigner.presignGetObject(presignRequest);
+
+        return presignedRequest.url();
+    }
 
 }
