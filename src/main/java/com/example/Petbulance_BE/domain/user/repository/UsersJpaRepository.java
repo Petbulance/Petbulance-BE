@@ -30,5 +30,4 @@ public interface UsersJpaRepository extends JpaRepository<Users, String>, UserRe
     @Query("SELECT u FROM Users u WHERE u.deleted = true AND u.updatedAt < :localDateTime")
     List<Users> findDeleteUsers(LocalDateTime localDateTime);
 
-
 }

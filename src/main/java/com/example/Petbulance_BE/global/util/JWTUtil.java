@@ -35,6 +35,16 @@ public class JWTUtil {
                 .signWith(SecretKEY)
                 .compact();
     }
+    public String createAdminJwt(String userId, String category, String role) {
+        return Jwts.builder()
+                .claim("nickname", userId)
+                .claim("category", category)
+                .claim("role", role)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiration*60*1000L))
+                .signWith(SecretKEY)
+                .compact();
+    }
     //userId추출
     public String getUserId(String accessToken) {
         return Jwts.parser()
