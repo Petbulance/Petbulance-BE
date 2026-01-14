@@ -87,7 +87,6 @@ public enum ErrorCode {
     BANNED_REVIEW(HttpStatus.BAD_REQUEST, "리뷰 작성이 제한되었습니다."),
     INVALID_LOGIN_CREDENTIALS(HttpStatus.BAD_REQUEST, "로그인 정보가 잘못되었습니다."),
     BANNED_REVIEW(HttpStatus.BAD_REQUEST, "리뷰 작성이 제한되었습니다."),
-    BANNED_REVIEW(HttpStatus.BAD_REQUEST, "리뷰 작성이 제한되었습니다."),
     MAX_FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "첨부파일은 최대 5개까지 등록할 수 있습니다." ),
     FAIL_FILE_UPLOAD(HttpStatus.BAD_REQUEST, "파일 업로드에 실패하였습니다."),
     INVALID_NOTICE_FILE_ACCESS( HttpStatus.FORBIDDEN, "해당 공지사항에 접근할 수 없는 첨부파일입니다."),
