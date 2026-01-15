@@ -7,7 +7,9 @@ import com.example.Petbulance_BE.domain.user.entity.UserSanction;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UserSanctionRepository;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
-import com.example.Petbulance_BE.domain.user.type.SactionType;
+import com.example.Petbulance_BE.domain.user.type.SanctionType;
+import com.example.Petbulance_BE.global.common.error.exception.CustomException;
+import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +29,7 @@ public class CommunitySanctionService {
     /**
      * 관리자 페이지에서 report actionType 을 SUSPEND 로 변경했을 때 호출
      */
-    public void applySanctionForReport(Report report, SactionType sactionType) {
+    public void applySanctionForReport(Report report, SanctionType sanctionType) {
         if (report.getActionType() != ReportActionType.SUSPEND) {
             // SUSPEND 가 아니면 제재 안 함
             return;
@@ -45,7 +47,7 @@ public class CommunitySanctionService {
         // 제재 이력 저장
         UserSanction sanction = UserSanction.builder()
                 .user(targetUser)
-                .sanctionType(sactionType)
+                .sanctionType(sanctionType)
                 .reason("[신고ID=" + report.getReportId() + "] " + report.getReportReason())
                 .startAt(now)
                 .endAt(until)
@@ -77,14 +79,14 @@ public class CommunitySanctionService {
 
     public void unbanCommunity(String userId) {
         Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자"));
+                .orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
 
         // 커뮤니티 정지 해제
         user.clearCommunityBan();
 
         // 활성화된 커뮤니티 제재 이력 비활성화
         userSanctionRepository
-                .findAllByUserAndActiveTrue(user)
+                .findAllByUserAndActiveTrueAndSanctionType(user, SanctionType.COMMUNITY_BAN)
                 .forEach(sanction -> sanction.deactivate());
     }
 }

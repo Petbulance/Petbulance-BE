@@ -20,4 +20,5 @@ public class ReportController {
     public ReportCreateResDto createReport(@RequestBody @Valid ReportCreateReqDto reqDto) {
         return reportService.createReport(reqDto);
     }
+
 }

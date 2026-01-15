@@ -15,9 +15,11 @@ import com.example.Petbulance_BE.domain.report.repository.ReportRepository;
 import com.example.Petbulance_BE.domain.report.type.ReportActionType;
 import com.example.Petbulance_BE.domain.report.type.ReportStatus;
 import com.example.Petbulance_BE.domain.report.type.ReportType;
+import com.example.Petbulance_BE.domain.review.entity.UserReview;
+import com.example.Petbulance_BE.domain.review.repository.ReviewJpaRepository;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
-import com.example.Petbulance_BE.domain.user.type.SactionType;
+import com.example.Petbulance_BE.domain.user.type.SanctionType;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.util.UserUtil;
@@ -37,6 +39,7 @@ public class ReportService {
     private final UsersJpaRepository usersJpaRepository;
     private final PostCommentService postCommentService;
     private final CommunitySanctionService communitySanctionService;
+    private final ReviewJpaRepository reviewJpaRepository;
 
     public ReportCreateResDto createReport(@Valid ReportCreateReqDto reqDto) {
 
@@ -73,6 +76,20 @@ public class ReportService {
                         .build();
             }
 
+            case REVIEW -> {
+                UserReview review = reviewJpaRepository.findById(reqDto.getReviewId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REVIEW));
+
+                report = Report.builder()
+                        .reportReason(reqDto.getReportReason())
+                        .targetUser(review.getUser())
+                        .reporter(reporter)
+                        .reportType(ReportType.REVIEW)
+                        .status(review.getDeleted() ? ReportStatus.DELETED : ReportStatus.REPORTED)
+                        .reviewId(review.getId())
+                        .build();
+            }
+
             default -> throw new IllegalStateException("잘못된 신고 타입입니다.");
         }
 
@@ -100,7 +117,7 @@ public class ReportService {
                 report.deleteAction(ReportActionType.SUSPEND);
 
                 // 커뮤니티 기능 접근 정지
-                communitySanctionService.applySanctionForReport(report, SactionType.COMMUNITY_BAN);
+                communitySanctionService.applySanctionForReport(report, SanctionType.COMMUNITY_BAN);
 
                 // 알림 보내기
                 sendAlarm(report);

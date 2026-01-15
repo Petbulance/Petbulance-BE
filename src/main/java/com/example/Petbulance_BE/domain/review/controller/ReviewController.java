@@ -129,19 +129,5 @@ public class ReviewController {
         return reviewService.reviewLikeCancelProcess(reviewId);
 
     }
-    //컨트롤러
-    @PostMapping(value = "/test", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Mono<ReceiptResDto> receiptExtract1(@RequestParam("image") MultipartFile image) {
-        //[1. Controller 진입] 스레드: http-nio-8080-exec-173 (실제 로그)
-        log.info("[1. Controller 진입] 스레드: {}", Thread.currentThread().getName());
-        if(image.isEmpty()){
-            throw new CustomException(ErrorCode.NOT_FOUND_RECEIPT);
-        }
 
-        return reviewService.receiptExtractProcessMock(image).doOnSuccess(result -> {
-            //  최종 응답 시점
-            //[6. Controller 응답 반환 - 클라이언트에게 전송] 스레드: boundedElastic-29 (비동기적으로 잘 동작)
-            log.info("[6. Controller 응답 반환 - 클라이언트에게 전송] 스레드: {}", Thread.currentThread().getName());
-        });
-    }
 }
