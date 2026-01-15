@@ -4,6 +4,7 @@ import com.example.Petbulance_BE.domain.dashboard.service.DashboardMetricRedisSe
 import com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto;
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
+import com.example.Petbulance_BE.domain.review.aop.CheckReviewAvailable;
 import com.example.Petbulance_BE.domain.review.aop.DailyLimit;
 import com.example.Petbulance_BE.domain.review.dto.*;
 import com.example.Petbulance_BE.domain.review.dto.MyReviewGetDto;
@@ -27,6 +28,7 @@ import com.example.Petbulance_BE.global.util.UserUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.annotation.Before;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -384,6 +386,7 @@ public class ReviewService {
     }
 
 
+    @CheckReviewAvailable
     @Transactional
     public ReviewSaveResDto saveHospitalReviewProcess(ReviewSaveReqDto saveReqDto) {
 
@@ -392,17 +395,6 @@ public class ReviewService {
         if(images.size()>5) throw new CustomException(ErrorCode.IMAGE_COUNT_EXCEEDED);
 
         Users currentUser = userUtil.getCurrentUser();
-
-        Users users = usersJpaRepository.findById(currentUser.getId()).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
-
-        LocalDateTime reviewBanUntil = users.getReviewBanUntil();
-
-        if(reviewBanUntil != null && reviewBanUntil.isAfter(LocalDateTime.now())){
-
-            String formattedDate = reviewBanUntil.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-
-            throw new CustomException(ErrorCode.BANNED_REVIEW, formattedDate + " 까지 리뷰 작성이 정지되었습니다.");
-        }
 
         Hospital hospital = hospitalJpaRepository.findById(saveReqDto.getHospitalId()).orElseThrow(()-> new CustomException(ErrorCode.NOT_FOUND_HOSPITAL));
 

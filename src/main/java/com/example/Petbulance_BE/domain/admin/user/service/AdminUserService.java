@@ -3,15 +3,16 @@ package com.example.Petbulance_BE.domain.admin.user.service;
 import com.example.Petbulance_BE.domain.admin.page.PageResponse;
 import com.example.Petbulance_BE.domain.admin.user.dto.GetUserQueryParam;
 import com.example.Petbulance_BE.domain.admin.user.dto.GetUsersResDto;
-import com.example.Petbulance_BE.domain.admin.user.dto.ReactiveReviewReq;
-import com.example.Petbulance_BE.domain.admin.user.dto.ReviewBanReqDto;
+import com.example.Petbulance_BE.domain.admin.user.exception.ReviewBannedException;
 import com.example.Petbulance_BE.domain.report.entity.Report;
+import com.example.Petbulance_BE.domain.report.repository.ReportRepository;
 import com.example.Petbulance_BE.domain.report.service.CommunitySanctionService;
+import com.example.Petbulance_BE.domain.report.type.ReportActionType;
 import com.example.Petbulance_BE.domain.user.entity.UserSanction;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UserSanctionRepository;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
-import com.example.Petbulance_BE.domain.user.type.SactionType;
+import com.example.Petbulance_BE.domain.user.type.SanctionType;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -23,15 +24,16 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class AdminUserService {
 
+    private static final long DEFAULT_SUSPEND_DAYS = 7;
     private final UsersJpaRepository usersJpaRepository;
     private final UserSanctionRepository userSanctionRepository;
     private final CommunitySanctionService communitySanctionService;
+    private final ReportRepository reportRepository;
 
     public PageResponse<GetUsersResDto> getUsersProcess(Pageable pageable, GetUserQueryParam queryParam) {
 
@@ -42,44 +44,44 @@ public class AdminUserService {
     }
 
     @Transactional
-    public Long banUserReviewProcess(ReviewBanReqDto reviewBanReqDto) {
+    public void banUserReviewProcess(Long reportId, SanctionType sanctionType) {
 
-        Users user = usersJpaRepository.findById(reviewBanReqDto.getId()).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
+        Report report = reportRepository.findById(reportId).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REPORT));
 
-        int day = reviewBanReqDto.getDay();
+        if(report.getActionType() != ReportActionType.SUSPEND){
+            return;
+        }
 
-        String reason = reviewBanReqDto.getReason();
+        Users targetUser = report.getTargetUser();
 
-        user.setCommunityBanUntil(LocalDateTime.now().plusDays(day));
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime until = now.plusDays(DEFAULT_SUSPEND_DAYS);
+
+        targetUser.banReviewUntil(until);
 
         UserSanction userSanction = UserSanction.builder()
-                .user(user)
-                .sanctionType(SactionType.REVIEW_BAN)
-                .reason(reason)
-                .startAt(LocalDateTime.now())
-                .endAt(LocalDateTime.now().plusDays(day))
+                .user(targetUser)
+                .sanctionType(sanctionType)
+                .reason("[신고ID=" + report.getReportId() + "] " + report.getReportReason())
+                .startAt(now)
+                .endAt(until)
                 .active(true)
                 .build();
 
         userSanctionRepository.save(userSanction);
-
-        return userSanction.getId();
     }
 
     @Transactional
-    public String reactiveReviewProcess(ReactiveReviewReq reactiveReviewReq) {
+    public void reactiveReviewProcess(String userId) {
 
-        String userId = reactiveReviewReq.getUserID();
+        Users users = usersJpaRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
 
-        Users user = usersJpaRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
+        users.clearReviewBan();
 
-        user.setReviewBanUntil(null);
+        List<UserSanction> sactions = userSanctionRepository.findAllByUserAndActiveTrueAndSanctionType(users, SanctionType.REVIEW_BAN);
 
-        List<UserSanction> byUserAndActiveIsTrue = userSanctionRepository.findByUserAndActiveIsTrue(user);
+        sactions.forEach(saction -> saction.deactivate());
 
-        byUserAndActiveIsTrue.forEach(userSanction -> userSanction.setActive(false));
-
-        return userId;
     }
 
     @Transactional
@@ -93,9 +95,11 @@ public class AdminUserService {
     }
 
     @Transactional
-    public Map<String, String> banUserCommnityBanProcess(Report report, SactionType sactionType) {
+    public Map<String, String> banUserCommunityBanProcess(Long id, SanctionType sanctionType) {
 
-        communitySanctionService.applySanctionForReport(report, sactionType);
+        Report report = reportRepository.findById(id).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REPORT));
+
+        communitySanctionService.applySanctionForReport(report, sanctionType);
 
         return Map.of("message", "success");
 
@@ -103,15 +107,27 @@ public class AdminUserService {
 
 
     @Transactional
-    public Map<String, String> reactiveCommunityProcess(Report report, SactionType sactionType) {
+    public Map<String, String> reactiveCommunityProcess(String userId) {
 
-        String targetUser = report.getTargetUser().getId();
-
-        Users byId = usersJpaRepository.findById(targetUser).orElseThrow(()->new CustomException(ErrorCode.NON_EXIST_USER));
-
-        byId.setCommunityBanUntil(null);
+        communitySanctionService.unbanCommunity(userId);
 
         return Map.of("message", "success");
 
+    }
+
+    @Transactional
+    public void checkReviewAccess(Users user){
+        LocalDateTime banUntil = user.getReviewBanUntil();
+
+        if(banUntil == null){
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if(banUntil.isAfter(now)){
+            throw new ReviewBannedException(banUntil);
+        }else{
+            user.clearReviewBan();
+        }
     }
 }

@@ -22,4 +22,7 @@ public class ReportCreateReqDto {
 
     // 댓글 신고용
     private Long commentId;
+
+    //리뷰 신고용
+    private Long reviewId;
 }

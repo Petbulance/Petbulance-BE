@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.global.common.error;
 
+import com.example.Petbulance_BE.domain.admin.user.exception.ReviewBannedException;
 import com.example.Petbulance_BE.domain.report.exception.CommunityBannedException;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
@@ -49,6 +50,18 @@ public class GlobalExceptionHandler {
                         "bannedUntil", e.getBannedUntil()
                 ));
     }
+
+    @ExceptionHandler(ReviewBannedException.class)
+    public ResponseEntity<?> handleReviewBanned(ReviewBannedException e) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(Map.of(
+                        "error", "REVIEW_BANNED",
+                        "message", e.getMessage(),
+                        "bannedUntil", e.getBannedUntil()
+                ));
+    }
+
 
 }
 

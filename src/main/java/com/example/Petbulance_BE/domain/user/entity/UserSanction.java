@@ -1,6 +1,6 @@
 package com.example.Petbulance_BE.domain.user.entity;
 
-import com.example.Petbulance_BE.domain.user.type.SactionType;
+import com.example.Petbulance_BE.domain.user.type.SanctionType;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,7 +26,7 @@ public class UserSanction extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "sanction_type", nullable = false)
-    private SactionType sanctionType;
+    private SanctionType sanctionType;
 
     @Column(name = "reason", length = 255)
     private String reason;
