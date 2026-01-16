@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.banner.service;
 import com.example.Petbulance_BE.domain.banner.dto.request.BannerImageCheckReqDto;
 import com.example.Petbulance_BE.domain.banner.dto.request.CreateBannerReqDto;
 import com.example.Petbulance_BE.domain.banner.dto.request.UpdateBannerReqDto;
+import com.example.Petbulance_BE.domain.banner.dto.response.BannerDetailResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.BannerResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.PagingAdminBannerListResDto;
 import com.example.Petbulance_BE.domain.banner.entity.Banner;
@@ -129,6 +130,7 @@ public class BannerService {
         return "bannerImage/" + UUID.randomUUID() + "_" + filename;
     }
 
+    @Transactional
     public void bannerFileSaveCheckProcess(BannerImageCheckReqDto reqDto) {
         Banner banner = getBanner(reqDto.getBannerId());
 
@@ -154,5 +156,11 @@ public class BannerService {
             throw new CustomException(ErrorCode.FAIL_FILE_UPLOAD);
         }
         banner.updateFileUrl(key);
+    }
+
+    @Transactional(readOnly = true)
+    public BannerDetailResDto bannerDetail(Long bannerId) {
+        Banner banner = getBanner(bannerId);
+        return bannerRepository.bannerDetail(banner);
     }
 }

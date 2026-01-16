@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.banner.controller;
 import com.example.Petbulance_BE.domain.banner.dto.request.BannerImageCheckReqDto;
 import com.example.Petbulance_BE.domain.banner.dto.request.CreateBannerReqDto;
 import com.example.Petbulance_BE.domain.banner.dto.request.UpdateBannerReqDto;
+import com.example.Petbulance_BE.domain.banner.dto.response.BannerDetailResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.BannerImageCheckResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.BannerResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.PagingAdminBannerListResDto;
@@ -39,4 +40,10 @@ public class AdminBannerController {
     public BannerResDto updateBanner(@PathVariable(name = "bannerId") Long bannerId, @RequestBody @Valid UpdateBannerReqDto reqDto) {
         return bannerService.updateBanner(bannerId, reqDto);
     }
+
+    @GetMapping("/{bannerId}")
+    public BannerDetailResDto bannerDetail(@PathVariable(name = "bannerId") Long bannerId) {
+        return bannerService.bannerDetail(bannerId);
+    }
+
 }

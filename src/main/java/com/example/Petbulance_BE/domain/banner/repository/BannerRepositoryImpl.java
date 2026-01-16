@@ -1,8 +1,10 @@
 package com.example.Petbulance_BE.domain.banner.repository;
 
 
+import com.example.Petbulance_BE.domain.banner.dto.response.BannerDetailResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.BannerListResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.PagingAdminBannerListResDto;
+import com.example.Petbulance_BE.domain.banner.entity.Banner;
 import com.example.Petbulance_BE.domain.banner.entity.QBanner;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -13,12 +15,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BannerRepositoryImpl implements BannerRepositoryCustom{
     private final JPAQueryFactory queryFactory;
+    QBanner banner = QBanner.banner;
 
     @Override
     public PagingAdminBannerListResDto adminBannerList(int page, int size) {
-
-        QBanner banner = QBanner.banner;
-
         // page는 1부터 시작
         long offset = (long) (page - 1) * size;
 
@@ -80,6 +80,25 @@ public class BannerRepositoryImpl implements BannerRepositoryCustom{
                 hasNext,
                 hasPrev
         );
+    }
+
+    @Override
+    public BannerDetailResDto bannerDetail(Banner b) {
+        return queryFactory
+                .select(Projections.constructor(BannerDetailResDto.class,
+                        banner.id,
+                        banner.notice.title,
+                        banner.users.nickname,
+                        banner.postStatus,
+                        banner.noticeStatus,
+                        banner.title,
+                        banner.startDate,
+                        banner.endDate,
+                        banner.fileUrl
+                        ))
+                .from(banner)
+                .where(banner.eq(b))
+                .fetchOne();
     }
 
 }
