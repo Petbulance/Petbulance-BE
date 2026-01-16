@@ -4,6 +4,7 @@ import com.example.Petbulance_BE.domain.notice.entity.Notice;
 import com.example.Petbulance_BE.domain.notice.type.NoticeStatus;
 import com.example.Petbulance_BE.domain.notice.type.PostStatus;
 import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,7 +21,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Banner {
+public class Banner extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

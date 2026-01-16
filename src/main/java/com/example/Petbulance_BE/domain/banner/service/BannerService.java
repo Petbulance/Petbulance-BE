@@ -37,7 +37,7 @@ public class BannerService {
 
     @Transactional(readOnly = true)
     public PagingAdminBannerListResDto adminBannerList(int page, int size) {
-        return null;
+        return bannerRepository.adminBannerList(page, size);
     }
 
     @Transactional
