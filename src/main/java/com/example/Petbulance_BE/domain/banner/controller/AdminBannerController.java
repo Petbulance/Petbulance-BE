@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/admin/banners")
 @RequiredArgsConstructor
 public class AdminBannerController {
-    private BannerService bannerService;
+    private final BannerService bannerService;
 
     @GetMapping
     public PagingAdminBannerListResDto adminBannerList(@RequestParam(defaultValue = "1") int page,

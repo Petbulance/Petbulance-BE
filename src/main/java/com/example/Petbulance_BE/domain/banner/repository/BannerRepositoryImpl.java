@@ -7,7 +7,11 @@ import com.example.Petbulance_BE.domain.banner.dto.response.HomeBannerListResDto
 import com.example.Petbulance_BE.domain.banner.dto.response.PagingAdminBannerListResDto;
 import com.example.Petbulance_BE.domain.banner.entity.Banner;
 import com.example.Petbulance_BE.domain.banner.entity.QBanner;
+import com.example.Petbulance_BE.domain.notice.entity.QNotice;
 import com.example.Petbulance_BE.domain.notice.type.PostStatus;
+import com.example.Petbulance_BE.domain.user.entity.QUsers;
+import com.example.Petbulance_BE.global.common.error.exception.CustomException;
+import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -85,23 +89,37 @@ public class BannerRepositoryImpl implements BannerRepositoryCustom{
     }
 
     @Override
-    public BannerDetailResDto bannerDetail(Banner b) {
-        return queryFactory
+    public BannerDetailResDto bannerDetail(Long bannerId) {
+
+        QBanner banner = QBanner.banner;
+        QNotice notice = QNotice.notice;
+        QUsers users = QUsers.users;
+
+        BannerDetailResDto result = queryFactory
                 .select(Projections.constructor(BannerDetailResDto.class,
                         banner.id,
-                        banner.notice.title,
-                        banner.users.nickname,
+                        notice.title,
+                        users.nickname,
                         banner.postStatus,
                         banner.noticeStatus,
                         banner.title,
                         banner.startDate,
                         banner.endDate,
                         banner.fileUrl
-                        ))
+                ))
                 .from(banner)
-                .where(banner.eq(b))
+                .leftJoin(banner.notice, notice)
+                .leftJoin(banner.users, users)
+                .where(banner.id.eq(bannerId))
                 .fetchOne();
+
+        if (result == null) {
+            throw new CustomException(ErrorCode.NOT_FOUND_BANNER);
+        }
+
+        return result;
     }
+
 
     @Override
     public List<HomeBannerListResDto> homeBannerList() {

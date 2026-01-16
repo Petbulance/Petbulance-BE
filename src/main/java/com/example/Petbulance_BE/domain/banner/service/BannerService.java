@@ -44,7 +44,6 @@ public class BannerService {
 
     @Transactional
     public BannerResDto createBanner(CreateBannerReqDto reqDto) {
-
         checkBannerIsActiveCount(reqDto.getPostStatus());
         Users currentUser = UserUtil.getCurrentUser();
 
@@ -162,7 +161,7 @@ public class BannerService {
     @Transactional(readOnly = true)
     public BannerDetailResDto bannerDetail(Long bannerId) {
         Banner banner = getBanner(bannerId);
-        return bannerRepository.bannerDetail(banner);
+        return bannerRepository.bannerDetail(banner.getId());
     }
 
     public List<HomeBannerListResDto> homeBannerList() {
