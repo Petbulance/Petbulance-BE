@@ -163,7 +163,6 @@ public class NoticeService {
 
     // 유틸 메서드
 
-
     private String extractKeyFromUrl(String fileUrl) {
         // https://bucket-resized.s3.region.amazonaws.com/noticeImage/uuid_filename
         return fileUrl.substring(fileUrl.indexOf("noticeImage/"));

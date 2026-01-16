@@ -1,10 +1,13 @@
 package com.example.Petbulance_BE.domain.banner.controller;
 
+import com.example.Petbulance_BE.domain.banner.dto.request.BannerImageCheckReqDto;
 import com.example.Petbulance_BE.domain.banner.dto.request.CreateBannerReqDto;
 import com.example.Petbulance_BE.domain.banner.dto.request.UpdateBannerReqDto;
+import com.example.Petbulance_BE.domain.banner.dto.response.BannerImageCheckResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.BannerResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.PagingAdminBannerListResDto;
 import com.example.Petbulance_BE.domain.banner.service.BannerService;
+import com.example.Petbulance_BE.domain.notice.dto.response.NoticeImageCheckResDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +21,7 @@ public class AdminBannerController {
     @GetMapping
     public PagingAdminBannerListResDto adminBannerList(@RequestParam(defaultValue = "1") int page,
                                                        @RequestParam(defaultValue = "20") int size) {
-        return bannerService.adminNoticeList(page, size);
+        return bannerService.adminBannerList(page, size);
     }
 
     @PostMapping
@@ -26,8 +29,14 @@ public class AdminBannerController {
         return bannerService.createBanner(reqDto);
     }
 
-    @PutMapping
-    public BannerResDto updateBanner(@RequestBody @Valid UpdateBannerReqDto reqDto) {
-        return bannerService.updateBanner(reqDto);
+    @GetMapping("/save/sucess")
+    public BannerImageCheckResDto bannerFileSaveCheckProcess(@RequestBody BannerImageCheckReqDto reqDto) {
+        bannerService.bannerFileSaveCheckProcess(reqDto);
+        return new BannerImageCheckResDto("성공적으로 이미지가 등록되었습니다.");
+    }
+
+    @PutMapping("/{bannerId}")
+    public BannerResDto updateBanner(@PathVariable(name = "bannerId") Long bannerId, @RequestBody @Valid UpdateBannerReqDto reqDto) {
+        return bannerService.updateBanner(bannerId, reqDto);
     }
 }
