@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.net.URL;
 import java.util.List;
@@ -94,12 +95,15 @@ public class BannerService {
         Long noticeId = reqDto.getNoticeId();
         Notice notice = noticeRepository.findById(noticeId).orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
 
-        String fileUrl = reqDto.getFileUrl();
-        if (!Objects.equals(reqDto.getFileUrl(), banner.getFileUrl())) {
-            s3Service.deleteObject(fileUrl);
+        String key = null;
+        URL url = null;
+        // 기존 이미지에서 변경
+        if(StringUtils.hasText(reqDto.getFile().getFilename())) {
+            key = createFileKey(reqDto.getFile().getFilename());
+            url = s3Service.createPresignedPutUrl(key, reqDto.getFile().getContentType(), 300);
         }
 
-        banner.update(reqDto.getNoticeStatus(), reqDto.getPostStatus(), notice, reqDto.getTitle(), reqDto.getStartDate(), reqDto.getEndDate(), fileUrl);
+        banner.update(reqDto.getNoticeStatus(), reqDto.getPostStatus(), notice, reqDto.getTitle(), reqDto.getStartDate(), reqDto.getEndDate());
 
         return BannerResDto.builder()
                 .bannerId(banner.getId())
@@ -109,7 +113,11 @@ public class BannerService {
                 .title(banner.getTitle())
                 .startDate(banner.getStartDate())
                 .endDate(banner.getEndDate())
-                .fileUrl(banner.getFileUrl())
+                .url(BannerResDto.UrlAndId
+                        .builder()
+                        .presignedUrl(url)
+                        .saveId(key)
+                        .build())
                 .build();
     }
 
@@ -128,7 +136,7 @@ public class BannerService {
             saveBannerFilesOrThrow(banner, reqDto.getKey());
         } catch (CustomException e) {
             cleanupUploadedFiles(reqDto.getKey());
-            bannerRepository.delete(banner);
+            if(banner.getFileUrl() == null) bannerRepository.delete(banner);
             throw e;
         }
     }

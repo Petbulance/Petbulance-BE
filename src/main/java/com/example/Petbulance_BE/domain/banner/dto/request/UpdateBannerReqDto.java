@@ -30,7 +30,15 @@ public class UpdateBannerReqDto {
     @NotNull(message = "공지사항 id는 필수입니다.")
     private Long noticeId;
 
-    private String fileUrl;
+    private BannerFileReqDto file;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class BannerFileReqDto {
+        private String filename;
+        private String contentType;
+    }
 
     /**
      * ✅ 종료일은 시작일보다 이후여야 함

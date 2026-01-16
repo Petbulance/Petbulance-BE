@@ -31,6 +31,7 @@ public class CreateBannerReqDto {
     @NotNull(message = "공지사항 id는 필수입니다.")
     private Long noticeId;
 
+    @NotNull(message = "이미지 정보는 필수입니다.")
     private NoticeFileReqDto file;
 
     @Data

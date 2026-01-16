@@ -44,16 +44,16 @@ public class Banner {
     private LocalDate startDate;
     private  LocalDate endDate;
 
-    private String fileUrl;
+    @Builder.Default
+    private String fileUrl = null;
 
-    public void update(NoticeStatus noticeStatus, PostStatus postStatus, Notice notice, String title, LocalDate startDate, LocalDate endDate, String fileUrl) {
+    public void update(NoticeStatus noticeStatus, PostStatus postStatus, Notice notice, String title, LocalDate startDate, LocalDate endDate) {
         this.noticeStatus = noticeStatus;
         this.postStatus = postStatus;
         this.notice = notice;
         this.title = title;
         this.startDate = startDate;
         this.endDate = endDate;
-        this.fileUrl = fileUrl;
     }
 
     public void updateFileUrl(String key) {
