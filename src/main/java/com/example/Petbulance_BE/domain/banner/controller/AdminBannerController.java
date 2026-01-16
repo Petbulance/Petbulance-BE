@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/admin/banner")
+@RequestMapping("/admin/banners")
 @RequiredArgsConstructor
 public class AdminBannerController {
     private BannerService bannerService;

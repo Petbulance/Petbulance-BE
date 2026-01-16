@@ -3,9 +3,11 @@ package com.example.Petbulance_BE.domain.banner.repository;
 
 import com.example.Petbulance_BE.domain.banner.dto.response.BannerDetailResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.BannerListResDto;
+import com.example.Petbulance_BE.domain.banner.dto.response.HomeBannerListResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.PagingAdminBannerListResDto;
 import com.example.Petbulance_BE.domain.banner.entity.Banner;
 import com.example.Petbulance_BE.domain.banner.entity.QBanner;
+import com.example.Petbulance_BE.domain.notice.type.PostStatus;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -99,6 +101,26 @@ public class BannerRepositoryImpl implements BannerRepositoryCustom{
                 .from(banner)
                 .where(banner.eq(b))
                 .fetchOne();
+    }
+
+    @Override
+    public List<HomeBannerListResDto> homeBannerList() {
+        return queryFactory
+                .select(Projections.constructor(HomeBannerListResDto.class,
+                        banner.id,
+                        banner.startDate,
+                        banner.endDate,
+                        banner.postStatus,
+                        banner.noticeStatus,
+                        banner.notice.id,
+                        banner.title,
+                        banner.fileUrl
+                        ))
+                .from(banner)
+                .where(banner.postStatus.eq(PostStatus.ACTIVE))
+                .orderBy(banner.createdAt.desc())
+                .limit(5)
+                .fetch();
     }
 
 }

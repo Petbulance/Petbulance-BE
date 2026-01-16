@@ -5,6 +5,7 @@ import com.example.Petbulance_BE.domain.banner.dto.request.CreateBannerReqDto;
 import com.example.Petbulance_BE.domain.banner.dto.request.UpdateBannerReqDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.BannerDetailResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.BannerResDto;
+import com.example.Petbulance_BE.domain.banner.dto.response.HomeBannerListResDto;
 import com.example.Petbulance_BE.domain.banner.dto.response.PagingAdminBannerListResDto;
 import com.example.Petbulance_BE.domain.banner.entity.Banner;
 import com.example.Petbulance_BE.domain.banner.repository.BannerRepository;
@@ -162,5 +163,9 @@ public class BannerService {
     public BannerDetailResDto bannerDetail(Long bannerId) {
         Banner banner = getBanner(bannerId);
         return bannerRepository.bannerDetail(banner);
+    }
+
+    public List<HomeBannerListResDto> homeBannerList() {
+        return bannerRepository.homeBannerList();
     }
 }
