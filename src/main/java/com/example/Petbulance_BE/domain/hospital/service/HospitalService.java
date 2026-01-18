@@ -377,6 +377,15 @@ public class HospitalService {
 
     public List<HospitalMatchingResDto> hospitalMatching(String filter, AnimalType species, Double lat, Double lng) {
 
+        try {
+            // 검색 필터 또는 위치 기반 검색이 들어온 경우 → 검색 1회
+            if (filter != null || species != null) {
+                dashboardMetricRedisService.incrementTodayHospitalSearch();
+            }
+        } catch (Exception e) {
+            log.warn("Failed to increment hospital_search_count", e);
+        }
+
         LocalDate today = LocalDate.now(); // 현재 날짜
         LocalTime now = LocalTime.now(); // 현재 시간
         String s = null;

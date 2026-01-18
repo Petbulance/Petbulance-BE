@@ -18,13 +18,15 @@ public class AdminNoticeListResDto {
     private NoticeStatus noticeStatus;
     private PostStatus postStatus;
     private String createdAt;
+    private boolean bannerRegistered;
 
-    public AdminNoticeListResDto(Long noticeId, String title, NoticeStatus noticeStatus, PostStatus postStatus, LocalDateTime createdAt) {
+    public AdminNoticeListResDto(Long noticeId, String title, NoticeStatus noticeStatus, PostStatus postStatus, LocalDateTime createdAt, boolean bannerRegistered) {
         this.noticeId = noticeId;
         this.title = title;
         this.noticeStatus = noticeStatus;
         this.postStatus = postStatus;
         this.createdAt = TimeUtil.formatCreatedAt(createdAt);
+        this.bannerRegistered = bannerRegistered;
     }
 
 }

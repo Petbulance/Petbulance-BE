@@ -1,22 +1,20 @@
 package com.example.Petbulance_BE.domain.banner.service;
 
-import com.example.Petbulance_BE.domain.banner.dto.request.CreateBannerReqDto;
-import com.example.Petbulance_BE.domain.banner.dto.request.UpdateBannerReqDto;
-import com.example.Petbulance_BE.domain.banner.dto.response.BannerResDto;
-import com.example.Petbulance_BE.domain.banner.dto.response.PagingAdminBannerListResDto;
-import jakarta.validation.Valid;
+import com.example.Petbulance_BE.domain.banner.dto.response.HomeBannerListResDto;
+import com.example.Petbulance_BE.domain.banner.repository.BannerRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
+import java.util.List;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
 public class BannerService {
+    private final BannerRepository bannerRepository;
 
-    public PagingAdminBannerListResDto adminNoticeList(int page, int size) {
-        return null;
-    }
-
-    public BannerResDto createBanner(@Valid CreateBannerReqDto reqDto) {
-        return null;
-    }
-
-    public BannerResDto updateBanner(@Valid UpdateBannerReqDto reqDto) {
-        return null;
+    public List<HomeBannerListResDto> homeBannerList() {
+        return bannerRepository.homeBannerList();
     }
 }
