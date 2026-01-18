@@ -125,6 +125,19 @@ public class ReportService {
     public ReportActionResDto processReport(Long reportId, ReportActionReqDto reqDto) {
         Report report = reportRepository.findById(reportId).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REPORT));
 
+        Users currentUser = UserUtil.getCurrentUser();
+        adminActionLogRepository.save(AdminActionLog.builder()
+                .actorType(AdminActorType.ADMIN)
+                .admin(currentUser)
+                .pageType(AdminPageType.COMMUNITY_MANAGEMENT)
+                .actionType(AdminActionType.UPDATE)
+                .targetType(AdminTargetType.COMMUNITY_ACTION)
+                .targetId(reportId)
+                .resultType(AdminActionResult.SUCCESS)
+                .description(String.format("[제재] %d번 신고 %s 조치", reportId, reqDto.getActionType().getDescription()))
+                .build()
+        );
+
         switch (reqDto.getActionType()) {
             case PUBLISH -> {
                 report.publish();
