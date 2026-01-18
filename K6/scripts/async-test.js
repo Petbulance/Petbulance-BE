@@ -11,9 +11,9 @@ export const options = {
             executor: 'ramping-vus',
             startVUs: 0,
             stages: [
-                { duration: '20s', target: 100 },  // 처음 10초 동안 50명까지 천천히 증가
-                { duration: '20s', target: 300 }, // 다음 20초 동안 100명까지 증가
-                { duration: '20s', target: 400 }, // 마지막에 300명 도달
+                { duration: '10s', target: 200 },  // 처음 10초 동안 50명까지 천천히 증가
+                { duration: '10s', target: 300 }, // 다음 20초 동안 100명까지 증가
+                { duration: '15s', target: 400 }, // 마지막에 300명 도달
                 { duration: '10s', target: 0 },   // 종료
             ],
             gracefulRampDown: '0s',

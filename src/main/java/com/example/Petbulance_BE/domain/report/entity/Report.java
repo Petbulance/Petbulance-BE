@@ -58,6 +58,10 @@ public class Report {
     @Builder.Default
     private Long commentId = null;
 
+    @Column(name = "review_id")
+    @Builder.Default
+    private Long reviewId = null;
+
     @Builder.Default
     private boolean processed = false;
 
