@@ -1,5 +1,9 @@
 package com.example.Petbulance_BE.domain.dashboard.service;
 
+import com.example.Petbulance_BE.domain.adminlog.entity.AdminActionLog;
+import com.example.Petbulance_BE.domain.adminlog.repository.AdminActionLogRepository;
+import com.example.Petbulance_BE.domain.adminlog.repository.AdminActionLogRepositoryCustom;
+import com.example.Petbulance_BE.domain.adminlog.type.*;
 import com.example.Petbulance_BE.domain.dashboard.dto.MetricResult;
 import com.example.Petbulance_BE.domain.dashboard.dto.request.EventVisitReqDto;
 import com.example.Petbulance_BE.domain.dashboard.dto.response.DashBoardSummaryResDto;
@@ -10,8 +14,10 @@ import com.example.Petbulance_BE.domain.qna.repository.QnaRepository;
 import com.example.Petbulance_BE.domain.qna.type.QnaStatus;
 import com.example.Petbulance_BE.domain.report.repository.ReportRepository;
 import com.example.Petbulance_BE.domain.report.type.ReportType;
+import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
@@ -22,7 +28,9 @@ public class DashBoardService {
     private final DashboardMetricRedisService redisService;
     private final ReportRepository reportRepository;
     private final QnaRepository qnaRepository;
+    private final AdminActionLogRepository adminActionLogRepository;
 
+    @Transactional
     public DashBoardSummaryResDto dashBoardSummary() {
 
         LocalDate today = LocalDate.now();
@@ -63,6 +71,17 @@ public class DashBoardService {
         int qnaTotal = (int) qnaRepository.count();
         int qnaWaiting =
                 qnaRepository.countByStatus(QnaStatus.ANSWER_WAITING);
+
+
+        adminActionLogRepository.save(AdminActionLog.builder()
+                .actorType(AdminActorType.ADMIN)
+                .admin(UserUtil.getCurrentUser())
+                .pageType(AdminPageType.DASHBOARD)
+                .actionType(AdminActionType.READ)
+                .targetType(AdminTargetType.DASHBOARD)
+                .resultType(AdminActionResult.SUCCESS)
+                .description("[조회] 대시보드 메인 화면 진입")
+                .build());
 
         return new DashBoardSummaryResDto(
                 new DashBoardSummaryResDto.SignUpResDto(

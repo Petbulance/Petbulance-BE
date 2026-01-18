@@ -31,7 +31,8 @@ public class AdminActionLog extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "adamin_id")
-    private Users admin; // SYSTEM인 경우 null
+    @Builder.Default
+    private Users admin = null; // SYSTEM인 경우 null
 
     @Enumerated(EnumType.STRING)
     @Column(name = "page_type", nullable = false, length = 30)
@@ -46,7 +47,8 @@ public class AdminActionLog extends BaseTimeEntity {
     private AdminTargetType targetType;
 
     @Column(name = "target_id")
-    private Long targetId; // 대상 엔티티 ID
+    @Builder.Default
+    private Long targetId = null; // 대상 엔티티 ID
 
     @Enumerated(EnumType.STRING)
     @Column(name = "result_type", nullable = false, length = 20)
@@ -56,6 +58,4 @@ public class AdminActionLog extends BaseTimeEntity {
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
 }
