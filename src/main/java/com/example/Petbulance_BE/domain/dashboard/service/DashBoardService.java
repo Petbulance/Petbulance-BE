@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -81,6 +82,7 @@ public class DashBoardService {
                 .targetType(AdminTargetType.DASHBOARD)
                 .resultType(AdminActionResult.SUCCESS)
                 .description("[조회] 대시보드 메인 화면 진입")
+                .createdAt(LocalDateTime.now())
                 .build());
 
         return new DashBoardSummaryResDto(
