@@ -12,6 +12,5 @@ import java.util.List;
 @AllArgsConstructor
 public class NoticeImageCheckReqDto {
     private Long noticeId;
-
     private List<String> keys = new ArrayList<>();
 }

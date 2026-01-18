@@ -68,15 +68,26 @@ public class NoticeService {
         Users user = UserUtil.getCurrentUser();
 
         Banner banner = null;
-        URL presignedUrl = null; // client에서 업로드할 presignedUrl이다.
-        String saveId = null; // 실제 저장된 fildUrl
-        if(reqDto.isBannerRegistered()) { // 배너를 등록하는 경우에만 배너 생성 및 이미지 presignedUrl 발급
+        if (reqDto.isBannerRegistered()) {
+            // DTO에서 넘어온 이미지가 Full URL일 경우를 대비해 Key만 추출
+            String bannerKey = extractKeyFromUrl(reqDto.getBannerInfo().getImageUrl());
+
+            if (!s3Service.doesObjectExist(bannerKey)) {
+                throw new CustomException(ErrorCode.FAIL_IMAGE_UPLOAD);
+            }
+
             banner = Banner.builder()
                     .startDate(reqDto.getBannerInfo().getStartDate())
                     .endDate(reqDto.getBannerInfo().getEndDate())
+                    .fileUrl(reqDto.getBannerInfo().getImageUrl()) // 또는 s3Service.getResizedObjectUrl(bannerKey)
                     .build();
-            saveId = "noticeImage/" + UUID.randomUUID() + "_" + reqDto.getBannerInfo().getImageName();
-            presignedUrl = s3Service.createPresignedPutUrl(saveId, reqDto.getBannerInfo().getImageContentType(), 300);
+        }
+
+        // 공지사항 파일 존재 여부 확인
+        for (String fileUrl : reqDto.getFileUrls()) {
+            if (!s3Service.doesObjectExist(extractKeyFromUrl(fileUrl))) {
+                throw new CustomException(ErrorCode.FAIL_FILE_UPLOAD);
+            }
         }
 
         Notice notice = noticeRepository.save(
@@ -91,31 +102,26 @@ public class NoticeService {
                         .build()
         );
 
-        // 공지사항에 업로드될 파일들에 대한 presignedUrl 발급
-        // List<NoticeResDto.UrlAndId> presignedUrls =
-        List<NoticeResDto.UrlAndId> urls = generatePresignedUrls(reqDto.getFiles());
+        // NoticeFile 저장 로직 (필요 시 호출)
+        saveNoticeFilesOrThrow(notice, reqDto.getFileUrls());
 
-        return new NoticeResDto(
-                notice.getId(),
-                "공지사항이 정상적으로 작성되었습니다.",
-                urls,
-                new NoticeResDto.BannerResInfo(banner.getId(), presignedUrl, saveId)
-        );
+        return new NoticeResDto(notice.getId(), "공지사항이 정상적으로 작성되었습니다.");
     }
 
     @CacheEvict(value = "adminNotice", allEntries = true)
     @Transactional
     public UpdateNoticeResDto updateNotice(Long noticeId, UpdateNoticeReqDto reqDto) {
-        Notice notice = getNotice(noticeId);
+        Notice notice = getNotice(noticeId); // 수정하고자하는 공지사항
 
+        // 추가하고자하는 파일이 있다면 최대 첨부 파일 갯수를 넘는지 확인
         int adding = reqDto.getAddFiles() == null ? 0 : reqDto.getAddFiles().size();
         validateFileCount(notice.getFiles().size(), adding);
 
         // 파일 삭제
         if (reqDto.getDeleteFileIds() != null && !reqDto.getDeleteFileIds().isEmpty()) {
-            noticeFileRepository.findAllById(reqDto.getDeleteFileIds())
+            noticeFileRepository.findAllById(reqDto.getDeleteFileIds()) // db 상에서 삭제
                     .forEach(file -> {
-                        s3Service.deleteObject(file.getFileUrl());
+                        s3Service.deleteObject(extractKeyFromUrl(file.getFileUrl())); // s3 상에서 삭제
                         notice.removeFile(file); // orphanRemoval
                     });
         }
@@ -124,6 +130,17 @@ public class NoticeService {
         if (adding > 0) {
             saveNoticeFilesOrThrow(notice, reqDto.getAddFiles());
         }
+
+        String changeImageUrl = reqDto.getBannerInfo().getImageUrl();
+        if(changeImageUrl != null) {{
+            if(!changeImageUrl.equals(notice.getBanner().getFileUrl())) {
+                // 배너 이미지를 변경하고자 함
+                String key = extractKeyFromUrl(changeImageUrl);
+                if (!s3Service.doesObjectExist(key)) {
+                    throw new CustomException(ErrorCode.FAIL_IMAGE_UPLOAD);
+                }
+            }
+        }}
 
         notice.update(reqDto);
 
@@ -179,8 +196,11 @@ public class NoticeService {
     // 유틸 메서드
 
     private String extractKeyFromUrl(String fileUrl) {
-        // https://bucket-resized.s3.region.amazonaws.com/noticeImage/uuid_filename
-        return fileUrl.substring(fileUrl.indexOf("noticeImage/"));
+        if (fileUrl == null || !fileUrl.contains(".com/")) {
+            return fileUrl; // 이미 Key 형태인 경우 그대로 반환
+        }
+        // ".com/" 이후의 모든 문자열을 Key로 간주
+        return fileUrl.substring(fileUrl.indexOf(".com/") + 5);
     }
 
     private Notice getNotice(Long noticeId) {
@@ -194,18 +214,6 @@ public class NoticeService {
         }
     }
 
-    private List<NoticeResDto.UrlAndId> generatePresignedUrls(
-            List<CreateNoticeReqDto.NoticeFileReqDto> files
-    ) {
-        List<NoticeResDto.UrlAndId> result = new LinkedList<>();
-
-        for (CreateNoticeReqDto.NoticeFileReqDto file : files) {
-            String key = createFileKey(file.getFilename());
-            URL url = s3Service.createPresignedPutUrl(key, file.getContentType(), 300);
-            result.add(new NoticeResDto.UrlAndId(url, key));
-        }
-        return result;
-    }
 
     private List<AddFileResDto.UrlAndId> generateAddFilePresignedUrls(
             List<AddFileReqDto.NoticeFileReqDto> files
@@ -220,18 +228,19 @@ public class NoticeService {
         return result;
     }
 
-    private void saveNoticeFilesOrThrow(Notice notice, List<String> keys) {
-        for (String key : keys) {
+    private void saveNoticeFilesOrThrow(Notice notice, List<String> urls) {
+        if (urls == null) return;
+
+        for (String url : urls) {
+            String key = extractKeyFromUrl(url);
             if (!s3Service.doesObjectExist(key)) {
                 throw new CustomException(ErrorCode.FAIL_FILE_UPLOAD);
             }
-        }
 
-        for (String key : keys) {
             noticeFileRepository.save(
                     NoticeFile.builder()
                             .notice(notice)
-                            .fileUrl(s3Service.getObject(key))
+                            .fileUrl(url)
                             .fileName(extractFileName(key))
                             .build()
             );
@@ -254,5 +263,41 @@ public class NoticeService {
 
     private String extractFileName(String key) {
         return key.split("_", 2)[1];
+    }
+
+    @Transactional(readOnly = true)
+    public AdminDetailNoticeResDto adminDetailNotice(Long noticeId) {
+        // 1. 공지사항 조회 (Fetch Join을 사용하지 않는다면 Banner와 Files는 지연 로딩됨)
+        Notice notice = getNotice(noticeId);
+
+        // 2. 파일 리스트 변환
+        List<AdminDetailNoticeResDto.FileResDto> fileList = notice.getFiles().stream()
+                .map(file -> new AdminDetailNoticeResDto.FileResDto(
+                        file.getId(),
+                        file.getFileUrl(),
+                        file.getFileName()
+                ))
+                .toList();
+
+        // 3. 배너 정보 변환 (배너 등록 여부 확인)
+        AdminDetailNoticeResDto.BannerInfoResDto bannerDto = null;
+        if (notice.isBannerRegistered() && notice.getBanner() != null) {
+            Banner banner = notice.getBanner();
+            bannerDto = new AdminDetailNoticeResDto.BannerInfoResDto(
+                    banner.getStartDate(),
+                    banner.getEndDate(),
+                    banner.getFileUrl()
+            );
+        }
+
+        // 4. 최종 DTO 조립 및 반환
+        return new AdminDetailNoticeResDto(
+                notice.getPostStatus(),
+                notice.getNoticeStatus(),
+                notice.getTitle(),
+                notice.getContent(),
+                fileList,
+                bannerDto
+        );
     }
 }

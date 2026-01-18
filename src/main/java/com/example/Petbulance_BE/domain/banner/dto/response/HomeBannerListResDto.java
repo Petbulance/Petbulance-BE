@@ -15,9 +15,6 @@ public class HomeBannerListResDto {
     private Long bannerId;
     private LocalDate startDate;
     private LocalDate endDate;
-    private PostStatus postStatus;
-    private NoticeStatus noticeStatus;
     private Long noticeId;
-    private String title;
-    private String fileUrl;
+    private String imageUrl;
 }

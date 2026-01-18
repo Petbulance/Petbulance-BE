@@ -77,5 +77,8 @@ public class Notice extends BaseTimeEntity {
         this.postStatus = reqDto.getPostStatus();
         this.title = reqDto.getTitle();
         this.content = reqDto.getContent();
+        this.bannerRegistered = reqDto.isBannerRegistered();
+        this.banner.updateBanner(reqDto.getBannerInfo());
+
     }
 }

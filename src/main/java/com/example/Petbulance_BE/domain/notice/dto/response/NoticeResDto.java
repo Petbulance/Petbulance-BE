@@ -11,24 +11,4 @@ import java.util.List;
 public class NoticeResDto {
     private Long noticeId;
     private String message;
-    private List<UrlAndId> urls;
-    private BannerResInfo bannerInfo;
-
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class UrlAndId{
-        private URL presignedUrl;
-        private String saveId;
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class BannerResInfo {
-        private Long bannerId;
-        private URL presignedUrl;
-        private String saveId;
-    }
 }

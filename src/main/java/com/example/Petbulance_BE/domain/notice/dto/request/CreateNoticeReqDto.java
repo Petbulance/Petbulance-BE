@@ -27,20 +27,11 @@ public class CreateNoticeReqDto {
     private String content;
 
     @Size(min = 1, max = 5, message = "첨부파일은 1개 이상 5개 이하만 가능합니다.")
-    private List<NoticeFileReqDto> files;
+    private List<String> fileUrls;
 
     private boolean bannerRegistered; // 배너 설정 여부
 
     private BannerReqDto bannerInfo;
-
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class NoticeFileReqDto {
-        private String filename;
-        private String contentType;
-    }
 
     @Data
     @AllArgsConstructor
@@ -48,8 +39,7 @@ public class CreateNoticeReqDto {
     public static class BannerReqDto {
         private LocalDate startDate;
         private LocalDate endDate;
-        private String imageName;
-        private String imageContentType;
+        private String imageUrl;
     }
 
     @AssertTrue(message = "배너 시작일은 종료일보다 이전이거나 같아야 하며, 배너 정보는 필수입니다.")

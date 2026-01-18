@@ -1,13 +1,8 @@
 package com.example.Petbulance_BE.domain.banner.entity;
 
-import com.example.Petbulance_BE.domain.notice.entity.Notice;
-import com.example.Petbulance_BE.domain.notice.type.NoticeStatus;
-import com.example.Petbulance_BE.domain.notice.type.PostStatus;
-import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.example.Petbulance_BE.domain.notice.dto.request.UpdateNoticeReqDto;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -39,5 +34,11 @@ public class Banner extends BaseTimeEntity {
 
     public void updateFileUrl(String key) {
         this.fileUrl = key;
+    }
+
+    public void updateBanner(UpdateNoticeReqDto.BannerReqDto bannerInfo) {
+        this.startDate = bannerInfo.getStartDate();
+        this.endDate = bannerInfo.getEndDate();
+        this.fileUrl = bannerInfo.getImageUrl();
     }
 }
