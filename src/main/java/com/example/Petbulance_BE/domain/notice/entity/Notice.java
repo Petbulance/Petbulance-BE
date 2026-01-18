@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.notice.entity;
 
+import com.example.Petbulance_BE.domain.banner.entity.Banner;
 import com.example.Petbulance_BE.domain.notice.dto.request.UpdateNoticeReqDto;
 import com.example.Petbulance_BE.domain.notice.type.NoticeStatus;
 import com.example.Petbulance_BE.domain.notice.type.PostStatus;
@@ -45,8 +46,12 @@ public class Notice extends BaseTimeEntity {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    private LocalDate postStartDate;
-    private LocalDate postEndDate;
+    private boolean bannerRegistered; // 배너 설정 여부
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "banner_id")
+    private Banner banner;
+
 
     @OneToMany(
             mappedBy = "notice",
@@ -72,7 +77,5 @@ public class Notice extends BaseTimeEntity {
         this.postStatus = reqDto.getPostStatus();
         this.title = reqDto.getTitle();
         this.content = reqDto.getContent();
-        this.postStartDate = reqDto.getStartDate();
-        this.postEndDate = reqDto.getEndDate();
     }
 }

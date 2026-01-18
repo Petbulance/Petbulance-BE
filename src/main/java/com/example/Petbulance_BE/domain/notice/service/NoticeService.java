@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.notice.service;
 
+import com.example.Petbulance_BE.domain.banner.entity.Banner;
 import com.example.Petbulance_BE.domain.notice.dto.request.*;
 import com.example.Petbulance_BE.domain.notice.dto.response.*;
 import com.example.Petbulance_BE.domain.notice.entity.Notice;
@@ -66,25 +67,39 @@ public class NoticeService {
     public NoticeResDto createNotice(@Valid CreateNoticeReqDto reqDto) {
         Users user = UserUtil.getCurrentUser();
 
+        Banner banner = null;
+        URL presignedUrl = null; // client에서 업로드할 presignedUrl이다.
+        String saveId = null; // 실제 저장된 fildUrl
+        if(reqDto.isBannerRegistered()) { // 배너를 등록하는 경우에만 배너 생성 및 이미지 presignedUrl 발급
+            banner = Banner.builder()
+                    .startDate(reqDto.getBannerInfo().getStartDate())
+                    .endDate(reqDto.getBannerInfo().getEndDate())
+                    .build();
+            saveId = "noticeImage/" + UUID.randomUUID() + "_" + reqDto.getBannerInfo().getImageName();
+            presignedUrl = s3Service.createPresignedPutUrl(saveId, reqDto.getBannerInfo().getImageContentType(), 300);
+        }
+
         Notice notice = noticeRepository.save(
                 Notice.builder()
+                        .user(user)
                         .noticeStatus(reqDto.getNoticeStatus())
                         .postStatus(reqDto.getPostStatus())
                         .title(reqDto.getTitle())
                         .content(reqDto.getContent())
-                        .postStartDate(reqDto.getStartDate())
-                        .postEndDate(reqDto.getEndDate())
-                        .user(user)
+                        .bannerRegistered(reqDto.isBannerRegistered())
+                        .banner(banner)
                         .build()
         );
 
-        List<NoticeResDto.UrlAndId> presignedUrls =
-                generatePresignedUrls(reqDto.getFiles());
+        // 공지사항에 업로드될 파일들에 대한 presignedUrl 발급
+        // List<NoticeResDto.UrlAndId> presignedUrls =
+        List<NoticeResDto.UrlAndId> urls = generatePresignedUrls(reqDto.getFiles());
 
         return new NoticeResDto(
                 notice.getId(),
                 "공지사항이 정상적으로 작성되었습니다.",
-                presignedUrls
+                urls,
+                new NoticeResDto.BannerResInfo(banner.getId(), presignedUrl, saveId)
         );
     }
 

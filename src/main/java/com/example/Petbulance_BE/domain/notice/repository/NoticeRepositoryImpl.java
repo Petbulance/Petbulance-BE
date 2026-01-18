@@ -144,7 +144,8 @@ public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
                                 notice.title,
                                 notice.noticeStatus,
                                 notice.postStatus,
-                                notice.createdAt
+                                notice.createdAt,
+                                notice.bannerRegistered
                         )
                 )
                 .from(notice)

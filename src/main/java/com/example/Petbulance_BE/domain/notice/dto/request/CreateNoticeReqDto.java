@@ -29,8 +29,10 @@ public class CreateNoticeReqDto {
     @Size(min = 1, max = 5, message = "첨부파일은 1개 이상 5개 이하만 가능합니다.")
     private List<NoticeFileReqDto> files;
 
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private boolean bannerRegistered; // 배너 설정 여부
+
+    private BannerReqDto bannerInfo;
+
 
     @Data
     @AllArgsConstructor
@@ -40,14 +42,29 @@ public class CreateNoticeReqDto {
         private String contentType;
     }
 
-    /**
-     * ✅ 종료일은 시작일보다 이후여야 함
-     */
-    @AssertTrue(message = "종료일은 시작일 이후 날짜여야 합니다.")
-    public boolean isValidPeriod() {
-        if (startDate == null || endDate == null) {
-            return true; // @NotNull에서 이미 걸러짐
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class BannerReqDto {
+        private LocalDate startDate;
+        private LocalDate endDate;
+        private String imageName;
+        private String imageContentType;
+    }
+
+    @AssertTrue(message = "배너 시작일은 종료일보다 이전이거나 같아야 하며, 배너 정보는 필수입니다.")
+    public boolean isValidBannerDate() {
+        // 배너 등록이 false라면 검증 통과
+        if (!bannerRegistered) {
+            return true;
         }
-        return endDate.isAfter(startDate);
+
+        // 배너 등록이 true인데 bannerInfo가 없으면 검증 실패
+        if (bannerInfo == null || bannerInfo.getStartDate() == null || bannerInfo.getEndDate() == null) {
+            return false;
+        }
+
+        // startDate가 endDate보다 이전(isBefore)이거나 같은 날(isEqual)인지 확인
+        return !bannerInfo.getStartDate().isAfter(bannerInfo.getEndDate());
     }
 }
