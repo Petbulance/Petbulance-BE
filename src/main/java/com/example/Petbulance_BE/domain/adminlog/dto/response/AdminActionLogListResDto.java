@@ -19,13 +19,4 @@ public class AdminActionLogListResDto {
     private String description; // 행동 상세
     private AdminActionResult actionResult;
     private String createdAt;
-
-    public AdminActionLogListResDto(Long actionLogId, String adminName, AdminPageType pageType, String description, AdminActionResult actionResult, LocalDateTime createdAt) {
-        this.actionLogId = actionLogId;
-        this.adminName = adminName;
-        this.pageType = pageType.getDescription();
-        this.description = description;
-        this.actionResult = actionResult;
-        this.createdAt = TimeUtil.formatCreatedAt(createdAt);
-    }
 }

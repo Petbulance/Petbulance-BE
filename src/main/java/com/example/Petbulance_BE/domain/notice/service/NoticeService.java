@@ -63,7 +63,7 @@ public class NoticeService {
             key = "'page:' + #page + ':size:' + #size",
             condition = "#page >= 1 && #page <= 5"
     )
-    @Transactional(readOnly = true)
+    @Transactional
     public PagingAdminNoticeListResDto adminNoticeList(int page, int size) {
         Users currentUser = UserUtil.getCurrentUser();
         adminActionLogRepository.save(AdminActionLog.builder()
