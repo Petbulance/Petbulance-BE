@@ -1,5 +1,9 @@
 FROM eclipse-temurin:17-jdk
 
+WORKDIR /app
+
 COPY build/libs/*SNAPSHOT.jar app.jar
 
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "/app.jar"]
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

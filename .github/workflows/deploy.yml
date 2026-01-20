@@ -1,14 +1,16 @@
-name: Deploy To EC2 (via Bastion)
+name: Deploy To EC2 (Blue-Green via Bastion)
 
 on:
   push:
-    branches:
-      - develop
+    branches: [ "main", "develop" ]
+
+permissions:
+  contents: read
 
 jobs:
-  deploy:
+  # 1️⃣ BUILD JOB
+  build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -24,10 +26,12 @@ jobs:
           EOF
 
       - name: Create application-prod.yml
-        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application-prod.yml
+        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application.yml
 
-      - run: chmod +x ./gradlew
-      - run: ./gradlew clean build -x test
+      - name: Build Spring Boot
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean build -x test
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -38,18 +42,20 @@ jobs:
       - name: Login to ECR
         run: |
           aws ecr get-login-password --region ap-northeast-2 \
-            | docker login --username AWS --password-stdin 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com
+            | docker login --username AWS --password-stdin 839983937363.dkr.ecr.ap-northeast-2.amazonaws.com
 
-      - name: Build image
-        run: docker build -t petbulance .
+      - name: Build & Push Docker Image
+        run: |
+          docker build -t forday .
+          docker tag forday:latest 839983937363.dkr.ecr.ap-northeast-2.amazonaws.com/forday:latest
+          docker push 839983937363.dkr.ecr.ap-northeast-2.amazonaws.com/forday:latest
 
-      - name: Tag image
-        run: docker tag petbulance:latest 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
-
-      - name: Push image
-        run: docker push 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
-
-      - name: Configure SSH
+  # 2️⃣ DEPLOY JOB
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH (Bastion → Private)
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
@@ -58,41 +64,88 @@ jobs:
           cat <<EOF >> ~/.ssh/config
           Host bastion
             HostName ${{ secrets.BASTION_HOST }}
-            User ${{ secrets.SSH_USERNAME }}
+            User ubuntu
             IdentityFile ~/.ssh/id_rsa
             StrictHostKeyChecking no
-            UserKnownHostsFile=/dev/null
 
           Host private
             HostName ${{ secrets.EC2_PRIVATE_HOST }}
-            User ${{ secrets.SSH_USERNAME }}
+            User ubuntu
             IdentityFile ~/.ssh/id_rsa
             ProxyJump bastion
             StrictHostKeyChecking no
-            UserKnownHostsFile=/dev/null
           EOF
 
-          chmod 600 ~/.ssh/config
-          ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts || true
-
-
-      - name: Deploy via Bastion → Private
+      - name: Blue-Green Deploy
         run: |
-          ssh -o StrictHostKeyChecking=no private "
-            docker stop petbulance || true &&
-            docker rm petbulance || true &&
-
+          ssh private << 'EOF'
+            set -e
+          
+            echo "▶ Detect current upstream from nginx env file"
+            if [ -f /etc/nginx/conf.d/service-env.inc ]; then
+              CURRENT_VAL=$(grep -oP '(?<=set \$service_url ).*(?=;)' /etc/nginx/conf.d/service-env.inc || echo "blue")
+            else
+              CURRENT_VAL="blue"
+            fi
+          
+            if [ "$CURRENT_VAL" = "blue" ]; then
+              TARGET="green"
+              TARGET_PORT=8081
+              OLD_TARGET="blue"
+            else
+              TARGET="blue"
+              TARGET_PORT=8080
+              OLD_TARGET="green"
+            fi
+          
+            echo "▶ 현재 서비스: $CURRENT_VAL -> 타겟: $TARGET (포트: $TARGET_PORT)"
+          
+            # ECR 로그인 및 이미지 풀 (주소 수정됨)
             aws ecr get-login-password --region ap-northeast-2 \
-              | docker login --username AWS --password-stdin 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com &&
-
-            docker system prune -f &&
-
-            docker pull 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest &&
-
+              | docker login --username AWS --password-stdin 839983937363.dkr.ecr.ap-northeast-2.amazonaws.com
+          
+            echo "▶ Pull image"
+            docker pull 839983937363.dkr.ecr.ap-northeast-2.amazonaws.com/forday:latest
+          
+            echo "▶ Stop & remove target $TARGET (if exists)"
+            docker stop $TARGET || true
+            docker rm $TARGET || true
+          
+            echo "▶ Run new $TARGET"
             docker run -d \
-              --name petbulance \
+              --name $TARGET \
               --restart=always \
               -e SPRING_PROFILES_ACTIVE=prod \
-              -p 8080:8080 \
-              276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
-          "
+              -p $TARGET_PORT:8080 \
+              839983937363.dkr.ecr.ap-northeast-2.amazonaws.com/forday:latest
+          
+            echo "▶ Health Check"
+            HEALTH_OK=false
+            for i in {1..20}; do
+              if curl -sf http://localhost:$TARGET_PORT/app/health; then
+                echo "✅ Health OK"
+                HEALTH_OK=true
+                break
+              fi
+              echo "Waiting... ($i/20)"
+              sleep 5
+            done
+          
+            if [ "$HEALTH_OK" != "true" ]; then
+              echo "❌ Health check failed. Rollback."
+              docker logs $TARGET
+              exit 1
+            fi
+          
+            echo "▶ Switching Nginx upstream to $TARGET"
+            echo "set \$service_url $TARGET;" | sudo tee /etc/nginx/conf.d/service-env.inc
+          
+            sudo nginx -t
+            sudo nginx -s reload
+          
+            echo "▶ Stopping OLD container: $OLD_TARGET"
+            docker stop $OLD_TARGET || true
+            docker rm $OLD_TARGET || true
+          
+            echo "✅ Deployment complete. Now running: $TARGET"
+          EOF
