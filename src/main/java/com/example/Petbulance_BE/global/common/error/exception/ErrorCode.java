@@ -88,7 +88,9 @@ public enum ErrorCode {
     MAX_FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "첨부파일은 최대 5개까지 등록할 수 있습니다." ),
     FAIL_FILE_UPLOAD(HttpStatus.BAD_REQUEST, "파일 업로드에 실패하였습니다."),
     INVALID_NOTICE_FILE_ACCESS( HttpStatus.FORBIDDEN, "해당 공지사항에 접근할 수 없는 첨부파일입니다."),
-    NOTICE_FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 파일이 존재하지 않습니다.");
+    NOTICE_FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 파일이 존재하지 않습니다."),
+    FAIL_DELETE_REGION(HttpStatus.BAD_REQUEST, "지역 삭제에 실패하였습니다."),
+    INVALID_JSON_FORMAT(HttpStatus.BAD_REQUEST, "입력값이 올바르지 않습니다. (Enum 타입 불일치 등 JSON 형식을 확인해주세요)");
 
     private final HttpStatus status;
     private final String message;

@@ -8,6 +8,7 @@ import com.example.Petbulance_BE.global.common.response.GlobalResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -60,6 +61,17 @@ public class GlobalExceptionHandler {
                         "message", e.getMessage(),
                         "bannedUntil", e.getBannedUntil()
                 ));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<GlobalResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+
+        final ErrorResponse errorCode = ErrorResponse.of(ErrorCode.INVALID_JSON_FORMAT.name(), ErrorCode.INVALID_JSON_FORMAT.getMessage());
+
+        final GlobalResponse response = GlobalResponse.failure(ErrorCode.INVALID_JSON_FORMAT.getStatus().value(), errorCode);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+
     }
 
 

@@ -1,10 +1,12 @@
 package com.example.Petbulance_BE.domain.app.service;
 
+import com.example.Petbulance_BE.domain.app.dto.MetadataDto;
 import com.example.Petbulance_BE.domain.app.dto.MetadataRequestDto;
 import com.example.Petbulance_BE.domain.app.dto.MetadataResponseDto;
 import com.example.Petbulance_BE.domain.app.dto.RegionsResponseDto;
 import com.example.Petbulance_BE.domain.app.entity.App;
 import com.example.Petbulance_BE.domain.app.repository.AppsJpaRepository;
+import com.example.Petbulance_BE.domain.app.type.VersionType;
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.region1.repository.Region1JpaRepository;
 import com.example.Petbulance_BE.domain.region2.repository.Region2JpaRepository;
@@ -30,17 +32,17 @@ public class AppService {
     private final AppsJpaRepository appsJpaRepository;
 
     public Map<String, String> getVersionProcess() {
-        App topByOrderByCreatedAtDesc = appsJpaRepository.findTopByOrderByCreatedAtDesc().orElseThrow(()-> new CustomException(ErrorCode.NOT_FOUND_APP_VERSION));
+        App topByOrderByCreatedAtDesc = appsJpaRepository.findAppByVersionType(VersionType.APP).orElseThrow(()-> new CustomException(ErrorCode.NOT_FOUND_APP_VERSION));
         return Map.of("version",topByOrderByCreatedAtDesc.getVersion());
     }
 
     public MetadataResponseDto getMetadataProcess(MetadataRequestDto requestVersion) {
 
-        App app = appRepository.findTopByOrderByCreatedAtDesc().orElseThrow(()->new CustomException(ErrorCode.NOT_FOUND_APP_VERSION));
+        MetadataDto metatDto = appRepository.findMetatDto();
 
         MetadataResponseDto metadataResponseDto = new MetadataResponseDto();
 
-        if(!app.getRegionVersion().equals(requestVersion.getRegion())){
+        if(!metatDto.getRegion().equals(requestVersion.getRegion())){
             List<String> region1Names = region1JpaRepository.findAllNames();
             List<String> region2Names = region2JpaRepository.findAllNames();
 
@@ -48,13 +50,13 @@ public class AppService {
             metadataResponseDto.setRegion(regionsResponseDto);
         }
 
-        if(!app.getSpeciesVersion().equals(requestVersion.getSpecies())){
+        if(!metatDto.getSpecies().equals(requestVersion.getSpecies())){
             List<String> allTypes = speciesJpaRepository.findAllTypes();
 
             metadataResponseDto.setSpecies(allTypes);
         }
 
-        if(!app.getCommunityCategoryVersion().equals(requestVersion.getCommunityCategory())){
+        if(!metatDto.getCommunity().equals(requestVersion.getCommunityCategory())){
             List<String> allName = boardRepository.findAllNameKr();
 
             metadataResponseDto.setCommunityCategory(allName);
