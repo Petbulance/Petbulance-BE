@@ -134,7 +134,11 @@ public class ReportService {
                 .targetType(AdminTargetType.COMMUNITY_ACTION)
                 .targetId(reportId)
                 .resultType(AdminActionResult.SUCCESS)
-                .description(String.format("[제재] %d번 신고 %s 조치", reportId, reqDto.getActionType().getDescription()))
+                .description(
+                        report.getReportType().equals(ReportType.POST) ?
+                        String.format("[제재] %d번 게시글 %s 조치", report.getPostId(), reqDto.getActionType().getDescription())
+                        : String.format("[제재] %d번 댓글 %s 조치", report.getCommentId(), reqDto.getActionType().getDescription())
+                        )
                 .build()
         );
 

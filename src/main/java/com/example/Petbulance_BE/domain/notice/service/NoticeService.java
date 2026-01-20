@@ -1,5 +1,8 @@
 package com.example.Petbulance_BE.domain.notice.service;
 
+import com.example.Petbulance_BE.domain.adminlog.entity.AdminActionLog;
+import com.example.Petbulance_BE.domain.adminlog.repository.AdminActionLogRepository;
+import com.example.Petbulance_BE.domain.adminlog.type.*;
 import com.example.Petbulance_BE.domain.banner.entity.Banner;
 import com.example.Petbulance_BE.domain.notice.dto.request.*;
 import com.example.Petbulance_BE.domain.notice.dto.response.*;
@@ -7,6 +10,7 @@ import com.example.Petbulance_BE.domain.notice.entity.Notice;
 import com.example.Petbulance_BE.domain.notice.entity.NoticeFile;
 import com.example.Petbulance_BE.domain.notice.repository.NoticeFileRepository;
 import com.example.Petbulance_BE.domain.notice.repository.NoticeRepository;
+import com.example.Petbulance_BE.domain.notice.type.PostStatus;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
@@ -15,6 +19,7 @@ import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.User;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -35,6 +40,7 @@ public class NoticeService {
     private final NoticeRepository noticeRepository;
     private final NoticeFileRepository noticeFileRepository;
     private final S3Service s3Service;
+    private final AdminActionLogRepository adminActionLogRepository;
 
     @Transactional(readOnly = true)
     public PagingNoticeListResDto noticeList(Long lastNoticeId, int pageSize) {
@@ -59,13 +65,25 @@ public class NoticeService {
     )
     @Transactional(readOnly = true)
     public PagingAdminNoticeListResDto adminNoticeList(int page, int size) {
+        Users currentUser = UserUtil.getCurrentUser();
+        adminActionLogRepository.save(AdminActionLog.builder()
+                .actorType(AdminActorType.ADMIN)
+                .admin(currentUser)
+                .pageType(AdminPageType.CONTENT_MANAGEMENT)
+                .actionType(AdminActionType.READ)
+                .targetType(AdminTargetType.CONTENT_LIST)
+                .resultType(AdminActionResult.SUCCESS)
+                .description("[조회] 콘텐츠 관리 리스트 진입")
+                .build()
+        );
+
         return noticeRepository.adminNoticeList(page, size);
     }
 
     @CacheEvict(value = "adminNotice", allEntries = true)
     @Transactional
     public NoticeResDto createNotice(@Valid CreateNoticeReqDto reqDto) {
-        Users user = UserUtil.getCurrentUser();
+        Users currentUser = UserUtil.getCurrentUser();
 
         Banner banner = null;
         if (reqDto.isBannerRegistered()) {
@@ -92,7 +110,7 @@ public class NoticeService {
 
         Notice notice = noticeRepository.save(
                 Notice.builder()
-                        .user(user)
+                        .user(currentUser)
                         .noticeStatus(reqDto.getNoticeStatus())
                         .postStatus(reqDto.getPostStatus())
                         .title(reqDto.getTitle())
@@ -102,8 +120,32 @@ public class NoticeService {
                         .build()
         );
 
+        if(!reqDto.getFileUrls().isEmpty()) {
+            adminActionLogRepository.save(AdminActionLog.builder()
+                    .actorType(AdminActorType.ADMIN)
+                    .admin(currentUser)
+                    .pageType(AdminPageType.CONTENT_MANAGEMENT)
+                    .actionType(AdminActionType.UPLOAD)
+                    .targetType(AdminTargetType.FILE)
+                    .resultType(AdminActionResult.SUCCESS)
+                    .description(String.format("[업로드] %d번 공지 첨부파일 업로드", notice.getId()))
+                    .build()
+            );
+        }
+
         // NoticeFile 저장 로직 (필요 시 호출)
         saveNoticeFilesOrThrow(notice, reqDto.getFileUrls());
+
+        adminActionLogRepository.save(AdminActionLog.builder()
+                .actorType(AdminActorType.ADMIN)
+                .admin(currentUser)
+                .pageType(AdminPageType.CONTENT_MANAGEMENT)
+                .actionType(AdminActionType.CREATE)
+                .targetType(AdminTargetType.NOTICE)
+                .resultType(AdminActionResult.SUCCESS)
+                .description(String.format("[생성] 신규 공지 %s 등록", reqDto.getTitle()))
+                .build()
+        );
 
         return new NoticeResDto(notice.getId(), "공지사항이 정상적으로 작성되었습니다.");
     }
@@ -112,6 +154,7 @@ public class NoticeService {
     @Transactional
     public UpdateNoticeResDto updateNotice(Long noticeId, UpdateNoticeReqDto reqDto) {
         Notice notice = getNotice(noticeId); // 수정하고자하는 공지사항
+        Users currentUser = UserUtil.getCurrentUser();
 
         // 추가하고자하는 파일이 있다면 최대 첨부 파일 갯수를 넘는지 확인
         int adding = reqDto.getAddFiles() == null ? 0 : reqDto.getAddFiles().size();
@@ -142,7 +185,31 @@ public class NoticeService {
             }
         }}
 
+        if(!reqDto.getPostStatus().equals(notice.getPostStatus())) {
+            adminActionLogRepository.save(AdminActionLog.builder()
+                    .actorType(AdminActorType.ADMIN)
+                    .admin(currentUser)
+                    .pageType(AdminPageType.CONTENT_MANAGEMENT)
+                    .actionType(AdminActionType.UPDATE)
+                    .targetType(AdminTargetType.NOTICE)
+                    .resultType(AdminActionResult.SUCCESS)
+                    .description(String.format("[상태 변경] %d번 공지 %S", noticeId, reqDto.getPostStatus().equals(PostStatus.ACTIVE) ? "중단->게시" : "게시->중단"))
+                    .build()
+            );
+        }
+
         notice.update(reqDto);
+
+        adminActionLogRepository.save(AdminActionLog.builder()
+                .actorType(AdminActorType.ADMIN)
+                .admin(currentUser)
+                .pageType(AdminPageType.CONTENT_MANAGEMENT)
+                .actionType(AdminActionType.UPDATE)
+                .targetType(AdminTargetType.NOTICE)
+                .resultType(AdminActionResult.SUCCESS)
+                .description(String.format("[수정] %d번 공지 본문 내용 수정", noticeId))
+                .build()
+        );
 
         return new UpdateNoticeResDto(
                 notice.getId(),
