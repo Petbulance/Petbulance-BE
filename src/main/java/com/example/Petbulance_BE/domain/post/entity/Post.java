@@ -58,6 +58,7 @@ public class Post extends BaseTimeEntity {
     private int imageNum;
 
     // 양방향 연관관계
+    @Builder.Default
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<PostImage> postImages = new ArrayList<>();
 
