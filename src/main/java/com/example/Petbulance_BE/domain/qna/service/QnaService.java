@@ -144,7 +144,7 @@ public class QnaService {
         return new AnswerQnaResDto("답변이 정상적으로 작성되었습니다.");
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public PagingAdminQnaListResDto adminQnaList(int page, int size) {
 
         adminActionLogRepository.save(AdminActionLog.builder()

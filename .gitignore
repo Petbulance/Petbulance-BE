@@ -36,6 +36,7 @@ out/
 ### VS Code ###
 .vscode/
 src/main/resources/application.yml
+src/main/resources/application-prod.yml
 src/main/resources/petbulance-*-firebase-adminsdk-*.json
 
 src/main/java/com/example/Petbulance_BE/global/oauth2/custom/CustomOAuth2UserService.java
