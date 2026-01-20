@@ -1,5 +1,8 @@
 package com.example.Petbulance_BE.domain.qna.service;
 
+import com.example.Petbulance_BE.domain.adminlog.entity.AdminActionLog;
+import com.example.Petbulance_BE.domain.adminlog.repository.AdminActionLogRepository;
+import com.example.Petbulance_BE.domain.adminlog.type.*;
 import com.example.Petbulance_BE.domain.qna.dto.request.AnswerQnaReqDto;
 import com.example.Petbulance_BE.domain.qna.dto.request.CreateQnaReqDto;
 import com.example.Petbulance_BE.domain.qna.dto.request.UpdateQnaReqDto;
@@ -7,6 +10,7 @@ import com.example.Petbulance_BE.domain.qna.dto.response.*;
 import com.example.Petbulance_BE.domain.qna.entity.Qna;
 import com.example.Petbulance_BE.domain.qna.repository.QnaRepository;
 import com.example.Petbulance_BE.domain.qna.type.QnaStatus;
+import com.example.Petbulance_BE.domain.report.type.ReportType;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
@@ -28,7 +32,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class QnaService {
     private final QnaRepository qnaRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final AdminActionLogRepository adminActionLogRepository;
+
 
     @Transactional
     @CacheEvict(value = {"qnaList", "qnaDetail"}, allEntries = true)
@@ -76,7 +81,23 @@ public class QnaService {
     @Cacheable(value = "qnaDetail", key = "#qnaId")
     public DetailQnaResDto detailQna(Long qnaId) {
         Qna qna = getQna(qnaId);
-        verifyQnaUer(qna, UserUtil.getCurrentUser());
+        Users currentUser = UserUtil.getCurrentUser();
+
+        assert currentUser != null;
+        if(currentUser.getRole().equals(Role.ROLE_ADMIN)) {
+            adminActionLogRepository.save(AdminActionLog.builder()
+                    .actorType(AdminActorType.ADMIN)
+                    .admin(currentUser)
+                    .pageType(AdminPageType.CUSTOMER_CENTER)
+                    .actionType(AdminActionType.READ)
+                    .targetType(AdminTargetType.CS_DETAIL)
+                    .resultType(AdminActionResult.SUCCESS)
+                        .description(String.format("[조회] %d번 1:1 문의 상세 열람 (작성자: %s)", qnaId, qna.getUser().getNickname()))
+                    .build()
+            );
+        }
+        verifyQnaUer(qna, currentUser);
+
 
         return DetailQnaResDto.from(qna);
     }
@@ -108,11 +129,35 @@ public class QnaService {
             throw new CustomException(ErrorCode.ALREADY_WRITTEN_ANSWER);
         }
 
+        Users currentUser = UserUtil.getCurrentUser();
+        adminActionLogRepository.save(AdminActionLog.builder()
+                .actorType(AdminActorType.ADMIN)
+                .admin(currentUser)
+                .pageType(AdminPageType.CUSTOMER_CENTER)
+                .actionType(AdminActionType.UPDATE)
+                .targetType(AdminTargetType.CS_ANSWER)
+                .resultType(AdminActionResult.SUCCESS)
+                .description(String.format("[작성] %d번 1:1 문의 답변 발송 및 상태 변경 (대기 -> 처리)", qnaId))
+                .build()
+        );
+
         return new AnswerQnaResDto("답변이 정상적으로 작성되었습니다.");
     }
 
     @Transactional(readOnly = true)
     public PagingAdminQnaListResDto adminQnaList(int page, int size) {
+
+        adminActionLogRepository.save(AdminActionLog.builder()
+                .actorType(AdminActorType.ADMIN)
+                .admin(UserUtil.getCurrentUser())
+                .pageType(AdminPageType.CUSTOMER_CENTER)
+                .actionType(AdminActionType.READ)
+                .targetType(AdminTargetType.CS_LIST)
+                .resultType(AdminActionResult.SUCCESS)
+                .description("[조회] 1:1 문의 리스트 진입")
+                .build()
+        );
+
         return qnaRepository.adminQnaList(page, size);
     }
 }
