@@ -3,9 +3,11 @@ package com.example.Petbulance_BE.domain.terms.entity;
 import com.example.Petbulance_BE.domain.terms.enums.TermsType;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Getter
+@Setter
 public class Terms {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

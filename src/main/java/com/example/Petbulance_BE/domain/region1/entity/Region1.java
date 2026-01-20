@@ -21,8 +21,10 @@ public class Region1 extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, nullable = false)
     private String name;
 
+    @Column(unique = true, nullable = false)
     private String code;
 
     @Builder.Default

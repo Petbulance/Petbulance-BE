@@ -19,4 +19,5 @@ public class Tag {
     private Hospital hospital;
 
     private String tag;
+
 }

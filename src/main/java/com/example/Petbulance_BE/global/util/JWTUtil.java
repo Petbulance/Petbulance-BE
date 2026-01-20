@@ -37,7 +37,7 @@ public class JWTUtil {
     }
     public String createAdminJwt(String userId, String category, String role) {
         return Jwts.builder()
-                .claim("nickname", userId)
+                .claim("userId", userId)
                 .claim("category", category)
                 .claim("role", role)
                 .issuedAt(new Date(System.currentTimeMillis()))
