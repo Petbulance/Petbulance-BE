@@ -115,7 +115,7 @@ jobs:
             docker run -d \
               --name $TARGET \
               --restart=always \
-              -e SPRING_PROFILES_ACTIVE=prod \
+              -e SPRING_PROFILES_ACTIVE=$TARGET \
               -p $TARGET_PORT:8080 \
               276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
           
