@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.app.entity;
 
+import com.example.Petbulance_BE.domain.app.type.VersionType;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -23,17 +24,12 @@ public class App {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String version;
 
     @Column(nullable = false)
-    private String regionVersion;
-
-    @Column(nullable = false)
-    private String speciesVersion;
-
-    @Column(nullable = false)
-    private String communityCategoryVersion;
+    @Enumerated(EnumType.STRING)
+    private VersionType versionType;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

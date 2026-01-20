@@ -22,8 +22,10 @@ public class Region2 extends BaseTimeEntity {
     @JoinColumn(name = "superior_id", nullable = false)
     private Region1 region1;
 
+    @Column(unique = true, nullable = false)
     private String name;
 
+    @Column(unique = true, nullable = false)
     private String code;
 
 }
