@@ -103,7 +103,7 @@ public class InquiryService {
         return inquiryRepository.findInquiryList(pageable, lastInquiryId, UserUtil.getCurrentUser());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public DetailInquiryResDto detailInquiry(Long inquiryId) {
         Inquiry inquiry = getInquiry(inquiryId);
 
@@ -153,6 +153,7 @@ public class InquiryService {
         return new AnswerInquiryResDto("답변이 정상적으로 작성되었습니다.");
     }
 
+    @Transactional
     public PagingAdminInquiryListResDto adminInquiryList(int page, int size) {
 
         adminActionLogRepository.save(AdminActionLog.builder()
