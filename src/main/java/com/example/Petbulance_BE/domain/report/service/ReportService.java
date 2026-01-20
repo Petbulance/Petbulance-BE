@@ -1,5 +1,8 @@
 package com.example.Petbulance_BE.domain.report.service;
 
+import com.example.Petbulance_BE.domain.adminlog.entity.AdminActionLog;
+import com.example.Petbulance_BE.domain.adminlog.repository.AdminActionLogRepository;
+import com.example.Petbulance_BE.domain.adminlog.type.*;
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.comment.service.PostCommentService;
@@ -40,6 +43,7 @@ public class ReportService {
     private final PostCommentService postCommentService;
     private final CommunitySanctionService communitySanctionService;
     private final ReviewJpaRepository reviewJpaRepository;
+    private final AdminActionLogRepository adminActionLogRepository;
 
     public ReportCreateResDto createReport(@Valid ReportCreateReqDto reqDto) {
 
@@ -101,11 +105,42 @@ public class ReportService {
     @Transactional(readOnly = true)
     public PagingReportListResDto reportList(int page, int size) {
         log.info("page={}, size={}", page, size);
+
+        Users currentUser = UserUtil.getCurrentUser();
+        adminActionLogRepository.save(
+                AdminActionLog.builder()
+                        .actorType(AdminActorType.ADMIN)
+                        .admin(currentUser)
+                        .pageType(AdminPageType.COMMUNITY_MANAGEMENT)
+                        .actionType(AdminActionType.READ)
+                        .targetType(AdminTargetType.COMMUNITY_LIST)
+                        .resultType(AdminActionResult.SUCCESS)
+                        .description("[조회] 커뮤니티 관리 리스트 진입")
+                        .build()
+        );
+
         return reportRepository.findPagingReports(page, size);
     }
 
     public ReportActionResDto processReport(Long reportId, ReportActionReqDto reqDto) {
         Report report = reportRepository.findById(reportId).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REPORT));
+
+        Users currentUser = UserUtil.getCurrentUser();
+        adminActionLogRepository.save(AdminActionLog.builder()
+                .actorType(AdminActorType.ADMIN)
+                .admin(currentUser)
+                .pageType(AdminPageType.COMMUNITY_MANAGEMENT)
+                .actionType(AdminActionType.UPDATE)
+                .targetType(AdminTargetType.COMMUNITY_ACTION)
+                .targetId(reportId)
+                .resultType(AdminActionResult.SUCCESS)
+                .description(
+                        report.getReportType().equals(ReportType.POST) ?
+                        String.format("[제재] %d번 게시글 %s 조치", report.getPostId(), reqDto.getActionType().getDescription())
+                        : String.format("[제재] %d번 댓글 %s 조치", report.getCommentId(), reqDto.getActionType().getDescription())
+                        )
+                .build()
+        );
 
         switch (reqDto.getActionType()) {
             case PUBLISH -> {

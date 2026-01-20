@@ -10,14 +10,4 @@ import org.springframework.data.jpa.repository.Query;
 import java.time.LocalDate;
 
 public interface NoticeRepository extends JpaRepository<Notice, Long>, NoticeRepositoryCustom {
-
-    @Modifying(clearAutomatically = true)
-    @Query("""
-        UPDATE Notice n
-           SET n.postStatus = :status
-         WHERE n.postEndDate < :today
-           AND n.postStatus <> :status
-    """)
-    int deactivateExpired(LocalDate today, PostStatus status);
-
 }

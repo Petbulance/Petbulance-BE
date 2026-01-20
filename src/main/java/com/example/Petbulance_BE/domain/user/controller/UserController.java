@@ -63,4 +63,5 @@ public class UserController {
     public NotificationSettingResponseDto settingNotification (@RequestBody NotificationSettingRequestDto notificationSettingRequestDto) {
         return userService.settingNotificationProcess(notificationSettingRequestDto);
     }
+
 }

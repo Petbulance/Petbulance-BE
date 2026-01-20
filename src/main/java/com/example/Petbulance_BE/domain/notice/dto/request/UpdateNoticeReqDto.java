@@ -30,7 +30,17 @@ public class UpdateNoticeReqDto {
     // 삭제할 파일 id 목록
     private List<Long> deleteFileIds;
 
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private boolean bannerRegistered; // 배너 설정 여부
+    private BannerReqDto bannerInfo;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class BannerReqDto {
+        private LocalDate startDate;
+        private LocalDate endDate;
+        private String imageUrl;
+    }
+
 }
 

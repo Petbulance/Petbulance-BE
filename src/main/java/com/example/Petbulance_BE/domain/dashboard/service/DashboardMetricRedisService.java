@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.dashboard.service;
 
+import com.example.Petbulance_BE.domain.dashboard.type.VisitType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 public class DashboardMetricRedisService {
 
     private final StringRedisTemplate redisTemplate;
+    private static final long VISIT_TTL_DAYS = 1;
 
     public void incrementTodaySignup() {
         String key = "dashboard:" + LocalDate.now();
@@ -59,6 +61,30 @@ public class DashboardMetricRedisService {
         String key = "dashboard:" + date;
         Object value = redisTemplate.opsForHash().get(key, "post_created_count");
         return value == null ? 0 : Integer.parseInt(value.toString());
+    }
+
+    /* ================= 방문 이벤트 ================= */
+
+    public void incrementTodayVisit(VisitType visitType) {
+        String key = getTodayVisitKey();
+        redisTemplate.opsForHash().increment(key, visitType.name(), 1);
+        redisTemplate.expire(key, VISIT_TTL_DAYS, TimeUnit.DAYS);
+    }
+
+    public int getVisitCount(LocalDate date, VisitType visitType) {
+        String key = getVisitKey(date);
+        Object value = redisTemplate.opsForHash().get(key, visitType.name());
+        return value == null ? 0 : Integer.parseInt(value.toString());
+    }
+
+    /* ================= key utils ================= */
+
+    private String getTodayVisitKey() {
+        return getVisitKey(LocalDate.now());
+    }
+
+    private String getVisitKey(LocalDate date) {
+        return "dashboard:visit:" + date;
     }
 
 
