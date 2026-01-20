@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   blue:
-    image: 839983937363.dkr.ecr.ap-northeast-2.amazonaws.com/forday:latest
+    image: 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
     container_name: blue
     ports:
       - "8080:8080" # ec2 외부 호출: 컨테이너 내부(스프링부트)
