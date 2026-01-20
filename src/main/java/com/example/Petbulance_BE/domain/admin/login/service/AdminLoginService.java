@@ -31,6 +31,7 @@ public class AdminLoginService {
 
         Users user = usersJpaRepository.findByNickname(username).orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN_CREDENTIALS));
 
+        log.info("admin password" + bCryptPasswordEncoder.encode(password));
         if (!bCryptPasswordEncoder.matches(password, user.getPassword())) {
             throw new CustomException(ErrorCode.INVALID_LOGIN_CREDENTIALS);
         }
