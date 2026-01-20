@@ -29,9 +29,9 @@ public class AdminLoginService {
         String username = adminLoginReqDto.getUsername();
         String password = adminLoginReqDto.getPassword();
 
-        Users user = usersJpaRepository.findByNickname(username).orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN_CREDENTIALS));
-
         System.out.println("비밀번호: " + bCryptPasswordEncoder.encode(password));
+
+        Users user = usersJpaRepository.findByNickname(username).orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN_CREDENTIALS));
         if (!bCryptPasswordEncoder.matches(password, user.getPassword())) {
             throw new CustomException(ErrorCode.INVALID_LOGIN_CREDENTIALS);
         }
