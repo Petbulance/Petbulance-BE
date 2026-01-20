@@ -18,5 +18,5 @@ public class AdminActionLogListResDto {
     private String pageType; // 페이지 위치
     private String description; // 행동 상세
     private AdminActionResult actionResult;
-    private String createdAt;
+    private LocalDateTime createdAt;
 }
