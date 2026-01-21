@@ -16,6 +16,7 @@ import com.example.Petbulance_BE.domain.inquiry.type.InterestType;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.common.type.Role;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -108,20 +109,26 @@ public class InquiryService {
         Inquiry inquiry = getInquiry(inquiryId);
 
         Users currentUser = UserUtil.getCurrentUser();
-        if(currentUser != null) {
-            verifyInquiryUser(inquiry, currentUser);
+        boolean isAdmin = currentUser != null && currentUser.getRole() == Role.ROLE_ADMIN; // 관리자 여부 체크
+
+        // 작성자거나 관리자인 경우만 조회 가능
+        if (currentUser != null && !inquiry.getUser().getId().equals(currentUser.getId()) && !isAdmin) {
+            throw new CustomException(ErrorCode.FORBIDDEN_INQUIRY_ACCESS);
         }
 
-        adminActionLogRepository.save(AdminActionLog.builder()
-                .actorType(AdminActorType.ADMIN)
-                .admin(currentUser)
-                .pageType(AdminPageType.CUSTOMER_CENTER)
-                .actionType(AdminActionType.READ)
-                .targetType(AdminTargetType.CS_DETAIL)
-                .resultType(AdminActionResult.SUCCESS)
-                .description(String.format("[조회] %d번 제휴 문의 상세 열람 (작성자: %s)", inquiryId, inquiry.getUser().getNickname()))
-                .build()
-        );
+        // 관리자일 경우에만 로그 저장
+        if (isAdmin) {
+            adminActionLogRepository.save(AdminActionLog.builder()
+                    .actorType(AdminActorType.ADMIN)
+                    .admin(currentUser)
+                    .pageType(AdminPageType.CUSTOMER_CENTER)
+                    .actionType(AdminActionType.READ)
+                    .targetType(AdminTargetType.CS_DETAIL)
+                    .resultType(AdminActionResult.SUCCESS)
+                    .description(String.format("[조회] %d번 제휴 문의 상세 열람 (작성자: %s)", inquiryId, inquiry.getUser().getNickname()))
+                    .build()
+            );
+        }
 
         return DetailInquiryResDto.from(inquiry);
     }
