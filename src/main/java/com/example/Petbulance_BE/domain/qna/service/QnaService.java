@@ -77,14 +77,17 @@ public class QnaService {
         return qnaRepository.findQnaList(currentUser, lastQnaId, pageable);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     @Cacheable(value = "qnaDetail", key = "#qnaId")
     public DetailQnaResDto detailQna(Long qnaId) {
         Qna qna = getQna(qnaId);
         Users currentUser = UserUtil.getCurrentUser();
 
         assert currentUser != null;
-        if(currentUser.getRole().equals(Role.ROLE_ADMIN)) {
+        boolean isAdmin = currentUser.getRole().equals(Role.ROLE_ADMIN);
+
+        // 관리자면 로그 저장
+        if (isAdmin) {
             adminActionLogRepository.save(AdminActionLog.builder()
                     .actorType(AdminActorType.ADMIN)
                     .admin(currentUser)
@@ -92,15 +95,18 @@ public class QnaService {
                     .actionType(AdminActionType.READ)
                     .targetType(AdminTargetType.CS_DETAIL)
                     .resultType(AdminActionResult.SUCCESS)
-                        .description(String.format("[조회] %d번 1:1 문의 상세 열람 (작성자: %s)", qnaId, qna.getUser().getNickname()))
+                    .description(String.format("[조회] %d번 1:1 문의 상세 열람 (작성자: %s)", qnaId, qna.getUser().getNickname()))
                     .build()
             );
         }
-        verifyQnaUer(qna, currentUser);
-
+        // 작성자가 아니고 관리자가 아니면 조회 불가
+        if (!qna.getUser().getId().equals(currentUser.getId()) && !isAdmin) {
+            throw new CustomException(ErrorCode.FORBIDDEN_QNA_ACCESS);
+        }
 
         return DetailQnaResDto.from(qna);
     }
+
 
     private Qna getQna(Long qnaId) {
         return qnaRepository.findById(qnaId).orElseThrow(() ->
@@ -108,11 +114,6 @@ public class QnaService {
     }
 
     private void verifyQnaUer(Qna qna, Users currentUser) {
-        // 관리자면 무조건 허용
-        if (currentUser.getRole() == Role.ROLE_ADMIN) {
-            return;
-        }
-
         if(!qna.getUser().equals(currentUser)) {
             throw new CustomException(ErrorCode.FORBIDDEN_QNA_ACCESS);
         }
