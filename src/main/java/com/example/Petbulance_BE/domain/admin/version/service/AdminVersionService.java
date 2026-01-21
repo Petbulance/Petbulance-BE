@@ -137,6 +137,10 @@ public class AdminVersionService {
         terms.setIsRequired(termsReqDto.getIsRequired());
         terms.setIsActive(true);
 
+        Boolean exists = termsJpaRepository.existsByVersion(termsReqDto.getVersion());
+
+        if(exists) throw new CustomException(ErrorCode.ALREADY_EXIST_VERSION);
+
         Integer i = termsJpaRepository.updateUnActive(termsReqDto.getTermsType());
 
         termsJpaRepository.save(terms);

@@ -4,6 +4,10 @@ import com.example.Petbulance_BE.domain.adminlog.type.*;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.CreatedDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,6 +22,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Setter
 public class AdminActionLog {
 
     @Id
@@ -49,7 +54,7 @@ public class AdminActionLog {
 
     @Column(name = "target_id")
     @Builder.Default
-    private Long targetId = null; // 대상 엔티티 ID
+    private String targetId = null; // 대상 엔티티 ID
 
     @Enumerated(EnumType.STRING)
     @Column(name = "result_type", nullable = false, length = 20)
@@ -59,6 +64,7 @@ public class AdminActionLog {
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
 }

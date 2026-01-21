@@ -10,6 +10,9 @@ public enum AdminTargetType {
     /* ===== 시스템 ===== */
     SYSTEM("시스템"),
 
+    /* ===== 계정 ===== */
+    ACCOUNT("계정"),
+
     /* ===== 대시보드 ===== */
     DASHBOARD("대시보드"),
 
@@ -28,6 +31,7 @@ public enum AdminTargetType {
 
     /* ===== 리뷰 ===== */
     REVIEW_LIST("리뷰 목록"),
+    REVIEW_ACTION("리뷰 조치"),
     REVIEW_DETAIL("리뷰 상세"),
     REVIEW_STATUS("리뷰 상태 변경"),
 

@@ -269,7 +269,7 @@ public class PostService {
                             .pageType(AdminPageType.COMMUNITY_MANAGEMENT)
                             .actionType(AdminActionType.READ)
                             .targetType(AdminTargetType.COMMUNITY_DETAIL)
-                            .targetId(postId)
+                            .targetId(postId.toString())
                             .resultType(AdminActionResult.SUCCESS)
                             .description(String.format("[조회] %d번 게시글 상세 내용 확인", postId))
                     .build()

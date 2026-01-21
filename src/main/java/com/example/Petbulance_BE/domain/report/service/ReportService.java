@@ -134,7 +134,7 @@ public class ReportService {
                 .pageType(AdminPageType.COMMUNITY_MANAGEMENT)
                 .actionType(AdminActionType.UPDATE)
                 .targetType(AdminTargetType.COMMUNITY_ACTION)
-                .targetId(reportId)
+                .targetId(reportId.toString())
                 .resultType(AdminActionResult.SUCCESS)
                 .description(
                         report.getReportType().equals(ReportType.POST) ?

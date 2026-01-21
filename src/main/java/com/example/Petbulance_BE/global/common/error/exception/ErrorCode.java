@@ -91,7 +91,8 @@ public enum ErrorCode {
     FAIL_DELETE_REGION(HttpStatus.BAD_REQUEST, "지역 삭제에 실패하였습니다."),
     INVALID_JSON_FORMAT(HttpStatus.BAD_REQUEST, "입력값이 올바르지 않습니다. (Enum 타입 불일치 등 JSON 형식을 확인해주세요)"),
     MAX_BANNER_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "게시 상태의 배너는 최대 5개까지 등록할 수 있습니다."),
-    NOT_FOUND_BANNER(HttpStatus.NOT_FOUND, "요청하신 배너를 찾을 수 없습니다.");
+    NOT_FOUND_BANNER(HttpStatus.NOT_FOUND, "요청하신 배너를 찾을 수 없습니다."),
+    ALREADY_EXIST_VERSION(HttpStatus.BAD_REQUEST, "이미 존재하는 버전입니다.");
 
     private final HttpStatus status;
     private final String message;

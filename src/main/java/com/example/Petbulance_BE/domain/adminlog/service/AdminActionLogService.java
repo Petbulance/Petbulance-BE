@@ -9,6 +9,7 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -31,6 +32,11 @@ public class AdminActionLogService {
                 .build()
         );
         return adminActionLogRepository.adminActionLogList(page, size);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void save(AdminActionLog adminActionLog) {
+        adminActionLogRepository.save(adminActionLog);
     }
 
 }
