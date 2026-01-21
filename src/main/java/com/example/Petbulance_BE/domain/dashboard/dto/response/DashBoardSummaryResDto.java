@@ -14,6 +14,9 @@ public class DashBoardSummaryResDto {
     private HospitalSearchResDto hospitalSearch;
     private ReviewResDto review;
     private PostResDto post;
+    private VisitResDto visit;
+    private CommunityReportDto communityReport;
+    private QnaDto qna;
 
     @Data
     @AllArgsConstructor
@@ -50,6 +53,31 @@ public class DashBoardSummaryResDto {
         private int todayPostCount;
         private double postChangeRate;
         private ChangeType postTrend;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class VisitResDto {
+        private int hospitalSearchVisitCount;
+        private int reviewWriteVisitCount;
+        private int communityVisitCount;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class CommunityReportDto {
+        private int totalCount;
+        private int pendingCount;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class QnaDto {
+        private int totalCount;
+        private int waitingCount;
     }
 }
 

@@ -45,6 +45,7 @@ public class ReportService {
     private final ReviewJpaRepository reviewJpaRepository;
     private final AdminActionLogRepository adminActionLogRepository;
 
+    @Transactional
     public ReportCreateResDto createReport(@Valid ReportCreateReqDto reqDto) {
 
         Users reporter = UserUtil.getCurrentUser();
@@ -102,7 +103,7 @@ public class ReportService {
         return new ReportCreateResDto("신고가 정상적으로 접수되었습니다.");
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public PagingReportListResDto reportList(int page, int size) {
         log.info("page={}, size={}", page, size);
 
@@ -122,6 +123,7 @@ public class ReportService {
         return reportRepository.findPagingReports(page, size);
     }
 
+    @Transactional
     public ReportActionResDto processReport(Long reportId, ReportActionReqDto reqDto) {
         Report report = reportRepository.findById(reportId).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REPORT));
 

@@ -1,19 +1,37 @@
 package com.example.Petbulance_BE.domain.dashboard.service;
 
+import com.example.Petbulance_BE.domain.adminlog.entity.AdminActionLog;
+import com.example.Petbulance_BE.domain.adminlog.repository.AdminActionLogRepository;
+import com.example.Petbulance_BE.domain.adminlog.repository.AdminActionLogRepositoryCustom;
+import com.example.Petbulance_BE.domain.adminlog.type.*;
 import com.example.Petbulance_BE.domain.dashboard.dto.MetricResult;
+import com.example.Petbulance_BE.domain.dashboard.dto.request.EventVisitReqDto;
 import com.example.Petbulance_BE.domain.dashboard.dto.response.DashBoardSummaryResDto;
+import com.example.Petbulance_BE.domain.dashboard.dto.response.EventVisitResDto;
 import com.example.Petbulance_BE.domain.dashboard.type.ChangeType;
+import com.example.Petbulance_BE.domain.dashboard.type.VisitType;
+import com.example.Petbulance_BE.domain.qna.repository.QnaRepository;
+import com.example.Petbulance_BE.domain.qna.type.QnaStatus;
+import com.example.Petbulance_BE.domain.report.repository.ReportRepository;
+import com.example.Petbulance_BE.domain.report.type.ReportType;
+import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class DashBoardService {
 
     private final DashboardMetricRedisService redisService;
+    private final ReportRepository reportRepository;
+    private final QnaRepository qnaRepository;
+    private final AdminActionLogRepository adminActionLogRepository;
 
+    @Transactional
     public DashBoardSummaryResDto dashBoardSummary() {
 
         LocalDate today = LocalDate.now();
@@ -39,6 +57,34 @@ public class DashBoardService {
                 redisService.getPostCreatedCount(yesterday)
         );
 
+        DashBoardSummaryResDto.VisitResDto visit =
+                new DashBoardSummaryResDto.VisitResDto(
+                        redisService.getVisitCount(today, VisitType.HOSPITAL_SEARCH),
+                        redisService.getVisitCount(today, VisitType.REVIEW_WRITE),
+                        redisService.getVisitCount(today, VisitType.COMMUNITY)
+                );
+
+        // 커뮤니티 신고
+        int reportTotal = (int) reportRepository.count();
+        int reportPending = reportRepository.countByProcessedFalse();
+
+        // 고객센터 문의
+        int qnaTotal = (int) qnaRepository.count();
+        int qnaWaiting =
+                qnaRepository.countByStatus(QnaStatus.ANSWER_WAITING);
+
+
+        adminActionLogRepository.save(AdminActionLog.builder()
+                .actorType(AdminActorType.ADMIN)
+                .admin(UserUtil.getCurrentUser())
+                .pageType(AdminPageType.DASHBOARD)
+                .actionType(AdminActionType.READ)
+                .targetType(AdminTargetType.DASHBOARD)
+                .resultType(AdminActionResult.SUCCESS)
+                .description("[조회] 대시보드 메인 화면 진입")
+                .createdAt(LocalDateTime.now())
+                .build());
+
         return new DashBoardSummaryResDto(
                 new DashBoardSummaryResDto.SignUpResDto(
                         signUp.getTodayCount(),
@@ -59,6 +105,15 @@ public class DashBoardService {
                         post.getTodayCount(),
                         post.getChangeRate(),
                         post.getTrend()
+                ),
+                visit,
+                new DashBoardSummaryResDto.CommunityReportDto(
+                        reportTotal,
+                        reportPending
+                ),
+                new DashBoardSummaryResDto.QnaDto(
+                        qnaTotal,
+                        qnaWaiting
                 )
         );
     }
@@ -80,5 +135,15 @@ public class DashBoardService {
         if (today > yesterday) return ChangeType.UP;
         if (today < yesterday) return ChangeType.DOWN;
         return ChangeType.SAME;
+    }
+
+    public EventVisitResDto eventVisit(EventVisitReqDto reqDto) {
+        try {
+            redisService.incrementTodayVisit(reqDto.getVisitType());
+            return new EventVisitResDto("방문 지표가 정상적으로 수집되었습니다.", reqDto.getVisitType());
+        } catch (Exception e) {
+            // 방문 이벤트는 실패해도 서비스 흐름에 영향 X
+            return new EventVisitResDto("방문 지표가 정상적으로 수집되었습니다.", reqDto.getVisitType());
+        }
     }
 }

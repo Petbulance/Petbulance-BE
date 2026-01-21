@@ -70,6 +70,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<GlobalResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+
+        final ErrorResponse errorCode = ErrorResponse.of(ErrorCode.INVALID_JSON_FORMAT.name(), ErrorCode.INVALID_JSON_FORMAT.getMessage());
+
+        final GlobalResponse response = GlobalResponse.failure(ErrorCode.INVALID_JSON_FORMAT.getStatus().value(), errorCode);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+
+    }
+
 
 }
 

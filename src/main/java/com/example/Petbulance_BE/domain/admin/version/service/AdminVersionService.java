@@ -128,6 +128,8 @@ public class AdminVersionService {
     @Transactional
     public Map<String, String> postTermsProcess(TermsReqDto termsReqDto) {
 
+        log.info("{}", termsReqDto.getTermsType());
+
         Terms terms = new Terms();
         terms.setType(termsReqDto.getTermsType());
         terms.setContent(termsReqDto.getContent());

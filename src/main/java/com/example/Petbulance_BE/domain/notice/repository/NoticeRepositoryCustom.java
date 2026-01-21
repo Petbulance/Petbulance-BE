@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.notice.repository;
 
+import com.example.Petbulance_BE.domain.notice.dto.response.AdminDetailNoticeResDto;
 import com.example.Petbulance_BE.domain.notice.dto.response.PagingAdminNoticeListResDto;
 import com.example.Petbulance_BE.domain.notice.dto.response.PagingNoticeListResDto;
 import com.example.Petbulance_BE.domain.notice.entity.Notice;

@@ -6,12 +6,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BannerListResDto {
+public class HomeBannerListResDto {
     private Long bannerId;
-    private NoticeStatus noticeStatus;
-    private String title;
-    private PostStatus postStatus;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private Long noticeId;
+    private String imageUrl;
 }

@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.user.repository;
 
 import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.example.Petbulance_BE.global.common.type.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -30,4 +31,6 @@ public interface UsersJpaRepository extends JpaRepository<Users, String>, UserRe
     @Query("SELECT u FROM Users u WHERE u.deleted = true AND u.updatedAt < :localDateTime")
     List<Users> findDeleteUsers(LocalDateTime localDateTime);
 
+
+    List<Users> findByRole(Role role);
 }

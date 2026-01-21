@@ -9,4 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TestResponseDto {
     private String message;
+    private int serverPort;
+    private String serverEnv;
+    private String serverName;
 }
