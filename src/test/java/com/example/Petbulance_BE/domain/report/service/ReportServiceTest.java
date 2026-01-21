@@ -112,6 +112,7 @@ class ReportServiceTest {
                 ReportType.POST,
                 "욕설 신고",
                 post.getId(),
+                null,
                 null
         );
 
