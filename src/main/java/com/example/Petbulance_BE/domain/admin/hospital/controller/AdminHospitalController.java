@@ -5,6 +5,10 @@ import com.example.Petbulance_BE.domain.admin.hospital.dto.AdminHospitalListResD
 import com.example.Petbulance_BE.domain.admin.hospital.dto.AdminSaveHospitalReqDto;
 import com.example.Petbulance_BE.domain.admin.page.PageResponse;
 import com.example.Petbulance_BE.domain.admin.hospital.service.AdminHospitalService;
+import com.example.Petbulance_BE.domain.adminlog.aop.AdminLoggable;
+import com.example.Petbulance_BE.domain.adminlog.type.AdminActionType;
+import com.example.Petbulance_BE.domain.adminlog.type.AdminPageType;
+import com.example.Petbulance_BE.domain.adminlog.type.AdminTargetType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -18,31 +22,72 @@ public class AdminHospitalController {
 
     private final AdminHospitalService adminHospitalService;
 
+    @AdminLoggable(
+            pageType = AdminPageType.HOSPITAL_MANAGEMENT,
+            actionType = AdminActionType.READ,
+            targetType = AdminTargetType.HOSPITAL_LIST,
+            description = "병원 목록 조회"
+    )
     @GetMapping
     public PageResponse<AdminHospitalListResDto> findHospital (@PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
         return adminHospitalService.findHospitalProcess(pageable);
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.HOSPITAL_MANAGEMENT,
+            actionType = AdminActionType.SEARCH,
+            targetType = AdminTargetType.HOSPITAL_LIST,
+            targetId = "#name",
+            description = "병원명 검색"
+    )
     @GetMapping("/{name}")
     public PageResponse<AdminHospitalListResDto> findNameHospital(@PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable, @PathVariable String name) {
         return adminHospitalService.findNameHospitalProcess(pageable, name);
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.HOSPITAL_MANAGEMENT,
+            actionType = AdminActionType.READ,
+            targetType = AdminTargetType.HOSPITAL_DETAIL,
+            targetId = "#id",
+            description = "병원 상세 조회"
+    )
     @GetMapping("/detail/{id}")
     public AdminHospitalDetailResDto detailHospital(@PathVariable Long id) {
         return adminHospitalService.detailHospitalProcess(id);
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.HOSPITAL_MANAGEMENT,
+            actionType = AdminActionType.CREATE,
+            targetType = AdminTargetType.HOSPITAL_DETAIL,
+            targetId = "#adminSaveHospitalReqDto.hospitalName",
+            description = "병원 생성"
+    )
     @PostMapping("/save")
     public Long saveHospital(@RequestBody AdminSaveHospitalReqDto adminSaveHospitalReqDto){
         return adminHospitalService.saveHospitalProcess(adminSaveHospitalReqDto);
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.HOSPITAL_MANAGEMENT,
+            actionType = AdminActionType.UPDATE,
+            targetType = AdminTargetType.HOSPITAL_DETAIL,
+            targetId = "#id",
+            description = "병원 정보 수정"
+    )
     @PutMapping("/update/{id}")
     public Long updateHospital(@RequestBody AdminSaveHospitalReqDto adminSaveHospitalReqDto, @PathVariable Long id) {
         return adminHospitalService.updateHospitalProcess(id, adminSaveHospitalReqDto);
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.HOSPITAL_MANAGEMENT,
+            actionType = AdminActionType.DELETE,
+            targetType = AdminTargetType.HOSPITAL_DETAIL,
+            targetId = "#id",
+            description = "병원 삭제"
+    )
     @DeleteMapping("/delete/{id}")
     public boolean deleteHospital(@PathVariable Long id) {
         return adminHospitalService.deleteHospitalProcess(id);

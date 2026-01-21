@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -30,6 +31,14 @@ public class GlobalResponse<T> {
                 .success(false)
                 .status(status)
                 .data(errorResponse)
+                .build();
+    }
+
+    public static GlobalResponse failure2(int status, Map<String, String> map) {
+        return GlobalResponse.builder()
+                .success(false)
+                .status(status)
+                .data(map)
                 .build();
     }
 }

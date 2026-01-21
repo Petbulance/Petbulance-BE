@@ -90,7 +90,7 @@ public class ReviewController {
 
     }
 
-    @GetMapping("/save/success")
+    @PostMapping("/save/success")
     public Map<String, String> reviewImageSaveCheck(@RequestBody ReviewImageCheckReqDto reviewImageCheckReqDto){
 
         reviewService.reviewImageSaveCheckProcess(reviewImageCheckReqDto);

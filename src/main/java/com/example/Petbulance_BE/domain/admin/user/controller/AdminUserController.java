@@ -4,6 +4,10 @@ import com.example.Petbulance_BE.domain.admin.page.PageResponse;
 import com.example.Petbulance_BE.domain.admin.user.dto.GetUserQueryParam;
 import com.example.Petbulance_BE.domain.admin.user.dto.GetUsersResDto;
 import com.example.Petbulance_BE.domain.admin.user.service.AdminUserService;
+import com.example.Petbulance_BE.domain.adminlog.aop.AdminLoggable;
+import com.example.Petbulance_BE.domain.adminlog.type.AdminActionType;
+import com.example.Petbulance_BE.domain.adminlog.type.AdminPageType;
+import com.example.Petbulance_BE.domain.adminlog.type.AdminTargetType;
 import com.example.Petbulance_BE.domain.report.service.CommunitySanctionService;
 import com.example.Petbulance_BE.domain.user.type.SanctionType;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +26,12 @@ public class AdminUserController {
     private final AdminUserService adminUserService;
     private final CommunitySanctionService communitySanctionService;
 
+    @AdminLoggable(
+            pageType = AdminPageType.USER_MANAGEMENT,
+            actionType = AdminActionType.READ,
+            targetType = AdminTargetType.USER_LIST,
+            description = "유저 목록 조회"
+    )
     @GetMapping("/search")
     public PageResponse<GetUsersResDto> getUsers(@PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
                                                  @ModelAttribute GetUserQueryParam queryParam) {
@@ -29,6 +39,13 @@ public class AdminUserController {
 
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.USER_MANAGEMENT,
+            actionType = AdminActionType.CREATE,
+            targetType = AdminTargetType.REVIEW_ACTION,
+            targetId = "#reportID",
+            description = "유저 리뷰 정지 조치(타겟 ID는 정지 근거 신고ID)"
+    )
     @PatchMapping("/reviewBan/{reportId}")
     public Map<String, String> reviewBan(@PathVariable Long reportId) {
 
@@ -38,6 +55,13 @@ public class AdminUserController {
 
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.USER_MANAGEMENT,
+            actionType = AdminActionType.UPDATE,
+            targetType = AdminTargetType.REVIEW_ACTION,
+            targetId = "#userID",
+            description = "유저 리뷰 정지 취소"
+    )
     @PatchMapping("/reactive/review/{userId}")
     public Map<String,String> reactiveReview(@PathVariable String userId) {
 
@@ -47,6 +71,13 @@ public class AdminUserController {
 
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.USER_MANAGEMENT,
+            actionType = AdminActionType.DELETE,
+            targetType = AdminTargetType.USER_INFO,
+            targetId = "#userID",
+            description = "유저 삭제(30일 보관후 자동 삭제 처리)"
+    )
     @DeleteMapping("/delete/{userID}")
     public String deleteUser(@PathVariable String userID) {
 
@@ -54,6 +85,13 @@ public class AdminUserController {
 
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.USER_MANAGEMENT,
+            actionType = AdminActionType.CREATE,
+            targetType = AdminTargetType.COMMUNITY_ACTION,
+            targetId = "#reportID",
+            description = "유저 커뮤니티 정지 조치(타겟 ID는 정지 근거 신고ID)"
+    )
     @PatchMapping("/communityBan/{reportId}")
     public Map<String, String> banUserCommunity(@PathVariable Long reportId) {
 
@@ -61,6 +99,13 @@ public class AdminUserController {
 
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.USER_MANAGEMENT,
+            actionType = AdminActionType.UPDATE,
+            targetType = AdminTargetType.COMMUNITY_ACTION,
+            targetId = "#userID",
+            description = "유저 커뮤니티 정지 취소"
+    )
     @PatchMapping("/reactive/community/{userId}")
     public Map<String, String> reactiveUserCommunity(@PathVariable String userId) {
 

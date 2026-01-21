@@ -1,5 +1,8 @@
 package com.example.Petbulance_BE.domain.post.service;
 
+import com.example.Petbulance_BE.domain.adminlog.entity.AdminActionLog;
+import com.example.Petbulance_BE.domain.adminlog.repository.AdminActionLogRepository;
+import com.example.Petbulance_BE.domain.adminlog.type.*;
 import com.example.Petbulance_BE.domain.board.entity.Board;
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.dashboard.service.DashboardMetricRedisService;
@@ -18,6 +21,7 @@ import com.example.Petbulance_BE.domain.report.aop.communityBan.CheckCommunityAv
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.common.type.Role;
 import com.example.Petbulance_BE.global.util.TimeUtil;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +55,7 @@ public class PostService {
     private final PostLikeRepository postLikeRepository;
     private final RecentService recentService;
     private final DashboardMetricRedisService dashboardMetricRedisService;
+    private final AdminActionLogRepository adminActionLogRepository;
 
     private static final String CACHE_KEY_FORMAT = "post::inquiry::%d";
 
@@ -150,7 +155,7 @@ public class PostService {
                 PostImage target = existingMap.remove(url);
                 if (target != null) {
                     postImageRepository.delete(target);
-                    try {
+                    ;try {
                         //s3Service.deleteFile(url);
                     } catch (Exception e) {
                         //  log.warn("S3 파일 삭제 실패: {}", url, e);
@@ -256,7 +261,23 @@ public class PostService {
 
         // 현재 로그인 유저 (게시글 작성자인지 확인하기 위함)
         Users currentUser = UserUtil.getCurrentUser();
+
+        if(currentUser.getRole().equals(Role.ROLE_ADMIN)) {
+            adminActionLogRepository.save(AdminActionLog.builder()
+                            .actorType(AdminActorType.ADMIN)
+                            .admin(currentUser)
+                            .pageType(AdminPageType.COMMUNITY_MANAGEMENT)
+                            .actionType(AdminActionType.READ)
+                            .targetType(AdminTargetType.COMMUNITY_DETAIL)
+                            .targetId(postId.toString())
+                            .resultType(AdminActionResult.SUCCESS)
+                            .description(String.format("[조회] %d번 게시글 상세 내용 확인", postId))
+                    .build()
+            );
+        }
+
         boolean currentUserIsPostAuthor = currentUserIsPostAuthor(post.getUser(), currentUser); // 현재 유저가 게시글 작성자인지
+
 
         // Redis 기반 조회수 증가
         assert currentUser != null;

@@ -128,14 +128,16 @@ public class AdminVersionService {
     @Transactional
     public Map<String, String> postTermsProcess(TermsReqDto termsReqDto) {
 
-        log.info("{}", termsReqDto.getTermsType());
-
         Terms terms = new Terms();
         terms.setType(termsReqDto.getTermsType());
         terms.setContent(termsReqDto.getContent());
         terms.setVersion(termsReqDto.getVersion());
         terms.setIsRequired(termsReqDto.getIsRequired());
         terms.setIsActive(true);
+
+        Boolean exists = termsJpaRepository.existsByVersion(termsReqDto.getVersion());
+
+        if(exists) throw new CustomException(ErrorCode.ALREADY_EXIST_VERSION);
 
         Integer i = termsJpaRepository.updateUnActive(termsReqDto.getTermsType());
 

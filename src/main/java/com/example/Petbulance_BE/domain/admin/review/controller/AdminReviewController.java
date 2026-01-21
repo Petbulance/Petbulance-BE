@@ -4,6 +4,10 @@ import com.example.Petbulance_BE.domain.admin.page.PageResponse;
 import com.example.Petbulance_BE.domain.admin.review.dto.AdminDetailReviewResDto;
 import com.example.Petbulance_BE.domain.admin.review.dto.AdminReviewResDto;
 import com.example.Petbulance_BE.domain.admin.review.service.AdminReviewService;
+import com.example.Petbulance_BE.domain.adminlog.aop.AdminLoggable;
+import com.example.Petbulance_BE.domain.adminlog.type.AdminActionType;
+import com.example.Petbulance_BE.domain.adminlog.type.AdminPageType;
+import com.example.Petbulance_BE.domain.adminlog.type.AdminTargetType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -19,6 +23,12 @@ public class AdminReviewController {
 
 private final AdminReviewService adminReviewService;
 
+    @AdminLoggable(
+            pageType = AdminPageType.REVIEW_MANAGEMENT,
+            actionType = AdminActionType.READ,
+            targetType = AdminTargetType.REVIEW_LIST,
+            description = "리뷰 목록 조회"
+    )
     @GetMapping
     public PageResponse<AdminReviewResDto> getReviewList(@PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC)Pageable pageable) {
 
@@ -26,6 +36,13 @@ private final AdminReviewService adminReviewService;
 
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.REVIEW_MANAGEMENT,
+            actionType = AdminActionType.READ,
+            targetType = AdminTargetType.REVIEW_DETAIL,
+            targetId = "#reviewId",
+            description = "리뷰 상세 조회"
+    )
     @GetMapping("/{reviewId}")
     public AdminDetailReviewResDto getDetailReview(@PathVariable Long reviewId) {
 
@@ -33,6 +50,13 @@ private final AdminReviewService adminReviewService;
 
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.REVIEW_MANAGEMENT,
+            actionType = AdminActionType.DELETE,
+            targetType = AdminTargetType.REVIEW_STATUS,
+            targetId = "#reviewId",
+            description = "리뷰 삭제"
+    )
     @PatchMapping("/delete/{reviewId}")
     public Map<String, String> deleteUserReview(@PathVariable Long reviewId) {
 
@@ -40,6 +64,13 @@ private final AdminReviewService adminReviewService;
 
     }
 
+    @AdminLoggable(
+            pageType = AdminPageType.REVIEW_MANAGEMENT,
+            actionType = AdminActionType.UPDATE,
+            targetType = AdminTargetType.REVIEW_STATUS,
+            targetId = "#reviewId",
+            description = "리뷰 삭제 취소"
+    )
     @PatchMapping("/active/{reviewId}")
     public Long activateUserReview(@PathVariable Long reviewId) {
 
