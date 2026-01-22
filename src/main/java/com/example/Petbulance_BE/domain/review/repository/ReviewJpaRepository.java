@@ -15,24 +15,24 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, ReviewRepositoryCustom {
     //-- 커서 조건: 이전 페이지의 마지막 ID보다 작은 리뷰를 가져옴
     //-- 정렬 기준: ID를 내림차순 (최신순 또는 ID가 큰 순서대로)
     @Query(value = """
-    SELECT new com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto(
-    r.receiptCheck, r.id, h.image, r.hospital.id, h.name, r.treatmentService, r.detailAnimalType, r.reviewContent, r.overallRating
-    )
+    SELECT r
     FROM UserReview r
-    JOIN Hospital h ON h.id = r.hospital.id
+    JOIN fetch r.hospital h
+    JOIN fetch r.user u
     WHERE ( r.treatmentService LIKE CONCAT('%', :search, '%') OR h.name LIKE CONCAT('%', :search, '%') )
     AND (:cursorId IS NULL OR r.id < :cursorId)
     AND (r.hidden = FALSE )
     AND (r.deleted = FALSE )
     ORDER BY r.id DESC
     """)
-    List<UserReviewSearchDto> findByHospitalNameOrTreatmentService(
+    List<UserReview> findByHospitalNameOrTreatmentService(
             @Param("search") String search,
             @Param("cursorId") Long cursorId, // 새로 추가된 커서 ID
             Pageable pageable // 페이징 정보를 받기 위한 Pageable 객체
@@ -141,6 +141,9 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
             order by r.id DESC 
             """)
     List<MyReviewGetDto> findByUserIdAndCursorId(@Param("user") Users user, @Param("cursorId") Long cursorId, Pageable pageable);
+
+    @Query("SELECT rl.review.id FROM UserReviewLike rl WHERE rl.user.id = :userId AND rl.review.id IN :reviewIds")
+    Set<Long> findLikedReviewIds(@Param("userId") String userId, @Param("reviewIds") List<Long> reviewIds);
 
     @Query("SELECT new com.example.Petbulance_BE.domain.admin.review.dto.AdminReviewResDto(" +
             "ur.id, " +
