@@ -71,7 +71,7 @@ public class UserReview extends BaseTimeEntity {
     @BatchSize(size = 10)
     List<UserReviewImage> images = new ArrayList<>();
 
-    @BatchSize(size = 10)
+    @BatchSize(size = 100)
     @OneToMany(mappedBy = "review", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @Builder.Default
     List<UserReviewLike> likes = new ArrayList<>();

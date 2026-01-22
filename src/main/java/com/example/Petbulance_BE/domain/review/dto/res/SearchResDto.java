@@ -16,6 +16,8 @@ public class SearchResDto {
 
     private Boolean receiptCheck;
 
+    private String userNickname;
+
     private Long id;
 
     private String treatmentService;
@@ -27,6 +29,8 @@ public class SearchResDto {
     private String reviewContent;
 
     private Double totalRating;
+
+    private Long totalPrice;
 
     private LocalDate reviewDate;
 

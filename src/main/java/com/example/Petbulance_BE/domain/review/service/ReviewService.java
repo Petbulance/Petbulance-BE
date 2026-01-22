@@ -273,11 +273,39 @@ public class ReviewService {
         return new FindHospitalResDto(list);
     }
 
+    @Transactional(readOnly = true)
     public CursorPagingResDto<UserReviewSearchDto> searchReviewProcess(String value, Long cursorId, int size) {
+
+        Users currentUser = userUtil.getCurrentUser();
 
         Pageable pageable = PageRequest.of(0, size + 1);
 
-        List<UserReviewSearchDto> reviews = reviewJpaRepository.findByHospitalNameOrTreatmentService(value, cursorId, pageable);
+        List<UserReview> ur = reviewJpaRepository.findByHospitalNameOrTreatmentService(value, cursorId, pageable);
+
+        List<Long> reviewIds = ur.stream().map(UserReview::getId).toList();
+
+        Set<Long> likedReviewIds = (currentUser != null && !reviewIds.isEmpty())
+                ? reviewJpaRepository.findLikedReviewIds(currentUser.getId(), reviewIds)
+                : Collections.emptySet();
+
+        List<UserReviewSearchDto> reviews = ur.stream().map(r -> UserReviewSearchDto.builder()
+                .userNickname(r.getUser().getNickname())
+                .receiptCheck(r.getReceiptCheck())
+                .id(r.getId())
+                .hospitalImage(r.getHospital().getImage())
+                .hospitalId(r.getHospital().getId())
+                .hospitalName(r.getHospital().getName())
+                .treatmentService(r.getTreatmentService())
+                .animalType(r.getAnimalType())
+                .detailAnimalType(r.getDetailAnimalType())
+                .reviewContent(r.getReviewContent())
+                .overallRating(r.getOverallRating())
+                .createdDate(r.getCreatedAt().toLocalDate())
+                .images(r.getImages().stream().map(UserReviewImage::getImageUrl).toList())
+                .totalPrice(r.getTotalPrice())
+                .likedCount((long) r.getLikes().size())
+                .liked(likedReviewIds.contains(r.getId()))
+                .build()).toList();
 
         //reviews의 사이즈가 size보다 작으면 마지막
         boolean hasNext = reviews.size() > size;
@@ -300,11 +328,26 @@ public class ReviewService {
 
         int size = filterReqDto.getSize();
 
-        List<FilterResDto> filterResDtos = reviewJpaRepository.reviewFilterQuery(filterReqDto);
+        List<FilterResDto> filterResDtos = reviewJpaRepository.reviewFilterQuery(filterReqDto, size);
 
         boolean hasNext = filterResDtos.size()>size;
 
         List<FilterResDto> limitedList = hasNext ? filterResDtos.subList(0,size) : filterResDtos;
+
+        if (!limitedList.isEmpty()) {
+            // 1. 결과 리스트에서 리뷰 ID들만 추출
+            List<Long> reviewIds = limitedList.stream()
+                    .map(FilterResDto::getId)
+                    .toList();
+
+            // 2. ID 리스트를 이용해 이미지 맵 가져오기 (리뷰ID : 이미지URL리스트)
+            Map<Long, List<String>> imageMap = reviewJpaRepository.findImagesByReviewIds(reviewIds);
+
+            // 3. 각 DTO에 이미지 셋팅 (이미지가 없는 경우 빈 리스트)
+            limitedList.forEach(dto ->
+                    dto.setImages(imageMap.getOrDefault(dto.getId(), Collections.emptyList()))
+            );
+        }
 
         Long nextCursorId = null;
         if (hasNext) {
@@ -348,6 +391,7 @@ public class ReviewService {
 
         List<SearchResDto> list = limitedReviews.stream().map(r ->
                 SearchResDto.builder()
+                        .userNickname(r.getUser().getNickname())
                         .receiptCheck(r.getReceiptCheck())
                         .id(r.getId())
                         .treatmentService(r.getTreatmentService())
@@ -355,6 +399,7 @@ public class ReviewService {
                         .detailAnimalType(r.getDetailAnimalType())
                         .reviewContent(r.getReviewContent())
                         .totalRating(r.getOverallRating())
+                        .totalPrice(r.getTotalPrice())
                         .reviewDate(r.getCreatedAt().toLocalDate())
                         .likeCount(r.getLikes().size())
                         .images(r.getImages().stream().map(i -> i.getImageUrl()).toList())
