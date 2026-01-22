@@ -10,13 +10,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DashBoardSummaryResDto {
 
-    private SignUpResDto signUp;
-    private HospitalSearchResDto hospitalSearch;
-    private ReviewResDto review;
-    private PostResDto post;
-    private VisitResDto visit;
-    private CommunityReportDto communityReport;
-    private QnaDto qna;
+    private SignUpResDto signUp; // 서비스 가입자
+    private HospitalSearchResDto hospitalSearch; // 병원 검색 횟수
+    private ReviewResDto review; // 후기 작성 수
+    private PostResDto post; // 게시글 작성 수
+    private VisitResDto visit; // 핵심 기능 방문 현황 (금일)
+    private CommunityReportDto communityReport; // 커뮤니티 신고
+    private QnaDto qna; // 고갟센터 문의
+    private ReviewReportDto reviewReport;
 
     @Data
     @AllArgsConstructor
@@ -77,7 +78,15 @@ public class DashBoardSummaryResDto {
     @NoArgsConstructor
     public static class QnaDto {
         private int totalCount;
-        private int waitingCount;
+        private int pendingCount;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ReviewReportDto {
+        private int totalCount;
+        private int pendingCount;
     }
 }
 
