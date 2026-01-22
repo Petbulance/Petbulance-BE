@@ -10,6 +10,8 @@ import com.example.Petbulance_BE.domain.dashboard.dto.response.DashBoardSummaryR
 import com.example.Petbulance_BE.domain.dashboard.dto.response.EventVisitResDto;
 import com.example.Petbulance_BE.domain.dashboard.type.ChangeType;
 import com.example.Petbulance_BE.domain.dashboard.type.VisitType;
+import com.example.Petbulance_BE.domain.inquiry.repository.InquiryRepository;
+import com.example.Petbulance_BE.domain.inquiry.type.InquiryAnswerType;
 import com.example.Petbulance_BE.domain.qna.repository.QnaRepository;
 import com.example.Petbulance_BE.domain.qna.type.QnaStatus;
 import com.example.Petbulance_BE.domain.report.repository.ReportRepository;
@@ -21,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +34,7 @@ public class DashBoardService {
     private final ReportRepository reportRepository;
     private final QnaRepository qnaRepository;
     private final AdminActionLogRepository adminActionLogRepository;
+    private final InquiryRepository inquiryRepository;
 
     @Transactional
     public DashBoardSummaryResDto dashBoardSummary() {
@@ -64,15 +69,27 @@ public class DashBoardService {
                         redisService.getVisitCount(today, VisitType.COMMUNITY)
                 );
 
-        // 커뮤니티 신고
-        int reportTotal = (int) reportRepository.count();
-        int reportPending = reportRepository.countByProcessedFalse();
+        LocalDateTime start = LocalDate.now().atStartOfDay(); // 2026-01-22T00:00:00
+        LocalDateTime end = LocalDate.now().atTime(LocalTime.MAX); // 2026-01-22T23:59:59.999...
 
-        // 고객센터 문의
-        int qnaTotal = (int) qnaRepository.count();
-        int qnaWaiting =
-                qnaRepository.countByStatus(QnaStatus.ANSWER_WAITING);
+        List<ReportType> targetTypes = List.of(ReportType.POST, ReportType.COMMENT);
 
+        int reportTotal = reportRepository.countByReportTypeInAndCreatedAtBetween(
+                targetTypes, start, end
+        );
+        int reportPending = reportRepository.countByReportTypeInAndProcessedFalse(targetTypes);
+
+        // 고객센터 문의 (QNA + INQUIRY)
+        int qnaTotal = (int) qnaRepository.countByCreatedAtBetween(start, end) + (int) inquiryRepository.countByCreatedAtBetween(start, end);;
+        int qnaPending =
+                qnaRepository.countByStatus(QnaStatus.ANSWER_WAITING) + inquiryRepository.countByInquiryAnswerType(InquiryAnswerType.ANSWER_WAITING);
+
+        int reviewReportTotal = reportRepository.countByReportTypeAndCreatedAtBetween(
+                ReportType.REVIEW, start, end
+        );
+
+        // 2. 전체 기간 중 미처리된 리뷰 신고 개수
+        int reviewReportPending = reportRepository.countByReportTypeAndProcessedFalse(ReportType.REVIEW);
 
         adminActionLogRepository.save(AdminActionLog.builder()
                 .actorType(AdminActorType.ADMIN)
@@ -113,7 +130,11 @@ public class DashBoardService {
                 ),
                 new DashBoardSummaryResDto.QnaDto(
                         qnaTotal,
-                        qnaWaiting
+                        qnaPending
+                ),
+                new DashBoardSummaryResDto.ReviewReportDto(
+                        reviewReportTotal,
+                        reviewReportPending
                 )
         );
     }
