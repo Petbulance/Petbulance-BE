@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.admin.user.controller;
 import com.example.Petbulance_BE.domain.admin.page.PageResponse;
 import com.example.Petbulance_BE.domain.admin.user.dto.GetUserQueryParam;
 import com.example.Petbulance_BE.domain.admin.user.dto.GetUsersResDto;
+import com.example.Petbulance_BE.domain.admin.user.dto.OneUserResDto;
 import com.example.Petbulance_BE.domain.admin.user.service.AdminUserService;
 import com.example.Petbulance_BE.domain.adminlog.aop.AdminLoggable;
 import com.example.Petbulance_BE.domain.adminlog.type.AdminActionType;
@@ -11,6 +12,7 @@ import com.example.Petbulance_BE.domain.adminlog.type.AdminTargetType;
 import com.example.Petbulance_BE.domain.report.service.CommunitySanctionService;
 import com.example.Petbulance_BE.domain.user.type.SanctionType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -21,6 +23,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/admin/user")
 @RequiredArgsConstructor
+@Slf4j
 public class AdminUserController {
 
     private final AdminUserService adminUserService;
@@ -39,6 +42,14 @@ public class AdminUserController {
 
     }
 
+    @GetMapping("/{userID}")
+    public OneUserResDto detailuser(@PathVariable String userID) {
+
+        return adminUserService.getDetailUser(userID);
+
+    }
+
+    @GetMapping("/userId")
     @AdminLoggable(
             pageType = AdminPageType.USER_MANAGEMENT,
             actionType = AdminActionType.CREATE,

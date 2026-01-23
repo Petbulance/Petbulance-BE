@@ -2,6 +2,7 @@ package com.example.Petbulance_BE.domain.user.repository;
 
 import com.example.Petbulance_BE.domain.admin.user.dto.GetUserQueryParam;
 import com.example.Petbulance_BE.domain.admin.user.dto.GetUsersResDto;
+import com.example.Petbulance_BE.global.common.type.Role;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
@@ -41,8 +42,8 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom{
                                 users.firstLogin.as("signUpPath"),
                                 getWarningCount().as("warnings"),
                                 reviewStatus().as("reviewBan"),
-                                communityStatus().as("communityBan")
-
+                                communityStatus().as("communityBan"),
+                                users.createdAt.as("createdAt")
                         )
                 )
                 .from(users)
@@ -50,7 +51,8 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom{
                 .where(
                         getUserNicknameAndEmail(getUserQueryParam),
                         getUserSignUpPath(getUserQueryParam),
-                        getUserStatus(getUserQueryParam)
+                        getUserStatus(getUserQueryParam),
+                        adminOnly(getUserQueryParam)
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -63,7 +65,8 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom{
                 .where(
                         getUserNicknameAndEmail(getUserQueryParam),
                         getUserSignUpPath(getUserQueryParam),
-                        getUserStatus(getUserQueryParam)
+                        getUserStatus(getUserQueryParam),
+                        adminOnly(getUserQueryParam)
                 )
                 .fetchOne();
 
@@ -92,6 +95,14 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom{
         }
 
         return users.firstLogin.eq(signUpPath);
+    }
+
+    private BooleanExpression adminOnly(GetUserQueryParam getUserQueryParam) {
+        Role userType = getUserQueryParam.getUserType();
+        if(userType == null) {
+            return null;
+        }
+        return users.role.eq(userType);
     }
 
     private BooleanExpression getUserStatus(GetUserQueryParam getUserQueryParam) {

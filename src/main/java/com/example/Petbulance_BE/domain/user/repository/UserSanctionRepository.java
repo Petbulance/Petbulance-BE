@@ -12,4 +12,5 @@ public interface UserSanctionRepository extends JpaRepository<UserSanction, Long
     List<UserSanction> findByUserAndActiveIsTrue(Users user);
     List<UserSanction> findAllByUserAndActiveTrueAndSanctionType(Users user, SanctionType type);
 
+    List<UserSanction> findByUserId(String userID);
 }
