@@ -45,6 +45,7 @@ public class TermsService {
                 .sorted(Comparator.comparingInt(a -> a.getType().getSort()))
                 .map(a -> GetTermsResDto.builder()
                 .id(a.getId())
+                .termsType(a.getType())
                 .title(a.getType().getDescription())
                 .required(a.getIsRequired())
                 .summary(a.getContent())

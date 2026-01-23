@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.admin.user.service;
 import com.example.Petbulance_BE.domain.admin.page.PageResponse;
 import com.example.Petbulance_BE.domain.admin.user.dto.GetUserQueryParam;
 import com.example.Petbulance_BE.domain.admin.user.dto.GetUsersResDto;
+import com.example.Petbulance_BE.domain.admin.user.dto.OneUserResDto;
 import com.example.Petbulance_BE.domain.admin.user.exception.ReviewBannedException;
 import com.example.Petbulance_BE.domain.report.entity.Report;
 import com.example.Petbulance_BE.domain.report.repository.ReportRepository;
@@ -15,6 +16,7 @@ import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.user.type.SanctionType;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +36,7 @@ public class AdminUserService {
     private final UserSanctionRepository userSanctionRepository;
     private final CommunitySanctionService communitySanctionService;
     private final ReportRepository reportRepository;
+    private final UserUtil userUtil;
 
     public PageResponse<GetUsersResDto> getUsersProcess(Pageable pageable, GetUserQueryParam queryParam) {
 
@@ -45,6 +48,8 @@ public class AdminUserService {
 
     @Transactional
     public void banUserReviewProcess(Long reportId, SanctionType sanctionType) {
+
+        Users currentUser = userUtil.getCurrentUser();
 
         Report report = reportRepository.findById(reportId).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REPORT));
 
@@ -66,6 +71,7 @@ public class AdminUserService {
                 .startAt(now)
                 .endAt(until)
                 .active(true)
+                .adminId(currentUser.getId())
                 .build();
 
         userSanctionRepository.save(userSanction);
@@ -129,5 +135,37 @@ public class AdminUserService {
         }else{
             user.clearReviewBan();
         }
+    }
+
+    public OneUserResDto getDetailUser(String userID) {
+
+        OneUserResDto oneUserResDto = new OneUserResDto();
+
+        Users users = usersJpaRepository.findById(userID).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
+        List<UserSanction> byUserId = userSanctionRepository.findByUserId(userID);
+
+        String userStatus = "정상계정";
+
+        if(users.getSuspended()!= null && users.getSuspended()){
+            userStatus = "정지계정";
+        }else if(users.getDeleted()!= null && users.getDeleted()){
+            userStatus = "삭제계정";
+        }
+
+
+        List<OneUserResDto.ReportInfo> list = byUserId.stream().map(m -> OneUserResDto.ReportInfo.builder()
+                .reportTime(m.getCreatedAt())
+                .actionContent(m.getSanctionType())
+                .actionReason(m.getReason())
+                .adminId(m.getAdminId())
+                .build()).toList();
+
+        oneUserResDto.setSignUpPath(users.getFirstLogin());
+        oneUserResDto.setUserStatus(userStatus);
+        oneUserResDto.setSignUpTime(users.getCreatedAt());
+        oneUserResDto.setWarningCount(byUserId.size());
+        oneUserResDto.setReportInfo(list);
+
+        return oneUserResDto;
     }
 }

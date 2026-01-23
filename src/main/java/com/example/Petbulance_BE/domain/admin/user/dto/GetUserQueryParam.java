@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.admin.user.dto;
 
+import com.example.Petbulance_BE.global.common.type.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,5 +17,7 @@ public class GetUserQueryParam {
     private String signUpPath;
 
     private String userStatus;
+
+    private Role userType;
 
 }
