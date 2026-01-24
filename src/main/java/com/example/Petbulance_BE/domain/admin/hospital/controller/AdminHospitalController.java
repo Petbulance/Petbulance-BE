@@ -22,36 +22,16 @@ public class AdminHospitalController {
 
     private final AdminHospitalService adminHospitalService;
 
-    @AdminLoggable(
-            pageType = AdminPageType.HOSPITAL_MANAGEMENT,
-            actionType = AdminActionType.READ,
-            targetType = AdminTargetType.HOSPITAL_LIST,
-            description = "병원 목록 조회"
-    )
     @GetMapping
     public PageResponse<AdminHospitalListResDto> findHospital (@PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
         return adminHospitalService.findHospitalProcess(pageable);
     }
 
-    @AdminLoggable(
-            pageType = AdminPageType.HOSPITAL_MANAGEMENT,
-            actionType = AdminActionType.SEARCH,
-            targetType = AdminTargetType.HOSPITAL_LIST,
-            targetId = "#name",
-            description = "병원명 검색"
-    )
     @GetMapping("/{name}")
     public PageResponse<AdminHospitalListResDto> findNameHospital(@PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable, @PathVariable String name) {
         return adminHospitalService.findNameHospitalProcess(pageable, name);
     }
 
-    @AdminLoggable(
-            pageType = AdminPageType.HOSPITAL_MANAGEMENT,
-            actionType = AdminActionType.READ,
-            targetType = AdminTargetType.HOSPITAL_DETAIL,
-            targetId = "#id",
-            description = "병원 상세 조회"
-    )
     @GetMapping("/detail/{id}")
     public AdminHospitalDetailResDto detailHospital(@PathVariable Long id) {
         return adminHospitalService.detailHospitalProcess(id);
