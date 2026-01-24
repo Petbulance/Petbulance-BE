@@ -23,12 +23,6 @@ public class AdminReviewController {
 
 private final AdminReviewService adminReviewService;
 
-    @AdminLoggable(
-            pageType = AdminPageType.REVIEW_MANAGEMENT,
-            actionType = AdminActionType.READ,
-            targetType = AdminTargetType.REVIEW_LIST,
-            description = "리뷰 목록 조회"
-    )
     @GetMapping
     public PageResponse<AdminReviewResDto> getReviewList(@PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC)Pageable pageable) {
 
@@ -36,13 +30,6 @@ private final AdminReviewService adminReviewService;
 
     }
 
-    @AdminLoggable(
-            pageType = AdminPageType.REVIEW_MANAGEMENT,
-            actionType = AdminActionType.READ,
-            targetType = AdminTargetType.REVIEW_DETAIL,
-            targetId = "#reviewId",
-            description = "리뷰 상세 조회"
-    )
     @GetMapping("/{reviewId}")
     public AdminDetailReviewResDto getDetailReview(@PathVariable Long reviewId) {
 
