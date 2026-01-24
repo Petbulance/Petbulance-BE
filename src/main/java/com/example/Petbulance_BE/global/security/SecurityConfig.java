@@ -93,7 +93,9 @@ public class SecurityConfig {
                 "http://127.0.0.1:5173/",
                 "https://127.0.0.1:5173",
                 "http://petbulance.cloud",
-                "http://petbulance.cloud/"
+                "http://petbulance.cloud/",
+                "http://admin.petbulance.co.kr",
+                "http://admin.petbulance.co.kr/"
         ));
 
         configuration.setAllowedMethods(List.of(
