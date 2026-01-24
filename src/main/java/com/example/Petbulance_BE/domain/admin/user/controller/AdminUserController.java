@@ -29,12 +29,6 @@ public class AdminUserController {
     private final AdminUserService adminUserService;
     private final CommunitySanctionService communitySanctionService;
 
-    @AdminLoggable(
-            pageType = AdminPageType.USER_MANAGEMENT,
-            actionType = AdminActionType.READ,
-            targetType = AdminTargetType.USER_LIST,
-            description = "유저 목록 조회"
-    )
     @GetMapping("/search")
     public PageResponse<GetUsersResDto> getUsers(@PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
                                                  @ModelAttribute GetUserQueryParam queryParam) {
