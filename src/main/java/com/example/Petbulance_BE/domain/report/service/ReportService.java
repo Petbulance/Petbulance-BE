@@ -103,22 +103,9 @@ public class ReportService {
         return new ReportCreateResDto("신고가 정상적으로 접수되었습니다.");
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public PagingReportListResDto reportList(int page, int size) {
         log.info("page={}, size={}", page, size);
-
-        Users currentUser = UserUtil.getCurrentUser();
-        adminActionLogRepository.save(
-                AdminActionLog.builder()
-                        .actorType(AdminActorType.ADMIN)
-                        .admin(currentUser)
-                        .pageType(AdminPageType.COMMUNITY_MANAGEMENT)
-                        .actionType(AdminActionType.READ)
-                        .targetType(AdminTargetType.COMMUNITY_LIST)
-                        .resultType(AdminActionResult.SUCCESS)
-                        .description("[조회] 커뮤니티 관리 리스트 진입")
-                        .build()
-        );
 
         return reportRepository.findPagingReports(page, size);
     }

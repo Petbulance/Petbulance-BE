@@ -77,7 +77,7 @@ public class QnaService {
         return qnaRepository.findQnaList(currentUser, lastQnaId, pageable);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Cacheable(value = "qnaDetail", key = "#qnaId")
     public DetailQnaResDto detailQna(Long qnaId) {
         Qna qna = getQna(qnaId);
@@ -86,19 +86,6 @@ public class QnaService {
         assert currentUser != null;
         boolean isAdmin = currentUser.getRole().equals(Role.ROLE_ADMIN);
 
-        // 관리자면 로그 저장
-        if (isAdmin) {
-            adminActionLogRepository.save(AdminActionLog.builder()
-                    .actorType(AdminActorType.ADMIN)
-                    .admin(currentUser)
-                    .pageType(AdminPageType.CUSTOMER_CENTER)
-                    .actionType(AdminActionType.READ)
-                    .targetType(AdminTargetType.CS_DETAIL)
-                    .resultType(AdminActionResult.SUCCESS)
-                    .description(String.format("[조회] %d번 1:1 문의 상세 열람 (작성자: %s)", qnaId, qna.getUser().getNickname()))
-                    .build()
-            );
-        }
         // 작성자가 아니고 관리자가 아니면 조회 불가
         if (!qna.getUser().getId().equals(currentUser.getId()) && !isAdmin) {
             throw new CustomException(ErrorCode.FORBIDDEN_QNA_ACCESS);
@@ -145,19 +132,8 @@ public class QnaService {
         return new AnswerQnaResDto("답변이 정상적으로 작성되었습니다.");
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public PagingAdminQnaListResDto adminQnaList(int page, int size) {
-
-        adminActionLogRepository.save(AdminActionLog.builder()
-                .actorType(AdminActorType.ADMIN)
-                .admin(UserUtil.getCurrentUser())
-                .pageType(AdminPageType.CUSTOMER_CENTER)
-                .actionType(AdminActionType.READ)
-                .targetType(AdminTargetType.CS_LIST)
-                .resultType(AdminActionResult.SUCCESS)
-                .description("[조회] 1:1 문의 리스트 진입")
-                .build()
-        );
 
         return qnaRepository.adminQnaList(page, size);
     }
