@@ -262,20 +262,6 @@ public class PostService {
         // 현재 로그인 유저 (게시글 작성자인지 확인하기 위함)
         Users currentUser = UserUtil.getCurrentUser();
 
-        if(currentUser.getRole().equals(Role.ROLE_ADMIN)) {
-            adminActionLogRepository.save(AdminActionLog.builder()
-                            .actorType(AdminActorType.ADMIN)
-                            .admin(currentUser)
-                            .pageType(AdminPageType.COMMUNITY_MANAGEMENT)
-                            .actionType(AdminActionType.READ)
-                            .targetType(AdminTargetType.COMMUNITY_DETAIL)
-                            .targetId(postId.toString())
-                            .resultType(AdminActionResult.SUCCESS)
-                            .description(String.format("[조회] %d번 게시글 상세 내용 확인", postId))
-                    .build()
-            );
-        }
-
         boolean currentUserIsPostAuthor = currentUserIsPostAuthor(post.getUser(), currentUser); // 현재 유저가 게시글 작성자인지
 
 

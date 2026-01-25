@@ -104,7 +104,7 @@ public class InquiryService {
         return inquiryRepository.findInquiryList(pageable, lastInquiryId, UserUtil.getCurrentUser());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public DetailInquiryResDto detailInquiry(Long inquiryId) {
         Inquiry inquiry = getInquiry(inquiryId);
 
@@ -115,21 +115,6 @@ public class InquiryService {
         if (currentUser != null && !inquiry.getUser().getId().equals(currentUser.getId()) && !isAdmin) {
             throw new CustomException(ErrorCode.FORBIDDEN_INQUIRY_ACCESS);
         }
-
-        // 관리자일 경우에만 로그 저장
-        if (isAdmin) {
-            adminActionLogRepository.save(AdminActionLog.builder()
-                    .actorType(AdminActorType.ADMIN)
-                    .admin(currentUser)
-                    .pageType(AdminPageType.CUSTOMER_CENTER)
-                    .actionType(AdminActionType.READ)
-                    .targetType(AdminTargetType.CS_DETAIL)
-                    .resultType(AdminActionResult.SUCCESS)
-                    .description(String.format("[조회] %d번 제휴 문의 상세 열람 (작성자: %s)", inquiryId, inquiry.getUser().getNickname()))
-                    .build()
-            );
-        }
-
         return DetailInquiryResDto.from(inquiry);
     }
 
@@ -160,19 +145,8 @@ public class InquiryService {
         return new AnswerInquiryResDto("답변이 정상적으로 작성되었습니다.");
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public PagingAdminInquiryListResDto adminInquiryList(int page, int size) {
-
-        adminActionLogRepository.save(AdminActionLog.builder()
-                .actorType(AdminActorType.ADMIN)
-                .admin(UserUtil.getCurrentUser())
-                .pageType(AdminPageType.CUSTOMER_CENTER)
-                .actionType(AdminActionType.READ)
-                .targetType(AdminTargetType.CS_LIST)
-                .resultType(AdminActionResult.SUCCESS)
-                .description("[조회] 제휴 문의 리스트 진입")
-                .build()
-        );
         return inquiryRepository.findAdminInquiryList(page, size);
     }
 }

@@ -63,19 +63,8 @@ public class NoticeService {
             key = "'page:' + #page + ':size:' + #size",
             condition = "#page >= 1 && #page <= 5"
     )
-    @Transactional
+    @Transactional(readOnly = true)
     public PagingAdminNoticeListResDto adminNoticeList(int page, int size) {
-        Users currentUser = UserUtil.getCurrentUser();
-        adminActionLogRepository.save(AdminActionLog.builder()
-                .actorType(AdminActorType.ADMIN)
-                .admin(currentUser)
-                .pageType(AdminPageType.CONTENT_MANAGEMENT)
-                .actionType(AdminActionType.READ)
-                .targetType(AdminTargetType.CONTENT_LIST)
-                .resultType(AdminActionResult.SUCCESS)
-                .description("[조회] 콘텐츠 관리 리스트 진입")
-                .build()
-        );
 
         return noticeRepository.adminNoticeList(page, size);
     }

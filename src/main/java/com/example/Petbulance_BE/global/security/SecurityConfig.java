@@ -95,7 +95,15 @@ public class SecurityConfig {
                 "http://petbulance.cloud",
                 "http://petbulance.cloud/",
                 "http://admin.petbulance.co.kr",
-                "http://admin.petbulance.co.kr/"
+                "http://admin.petbulance.co.kr/",
+                "https://www.petbulance.co.kr/",
+                "https://www.petbulance.co.kr",
+                "https://www.admin.petbulance.co.kr/",
+                "https://www.admin.petbulance.co.kr",
+                "http://petbulance.local",
+                "http://petbulance.local/",
+                "https://petbulance.local",
+                "https://petbulance.local/"
         ));
 
         configuration.setAllowedMethods(List.of(

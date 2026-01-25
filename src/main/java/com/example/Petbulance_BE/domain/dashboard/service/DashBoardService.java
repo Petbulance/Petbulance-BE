@@ -91,16 +91,6 @@ public class DashBoardService {
         // 2. 전체 기간 중 미처리된 리뷰 신고 개수
         int reviewReportPending = reportRepository.countByReportTypeAndProcessedFalse(ReportType.REVIEW);
 
-        adminActionLogRepository.save(AdminActionLog.builder()
-                .actorType(AdminActorType.ADMIN)
-                .admin(UserUtil.getCurrentUser())
-                .pageType(AdminPageType.DASHBOARD)
-                .actionType(AdminActionType.READ)
-                .targetType(AdminTargetType.DASHBOARD)
-                .resultType(AdminActionResult.SUCCESS)
-                .description("[조회] 대시보드 메인 화면 진입")
-                .createdAt(LocalDateTime.now())
-                .build());
 
         return new DashBoardSummaryResDto(
                 new DashBoardSummaryResDto.SignUpResDto(
