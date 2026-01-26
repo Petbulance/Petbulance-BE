@@ -103,7 +103,9 @@ public class SecurityConfig {
                 "http://petbulance.local",
                 "http://petbulance.local/",
                 "https://petbulance.local",
-                "https://petbulance.local/"
+                "https://petbulance.local/",
+                "http://admin.petbulance.local",
+                "http://admin.petbulance.local/"
         ));
 
         configuration.setAllowedMethods(List.of(
