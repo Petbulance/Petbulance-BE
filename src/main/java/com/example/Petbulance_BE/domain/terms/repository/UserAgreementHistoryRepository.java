@@ -17,7 +17,7 @@ public interface UserAgreementHistoryRepository extends JpaRepository<UserAgreem
     @Query("SELECT uh FROM UserAgreementHistory uh JOIN FETCH uh.terms t WHERE uh.user = :user AND uh.terms.type = :type ORDER BY uh.agreedAt DESC")
     List<UserAgreementHistory> findLatestAgreement(@Param("user") Users user, @Param("type") TermsType type);
 
-    @Query("SELECT count(DISTINCT uh.terms.type) FROM UserAgreementHistory uh WHERE uh.user = :userAND AND uh.isAgreed = true AND (uh.terms.type = 'SERVICE' OR uh.terms.type = 'PRIVACY' OR uh.terms.type = 'LOCATION')")
+    @Query("SELECT count(DISTINCT uh.terms.type) FROM UserAgreementHistory uh WHERE uh.user = :user AND uh.isAgreed = true AND (uh.terms.type = 'SERVICE' OR uh.terms.type = 'PRIVACY' OR uh.terms.type = 'LOCATION')")
     Integer countUserAgreement(@Param("user") Users user);
 
     @Query("SELECT uah FROM UserAgreementHistory uah " +
