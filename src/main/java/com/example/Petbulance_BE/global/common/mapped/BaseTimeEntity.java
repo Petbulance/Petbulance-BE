@@ -9,7 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @MappedSuperclass
-@SuperBuilder
+@Builder
 @Getter
 public class BaseTimeEntity {
     @CreationTimestamp
