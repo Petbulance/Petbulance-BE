@@ -54,7 +54,8 @@ public interface ReviewJpaRepository extends JpaRepository<UserReview, Long>, Re
     """)
     Page<UserReview> findByHospitalIdWithImages(@Param("hospitalId") Long hospitalId, Pageable pageable);
 
-    Optional<UserReview> findByIdAndUserId(Long id, String userId);
+    @Query("SELECT ur FROM UserReview ur WHERE ur.id = :id AND ur.user = :user AND ur.hidden = false AND ur.deleted = false")
+    Optional<UserReview> findByIdAndUserId(Long id, Users userId);
 
     //최신순
     @Query(value = """

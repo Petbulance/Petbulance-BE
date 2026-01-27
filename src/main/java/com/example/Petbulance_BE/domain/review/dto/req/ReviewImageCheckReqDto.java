@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.review.dto.req;
 
+import com.example.Petbulance_BE.domain.review.type.ImageSaveType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReviewImageCheckReqDto {
+
+    private ImageSaveType type;
 
     private Long reviewId;
 
