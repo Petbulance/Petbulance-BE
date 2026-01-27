@@ -2,6 +2,7 @@ package com.example.Petbulance_BE.domain.review.controller;
 
 import com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto;
 import com.example.Petbulance_BE.domain.review.dto.CursorPagingResDto;
+import com.example.Petbulance_BE.domain.review.dto.req.ReviewModifyReqDto;
 import com.example.Petbulance_BE.domain.review.dto.res.HospitalReviewsCursorResDto;
 import com.example.Petbulance_BE.domain.review.dto.req.FilterReqDto;
 import com.example.Petbulance_BE.domain.review.dto.req.ReviewImageCheckReqDto;
@@ -93,9 +94,7 @@ public class ReviewController {
     @PostMapping("/save/success")
     public Map<String, String> reviewImageSaveCheck(@RequestBody ReviewImageCheckReqDto reviewImageCheckReqDto){
 
-        reviewService.reviewImageSaveCheckProcess(reviewImageCheckReqDto);
-
-        return Map.of("message", "이미지 저장에 성공하였습니다.");
+        return reviewService.reviewImageSaveCheckProcess(reviewImageCheckReqDto);
 
     }
 
@@ -127,6 +126,20 @@ public class ReviewController {
     public Map<String, String> reviewLikeCancel(@PathVariable("reviewId")Long reviewId){
 
         return reviewService.reviewLikeCancelProcess(reviewId);
+
+    }
+    //리뷰 상세 조회(단건)
+    @GetMapping("/detail/{reviewId}")
+    public FilterResDto getDetailReview(@PathVariable Long reviewId) {
+
+        return reviewService.getDetailReviewProcess(reviewId);
+
+    }
+    //리뷰 수정
+    @PutMapping("/modify")
+    public ReviewSaveResDto modifyReview(@RequestBody ReviewModifyReqDto reviewModifyReqDto){
+
+        return reviewService.modifyReviewProcess(reviewModifyReqDto);
 
     }
 

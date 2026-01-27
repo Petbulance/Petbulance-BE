@@ -9,7 +9,9 @@ import java.util.Map;
 
 public interface ReviewRepositoryCustom {
 
-    List<FilterResDto> reviewFilterQuery(FilterReqDto filterReqDto, int size);
+    List<FilterResDto> reviewFilterQuery(FilterReqDto filterReqDto);
 
     Map<Long, List<String>> findImagesByReviewIds(List<Long> reviewIds);
+
+    FilterResDto reviewFilterQuery(Long id);
 }

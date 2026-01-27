@@ -36,13 +36,14 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
     private final UserUtil userUtil;
 
     @Override
-    public List<FilterResDto> reviewFilterQuery(FilterReqDto filterReqDto, int size) {
+    public List<FilterResDto> reviewFilterQuery(FilterReqDto filterReqDto) {
 
         Users user = userUtil.getCurrentUser();
 
         List<AnimalType> animalType = filterReqDto.getAnimalType();
         String region = filterReqDto.getRegion();
         Boolean onlyReceipt = filterReqDto.getReceipt();
+        Long cursorId = filterReqDto.getCursorId();
 
         return queryFactory.select(
                     Projections.fields(FilterResDto.class,
@@ -78,12 +79,26 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                     .from(userReview)
                     .join(userReview.user, users)
                     .join(userReview.hospital, hospital)
-                    .where(checkAnimalType(animalType), checkRegion(region), checkReceiptReview(onlyReceipt), checkHidden(), checkDeleted())
-                    .orderBy(userReview.createdAt.desc())
-                    .limit(size + 1)
+                    .where(checkAnimalType(animalType), checkRegion(region), checkReceiptReview(onlyReceipt), checkHidden(), checkDeleted(), ltCursorId(cursorId))
+                    .orderBy(userReview.createdAt.desc(), userReview.id.desc())
+                    .limit(filterReqDto.getSize() + 1)
                     .fetch();
 
     }
+
+    private BooleanExpression ltCursorId(Long cursorId) {
+        if (cursorId == null || cursorId == 0) {
+            return null;
+        }
+
+        return userReview.id.lt(cursorId);
+    }
+
+    private BooleanExpression eqId(Long id) {
+
+        return userReview.id.eq(id);
+    }
+
 
     public BooleanExpression checkAnimalType(List<AnimalType> animalTypes){
         if(animalTypes == null || animalTypes.isEmpty()) return null;
@@ -155,6 +170,51 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                                 Collectors.toList()
                         )
                 ));
+    }
+
+    @Override
+    public FilterResDto reviewFilterQuery(Long id) {
+
+        Users user = userUtil.getCurrentUser();
+
+        return queryFactory.select(
+                        Projections.fields(FilterResDto.class,
+                                users.nickname.as("userNickname"),
+                                userReview.receiptCheck.as("receiptCheck"),
+                                userReview.id.as("id"),
+                                userReview.hospital.image.as("hospitalImage"),
+                                userReview.hospital.id.as("hospitalId"),
+                                userReview.hospital.name.as("hospitalName"),
+                                userReview.treatmentService.as("treatmentService"),
+                                userReview.animalType.as("animalType"),
+                                userReview.detailAnimalType.as("detailAnimalType"),
+                                userReview.reviewContent.as("reviewContent"),
+                                userReview.overallRating.as("totalRating"),
+                                userReview.createdAt.as("createDate"),
+                                userReview.totalPrice.as("totalPrice"),
+                                ExpressionUtils.as(
+                                        JPAExpressions.select(userReviewLike.count())
+                                                .from(userReviewLike)
+                                                .where(userReviewLike.review.id.eq(userReview.id)),
+                                        "likeCount"
+                                ),
+                                ExpressionUtils.as(
+                                        user == null ? Expressions.asBoolean(false) : // 미로그인 시 false
+                                                JPAExpressions.select(userReviewLike.id.count().gt(0L)) // 개수가 0보다 크면 true
+                                                        .from(userReviewLike)
+                                                        .where(userReviewLike.review.id.eq(userReview.id)
+                                                                .and(userReviewLike.user.id.eq(user.getId()))),
+                                        "liked"
+                                )
+                        )
+                )
+                .from(userReview)
+                .join(userReview.user, users)
+                .join(userReview.hospital, hospital)
+                .where(checkHidden(), checkDeleted(), eqId(id))
+                .limit(1)
+                .fetchOne();
+
     }
 
 }

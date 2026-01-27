@@ -10,6 +10,7 @@ import com.example.Petbulance_BE.domain.review.dto.*;
 import com.example.Petbulance_BE.domain.review.dto.MyReviewGetDto;
 import com.example.Petbulance_BE.domain.review.dto.req.FilterReqDto;
 import com.example.Petbulance_BE.domain.review.dto.req.ReviewImageCheckReqDto;
+import com.example.Petbulance_BE.domain.review.dto.req.ReviewModifyReqDto;
 import com.example.Petbulance_BE.domain.review.dto.req.ReviewSaveReqDto;
 import com.example.Petbulance_BE.domain.review.dto.res.*;
 import com.example.Petbulance_BE.domain.review.entity.UserReview;
@@ -18,6 +19,7 @@ import com.example.Petbulance_BE.domain.review.entity.UserReviewLike;
 import com.example.Petbulance_BE.domain.review.repository.ReviewImageJpaRepository;
 import com.example.Petbulance_BE.domain.review.repository.ReviewJpaRepository;
 import com.example.Petbulance_BE.domain.review.repository.ReviewLikeJpaRepository;
+import com.example.Petbulance_BE.domain.review.type.ImageSaveType;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -328,7 +330,7 @@ public class ReviewService {
 
         int size = filterReqDto.getSize();
 
-        List<FilterResDto> filterResDtos = reviewJpaRepository.reviewFilterQuery(filterReqDto, size);
+        List<FilterResDto> filterResDtos = reviewJpaRepository.reviewFilterQuery(filterReqDto);
 
         boolean hasNext = filterResDtos.size()>size;
 
@@ -497,14 +499,16 @@ public class ReviewService {
     }
 
     @Transactional
-    public void reviewImageSaveCheckProcess(ReviewImageCheckReqDto reviewImageCheckReqDto) {
+    public Map<String, String> reviewImageSaveCheckProcess(ReviewImageCheckReqDto reviewImageCheckReqDto) {
 
         Users currentUser = userUtil.getCurrentUser();
+
+        ImageSaveType type = reviewImageCheckReqDto.getType();
 
         Long reviewId = reviewImageCheckReqDto.getReviewId();
         List<String> keys = reviewImageCheckReqDto.getKeys();
 
-        UserReview userReview = reviewJpaRepository.findByIdAndUserId(reviewId, currentUser.getId()).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REVIEW));
+        UserReview userReview = reviewJpaRepository.findByIdAndUserId(reviewId, currentUser).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REVIEW));
 
         Boolean[] exists = new Boolean[keys.size()];
         Boolean allExists = true;
@@ -517,8 +521,18 @@ public class ReviewService {
             exists[i] = b;
         }
 
-        if(allExists){
+        if(allExists && type.equals(ImageSaveType.NEW)){
             for(String key : keys){
+                UserReviewImage userReviewImage = UserReviewImage.builder()
+                        .imageUrl(s3Service.getObject(key))
+                        .review(userReview)
+                        .build();
+
+                reviewImageJpaRepository.save(userReviewImage);
+            }
+        }else if(allExists && type.equals(ImageSaveType.UPDATE)) {
+            reviewImageJpaRepository.deleteByReviewId(reviewId);
+            for(String key : keys) {
                 UserReviewImage userReviewImage = UserReviewImage.builder()
                         .imageUrl(s3Service.getObject(key))
                         .review(userReview)
@@ -536,17 +550,19 @@ public class ReviewService {
                     }
                 }
             }
-            reviewJpaRepository.deleteById(reviewId);
+            if(type.equals(ImageSaveType.NEW)){
+                reviewJpaRepository.deleteById(reviewId);
+            }
+
             throw new CustomException(ErrorCode.FAIL_IMAGE_UPLOAD);
         }
+
+        return Map.of("message", "success");
 
 
     }
 
     public MyReviewGetResDto myReviewGetProcess(Long cursorId, int size){
-        //3a7a6eba-f107-42b5-8e2d-4536a94a17bf
-//        String jwt = jwtUtil.createJwt("3a7a6eba-f107-42b5-8e2d-4536a94a17bf", "access", "ROLE_CLIENT", "GOOGLE");
-//        log.info("{}", jwt);
 
         Users currentUser = userUtil.getCurrentUser();
 
@@ -710,4 +726,76 @@ public class ReviewService {
                 ));
     }
 
+    public FilterResDto getDetailReviewProcess(Long reviewId) {
+
+        if(!reviewJpaRepository.existsById(reviewId)) throw new CustomException(ErrorCode.NOT_FOUND_REVIEW);
+
+        FilterResDto filterResDto = reviewJpaRepository.reviewFilterQuery(reviewId);
+
+        Map<Long, List<String>> imagesByReviewIds = reviewJpaRepository.findImagesByReviewIds(List.of(reviewId));
+
+        filterResDto.setImages(imagesByReviewIds.get(reviewId));
+
+        return filterResDto;
+
+    }
+
+    @Transactional
+    @CheckReviewAvailable
+    public ReviewSaveResDto modifyReviewProcess(ReviewModifyReqDto reviewModifyReqDto) {
+
+        Users currentUser = userUtil.getCurrentUser();
+
+        Long reviewId = reviewModifyReqDto.getReviewId();
+
+        UserReview userReview1 = reviewJpaRepository.findByIdAndUserId(reviewId, currentUser).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REVIEW));
+
+        List<ReviewSaveReqDto.Images> images = reviewModifyReqDto.getImages();
+
+        if(images.size()>5) throw new CustomException(ErrorCode.IMAGE_COUNT_EXCEEDED);
+
+        Hospital hospital = hospitalJpaRepository.findById(reviewModifyReqDto.getHospitalId()).orElseThrow(()-> new CustomException(ErrorCode.NOT_FOUND_HOSPITAL));
+
+        Double facilityRating = reviewModifyReqDto.getFacilityRating();
+        Double expertiseRating = reviewModifyReqDto.getExpertiseRating();
+        Double kindnessRating = reviewModifyReqDto.getKindnessRating();
+
+        String combinedService = reviewModifyReqDto.getReceiptItems().stream()
+                .map(item -> item.getName() + "(" + String.format("%,d", item.getPrice()) + "원)")
+                .collect(Collectors.joining(", "));
+
+        Double overallRating = (expertiseRating + facilityRating + kindnessRating) / 3;
+
+        userReview1.setTitle(reviewModifyReqDto.getTitle());
+        userReview1.setReceiptCheck(reviewModifyReqDto.getReceiptChecked());
+        userReview1.setUser(currentUser);
+        userReview1.setHospital(hospital);
+        userReview1.setVisitDate(reviewModifyReqDto.getVisitDate());
+        userReview1.setAnimalType(reviewModifyReqDto.getAnimalType());
+        userReview1.setDetailAnimalType(reviewModifyReqDto.getDetailAnimalType());
+        userReview1.setTreatmentService(combinedService);
+        userReview1.setReviewContent(reviewModifyReqDto.getReviewComment());
+        userReview1.setExpertiseRating(expertiseRating);
+        userReview1.setKindnessRating(kindnessRating);
+        userReview1.setFacilityRating(facilityRating);
+        userReview1.setOverallRating(overallRating);
+        userReview1.setTotalPrice(reviewModifyReqDto.getTotalPrice());
+
+        List<ReviewSaveResDto.UrlAndId> list = new LinkedList<>();
+
+        for(ReviewSaveReqDto.Images image : images){
+
+            String filename = image.getFilename();
+            String contentType = image.getContentType();
+
+            String key = "reviewImage/" + UUID.randomUUID() + "_" + filename;
+
+            URL presignedPutUrl = s3Service.createPresignedPutUrl(key, contentType, 300);
+
+            list.add(new ReviewSaveResDto.UrlAndId(presignedPutUrl, key));
+        }
+
+        return new ReviewSaveResDto(userReview1.getId(), list);
+
+    }
 }
