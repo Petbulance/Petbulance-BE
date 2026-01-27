@@ -100,12 +100,12 @@ public class SecurityConfig {
                 "https://www.petbulance.co.kr",
                 "https://www.admin.petbulance.co.kr/",
                 "https://www.admin.petbulance.co.kr",
-                "http://petbulance.local",
-                "http://petbulance.local/",
-                "https://petbulance.local",
-                "https://petbulance.local/",
-                "http://admin.petbulance.local",
-                "http://admin.petbulance.local/"
+                "http://petbulance.local:5173",
+                "http://petbulance.local:5173/",
+                "https://petbulance.local:5173",
+                "https://petbulance.local:5173/",
+                "http://admin.petbulance.local:5173",
+                "http://admin.petbulance.local:5173/"
         ));
 
         configuration.setAllowedMethods(List.of(
