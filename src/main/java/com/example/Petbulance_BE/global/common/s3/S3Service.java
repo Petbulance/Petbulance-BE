@@ -81,7 +81,7 @@ public class S3Service {
     public boolean doesObjectExist(String key) {
         try{
             HeadObjectRequest headReq = HeadObjectRequest.builder()
-                    .bucket(bucket+"-resized")
+                    .bucket(bucket)
                     .key(key)
                     .build();
             s3.headObject(headReq);
@@ -107,7 +107,7 @@ public class S3Service {
 
     //객체 조회 URL
     public String getObject(String key) {
-        return "https://" + bucket +"-resized" + ".s3." + region + ".amazonaws.com/" + key;
+        return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
     }
 
     public URL createPresignedGetUrl(String key, long expireSeconds) {
