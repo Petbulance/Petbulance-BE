@@ -1,5 +1,5 @@
 package com.example.Petbulance_BE.global.common.mapped;
-
+import lombok.experimental.SuperBuilder;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
