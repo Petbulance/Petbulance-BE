@@ -116,6 +116,7 @@ jobs:
               --name $TARGET \
               --restart=always \
               -e SPRING_PROFILES_ACTIVE=$TARGET \
+              -e JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Seoul" \
               -p $TARGET_PORT:8080 \
               276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
           
