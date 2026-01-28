@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.review.repository;
 
 import com.example.Petbulance_BE.domain.review.dto.req.FilterReqDto;
+import com.example.Petbulance_BE.domain.review.dto.res.DetailResDto;
 import com.example.Petbulance_BE.domain.review.dto.res.FilterResDto;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.type.AnimalType;
@@ -173,12 +174,12 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
     }
 
     @Override
-    public FilterResDto reviewFilterQuery(Long id) {
+    public DetailResDto reviewFilterQuery(Long id) {
 
         Users user = userUtil.getCurrentUser();
 
         return queryFactory.select(
-                        Projections.fields(FilterResDto.class,
+                        Projections.fields(DetailResDto.class,
                                 users.nickname.as("userNickname"),
                                 userReview.receiptCheck.as("receiptCheck"),
                                 userReview.id.as("id"),
@@ -186,10 +187,13 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                                 userReview.hospital.id.as("hospitalId"),
                                 userReview.hospital.name.as("hospitalName"),
                                 userReview.treatmentService.as("treatmentService"),
+                                userReview.visitDate.as("visitDate"),
                                 userReview.animalType.as("animalType"),
                                 userReview.detailAnimalType.as("detailAnimalType"),
                                 userReview.reviewContent.as("reviewContent"),
-                                userReview.overallRating.as("totalRating"),
+                                userReview.facilityRating.as("facilityRating"),
+                                userReview.expertiseRating.as("expertiseRating"),
+                                userReview.kindnessRating.as("kindnessRating"),
                                 userReview.createdAt.as("createDate"),
                                 userReview.totalPrice.as("totalPrice"),
                                 ExpressionUtils.as(
