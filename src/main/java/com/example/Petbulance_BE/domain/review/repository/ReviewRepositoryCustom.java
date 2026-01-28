@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.review.repository;
 
 import com.example.Petbulance_BE.domain.review.dto.req.FilterReqDto;
+import com.example.Petbulance_BE.domain.review.dto.res.DetailResDto;
 import com.example.Petbulance_BE.domain.review.dto.res.FilterResDto;
 import com.example.Petbulance_BE.domain.review.dto.res.HospitalUserReviewResDto;
 
@@ -13,5 +14,5 @@ public interface ReviewRepositoryCustom {
 
     Map<Long, List<String>> findImagesByReviewIds(List<Long> reviewIds);
 
-    FilterResDto reviewFilterQuery(Long id);
+    DetailResDto reviewFilterQuery(Long id);
 }

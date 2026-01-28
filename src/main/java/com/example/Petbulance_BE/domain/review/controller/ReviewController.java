@@ -130,7 +130,7 @@ public class ReviewController {
     }
     //리뷰 상세 조회(단건)
     @GetMapping("/detail/{reviewId}")
-    public FilterResDto getDetailReview(@PathVariable Long reviewId) {
+    public DetailResDto getDetailReview(@PathVariable Long reviewId) {
 
         return reviewService.getDetailReviewProcess(reviewId);
 

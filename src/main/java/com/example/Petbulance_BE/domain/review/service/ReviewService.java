@@ -726,11 +726,11 @@ public class ReviewService {
                 ));
     }
 
-    public FilterResDto getDetailReviewProcess(Long reviewId) {
+    public DetailResDto getDetailReviewProcess(Long reviewId) {
 
         if(!reviewJpaRepository.existsById(reviewId)) throw new CustomException(ErrorCode.NOT_FOUND_REVIEW);
 
-        FilterResDto filterResDto = reviewJpaRepository.reviewFilterQuery(reviewId);
+        DetailResDto filterResDto = reviewJpaRepository.reviewFilterQuery(reviewId);
 
         Map<Long, List<String>> imagesByReviewIds = reviewJpaRepository.findImagesByReviewIds(List.of(reviewId));
 
