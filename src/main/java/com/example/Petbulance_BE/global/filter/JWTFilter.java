@@ -55,6 +55,7 @@ public class JWTFilter extends OncePerRequestFilter {
         }
 
         String token = authorization.split(" ")[1];
+        log.info("{}", token);
 
         //로그아웃한 유저의 jwt토큰으로 접근시 유저 계정 정지
         if (redisTemplate.hasKey("blackList:" + token)) {
