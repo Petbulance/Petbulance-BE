@@ -98,6 +98,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'io.micrometer:micrometer-registry-prometheus'
 
+	implementation 'org.apache.lucene:lucene-spatial-extras:9.11.1'
+
 }
 
 tasks.named('test') {

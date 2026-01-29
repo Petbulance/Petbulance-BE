@@ -70,6 +70,17 @@ public class AiService {
         });
     }
 
+    public Mono<String> encodeBase64Direct(MultipartFile image) {
+        return Mono.fromCallable(() -> {
+            // 1. 이미지 전체 바이트를 메모리에 한꺼번에 로드 (위험!)
+            byte[] imageBytes = image.getBytes();
+
+            // 2. 메모리에 있는 바이트 배열을 기반으로 인코딩 수행
+            // 원본 배열(1.0) + 인코딩 결과 문자열(1.3) = 최소 2.3배의 메모리 점유
+            return Base64.getEncoder().encodeToString(imageBytes);
+        });
+    }
+
 
     // [재시도 전략 정의]: 에러 발생 시 2초 대기 후 1회 재시도 (최대 2번 실행됨)
     private final Retry retrySpec = Retry.backoff(1, Duration.ofSeconds(2))
@@ -275,5 +286,105 @@ public class AiService {
                 .totalSteps(data.totalSteps())
                 .steps(data.steps())
                 .build();
+    }
+
+    public Mono<DiagnosisResDto> aiDiagnosisProcess1(List<MultipartFile> images, String animalTypes, String symptoms) {
+
+        boolean hasImage = images != null && !images.isEmpty() && !images.get(0).isEmpty();
+        String animalType = (animalTypes == null) ? "입력없음" : animalTypes;
+        String symptom = (symptoms == null) ? "입력없음" : symptoms;
+
+        Mono<List<ExtractedData>> imageAnalysisMono;
+
+        if (hasImage) {
+            imageAnalysisMono = Flux.fromIterable(images)
+                    .flatMap(image -> encodeBase64Streaming(image) // 메모리 부하 로직은 유지
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(base64 -> {
+                                log.info("이미지 인코딩 완료 (길이: {}), 가짜 응답 반환", base64.length());
+
+                                // [수정] 외부 API 호출 대신 고정된 성공 데이터 반환
+                                return Mono.just(new ExtractedData(
+                                        "이미지 분석 결과 예시입니다. 눈에 충혈이 보입니다.",
+                                        0.95,
+                                        animalType
+                                ));
+                            })
+                    )
+                    .collectList();
+        } else {
+            imageAnalysisMono = Mono.just(List.of(new ExtractedData(
+                    "이미지 없음", 0.0, "없음"
+            )));
+        }
+
+        // [2단계] RAG 진단 수행 (여기도 Mock 처리)
+        return imageAnalysisMono.flatMap(list -> {
+            log.info("2차 RAG 단계 진입 (Mock)");
+
+            // [수정] 2차 외부 호출도 Mock 데이터로 즉시 반환
+            DiagnosisResDto mockResponse = DiagnosisResDto.builder()
+                    .animalType(animalType)
+                    .emergencyLevel("high")
+                    .detectedSymptoms(List.of("결막염", "안구 건조"))
+                    .suspectedDisease("안구 질환 의심")
+                    .totalSteps(5)
+                    .steps(new ArrayList<>()) // 필요시 dummy 데이터 추가
+                    .recommendedActions(List.of("인공눈물 투여", "병원 방문"))
+                    .confidence(0.88)
+                    .build();
+
+            return Mono.just(mockResponse);
+        });
+    }
+
+    public Mono<DiagnosisResDto> aiDiagnosisProcess2(List<MultipartFile> images, String animalTypes, String symptoms) {
+
+        boolean hasImage = images != null && !images.isEmpty() && !images.get(0).isEmpty();
+        String animalType = (animalTypes == null) ? "입력없음" : animalTypes;
+        String symptom = (symptoms == null) ? "입력없음" : symptoms;
+
+        Mono<List<ExtractedData>> imageAnalysisMono;
+
+        if (hasImage) {
+            imageAnalysisMono = Flux.fromIterable(images)
+                    .flatMap(image -> encodeBase64Direct(image) // 메모리 부하 로직은 유지
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(base64 -> {
+                                log.info("이미지 인코딩 완료 (길이: {}), 가짜 응답 반환", base64.length());
+
+                                // [수정] 외부 API 호출 대신 고정된 성공 데이터 반환
+                                return Mono.just(new ExtractedData(
+                                        "이미지 분석 결과 예시입니다. 눈에 충혈이 보입니다.",
+                                        0.95,
+                                        animalType
+                                ));
+                            })
+                    )
+                    .collectList();
+        } else {
+            imageAnalysisMono = Mono.just(List.of(new ExtractedData(
+                    "이미지 없음", 0.0, "없음"
+            )));
+        }
+
+        // [2단계] RAG 진단 수행 (여기도 Mock 처리)
+        return imageAnalysisMono.flatMap(list -> {
+            log.info("2차 RAG 단계 진입 (Mock)");
+
+            // [수정] 2차 외부 호출도 Mock 데이터로 즉시 반환
+            DiagnosisResDto mockResponse = DiagnosisResDto.builder()
+                    .animalType(animalType)
+                    .emergencyLevel("high")
+                    .detectedSymptoms(List.of("결막염", "안구 건조"))
+                    .suspectedDisease("안구 질환 의심")
+                    .totalSteps(5)
+                    .steps(new ArrayList<>()) // 필요시 dummy 데이터 추가
+                    .recommendedActions(List.of("인공눈물 투여", "병원 방문"))
+                    .confidence(0.88)
+                    .build();
+
+            return Mono.just(mockResponse);
+        });
     }
 }
