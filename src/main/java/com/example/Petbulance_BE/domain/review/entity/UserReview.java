@@ -4,6 +4,7 @@ import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import com.example.Petbulance_BE.global.common.type.AnimalType;
+import com.example.Petbulance_BE.global.common.type.DetailAnimalType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
@@ -43,7 +44,8 @@ public class UserReview extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private AnimalType animalType;
 
-    private String detailAnimalType;
+    @Enumerated(EnumType.STRING)
+    private DetailAnimalType detailAnimalType;
 
     @Column(columnDefinition = "TEXT")
     private String treatmentService;

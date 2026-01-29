@@ -45,4 +45,4 @@ src/main/java/com/example/Petbulance_BE/global/oauth2/custom/CustomSuccessHandle
 src/main/java/com/example/Petbulance_BE/global/deleted
 
 src/test/resources/application-test.properties
-/K6/scripts/Cursor-test.js
+/K6/scripts/*

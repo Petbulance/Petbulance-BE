@@ -27,4 +27,16 @@ public class AiController {
         return aiService.aiDiagnosisProcess(images, animalType, symptom);
     }
 
+    @PostMapping("/diagnosis/stream")
+    public Mono<DiagnosisResDto> aiDiagnosis1(@RequestParam(name = "images") List<MultipartFile> images,
+                                             @RequestParam(name = "animalType", required = false)String animalType, @RequestParam(name = "symptom", required = false)String symptom) {
+        return aiService.aiDiagnosisProcess1(images, animalType, symptom);
+    }
+
+    @PostMapping("/diagnosis/encode")
+    public Mono<DiagnosisResDto> aiDiagnosis2(@RequestParam(name = "images") List<MultipartFile> images,
+                                             @RequestParam(name = "animalType", required = false)String animalType, @RequestParam(name = "symptom", required = false)String symptom) {
+        return aiService.aiDiagnosisProcess2(images, animalType, symptom);
+    }
+
 }

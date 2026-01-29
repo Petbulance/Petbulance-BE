@@ -26,6 +26,12 @@ public class HospitalDetailResDto {
 
     private String phone;
 
+    private Double distanceMeter;
+
+    private Long reviewCount;
+
+    private Double overallRating;
+
     @Builder.Default
     private List<String> acceptedAnimals = new ArrayList<>();
 

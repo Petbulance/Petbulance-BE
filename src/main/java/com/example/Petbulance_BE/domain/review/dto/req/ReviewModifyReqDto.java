@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.review.dto.req;
 
 import com.example.Petbulance_BE.global.common.type.AnimalType;
+import com.example.Petbulance_BE.global.common.type.DetailAnimalType;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -41,7 +42,7 @@ public class ReviewModifyReqDto {
     private AnimalType animalType;
 
     @NotBlank
-    private String DetailAnimalType;
+    private DetailAnimalType DetailAnimalType;
 
     @NotNull
     private List<ReviewSaveReqDto.ReceiptItem> receiptItems = new ArrayList<>();

@@ -13,9 +13,11 @@ import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.type.AnimalType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.lucene.util.SloppyMath;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -224,7 +226,8 @@ public class HospitalService {
     }
 
 
-    public HospitalDetailResDto searchHospitalDetailProcess(Long hospitalId) {
+    @Transactional(readOnly = true)
+    public HospitalDetailResDto searchHospitalDetailProcess(Long hospitalId, Double lat, Double lng) {
 
         LocalTime now = LocalTime.now();
         DayOfWeek today = LocalDate.now().getDayOfWeek();
@@ -279,6 +282,10 @@ public class HospitalService {
 
         String note = "매주 " + noteList.stream().map(n->dayMap.get(n)).collect(Collectors.joining("/")) + " 휴무";
 
+        double distanceMeters = SloppyMath.haversinMeters(lat, lng, hospital.getLat(), hospital.getLng());
+
+        Double overallRating = hospital.getUserReviews().stream().mapToDouble(UserReview::getOverallRating).average().orElse(0.0);
+
         return HospitalDetailResDto.builder()
                 .hospitalId(hospitalId)
                 .name(hospital.getName())
@@ -291,6 +298,9 @@ public class HospitalService {
                 .notes(note.length()==6?null:note)
                 .openNow(openNow)
                 .description(hospital.getInformation())
+                .distanceMeter(distanceMeters)
+                .reviewCount((long) hospital.getUserReviews().size())
+                .overallRating(overallRating)
                 .build();
 
     }
