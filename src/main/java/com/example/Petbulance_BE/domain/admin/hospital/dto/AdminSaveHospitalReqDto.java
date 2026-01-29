@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.admin.hospital.dto;
 
 import com.example.Petbulance_BE.global.common.type.AnimalType;
+import com.example.Petbulance_BE.global.common.type.DetailAnimalType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -48,7 +49,7 @@ public class AdminSaveHospitalReqDto {
 
     private List<String> tags = new ArrayList<>();
 
-    private List<AnimalType> animalTypes = new ArrayList<>();
+    private List<DetailAnimalType> animalTypes = new ArrayList<>();
 
     @NotNull(message = "빈값은 입력할 수 없습니다.")
     private Boolean night;
