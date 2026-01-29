@@ -11,6 +11,7 @@ import com.example.Petbulance_BE.domain.hospitalWorktime.entity.QHospitalWorktim
 import com.example.Petbulance_BE.domain.treatmentAnimal.entity.QTreatmentAnimal;
 import com.example.Petbulance_BE.domain.treatmentAnimal.entity.TreatmentAnimal;
 import com.example.Petbulance_BE.global.common.type.AnimalType;
+import com.example.Petbulance_BE.global.common.type.DetailAnimalType;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.ExpressionUtils;
@@ -357,7 +358,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
         BooleanExpression speciesCheck= null;
 
         if(species != null){
-            speciesCheck =  treat.animalType.eq(AnimalType.valueOf(species));
+            speciesCheck =  treat.animalType.eq(DetailAnimalType.valueOf(species));
         }
 
         // -----------------------------
@@ -532,7 +533,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                 .where(t.hospital.id.eq(hospitalId))
                 .fetch()
                 .stream()
-                .map(AnimalType::getDescription)
+                .map(DetailAnimalType::getDescription)
                 .collect(Collectors.toList());
 
         // ======================
