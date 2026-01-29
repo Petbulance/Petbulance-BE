@@ -2,7 +2,6 @@ package com.example.Petbulance_BE.domain.treatmentAnimal.entity;
 
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
-import com.example.Petbulance_BE.global.common.type.AnimalType;
 import com.example.Petbulance_BE.global.common.type.DetailAnimalType;
 import jakarta.persistence.*;
 import lombok.*;

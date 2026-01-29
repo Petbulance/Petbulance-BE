@@ -116,18 +116,19 @@ jobs:
               --name $TARGET \
               --restart=always \
               -e SPRING_PROFILES_ACTIVE=$TARGET \
+              -e JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Seoul" \
               -p $TARGET_PORT:8080 \
               276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
           
             echo "▶ Health Check"
             HEALTH_OK=false
-            for i in {1..20}; do
+            for i in {1..50}; do
               if curl -sf http://localhost:$TARGET_PORT/app/health; then
                 echo "✅ Health OK"
                 HEALTH_OK=true
                 break
               fi
-              echo "Waiting... ($i/20)"
+              echo "Waiting... ($i/50)"
               sleep 5
             done
           

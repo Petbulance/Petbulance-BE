@@ -12,22 +12,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/app")
 public class TestController {
-    @Value("${server.port}")
-    private int serverPort;
+   @Value("${server.port}")
+   private int serverPort;
 
-    @Value("${server.env}")
-    private String serverEnv;
+   @Value("${server.env}")
+   private String serverEnv;
 
-    @Value("${serverName}")
-    private String serverName;
+   @Value("${serverName}")
+   private String serverName;
 
-    @GetMapping("/health")
-    public TestResponseDto health() {
-        return new TestResponseDto("테스트에 성공하였습니다~~!!", serverPort, serverEnv, serverName);
-    }
+   @GetMapping("/health")
+   public TestResponseDto health() {
+       return new TestResponseDto("테스트에 성공하였습니다~~!!", serverPort, serverEnv, serverName);
+   }
 
-    @GetMapping("/error")
-    public void errorCheck() {
-        throw new CustomException(ErrorCode.TEST_ERROR_CODE);
-    }
+   @GetMapping("/error")
+   public void errorCheck() {
+       throw new CustomException(ErrorCode.TEST_ERROR_CODE);
+   }
 }

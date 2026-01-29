@@ -1,5 +1,5 @@
 package com.example.Petbulance_BE.domain.user.entity;
-
+import lombok.experimental.SuperBuilder;
 import com.example.Petbulance_BE.domain.device.entity.Device;
 import com.example.Petbulance_BE.domain.recent.entity.History;
 import com.example.Petbulance_BE.domain.terms.entity.UserAgreementHistory;
