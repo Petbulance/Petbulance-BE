@@ -43,7 +43,6 @@ public class AdminUserController {
 
     }
 
-    @GetMapping("/userId")
     @AdminLoggable(
             pageType = AdminPageType.USER_MANAGEMENT,
             actionType = AdminActionType.CREATE,
