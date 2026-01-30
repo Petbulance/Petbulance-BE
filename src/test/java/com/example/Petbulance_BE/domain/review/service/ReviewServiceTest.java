@@ -18,7 +18,7 @@ class ReviewServiceTest {
 
     @Test
     public void makeJwt () {
-        String userId = "7d9e87b2-6c3a-4a2e-8f1d-9c4e5b6a7f80";
+        String userId = "533e8700-ef36-4f61-8b4b-51f1135ea6fe";
         log.info("{}", jwtUtil.createJwt(userId, "", "", ""));
 
     }

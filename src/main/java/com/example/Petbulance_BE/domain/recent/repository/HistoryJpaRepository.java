@@ -22,4 +22,5 @@ public interface HistoryJpaRepository extends JpaRepository<History, Long> {
 
     Optional<History> findByUserAndSearchTypeAndHospitalId(Users currentUser, SearchType searchType, Long hospitalId);
 
+    Optional<History> findFirstByUserAndSearchTypeAndHospitalIdOrderByCreatedAtDesc(Users currentUser, SearchType searchType, Long hospitalId);
 }

@@ -13,6 +13,7 @@ import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -103,30 +104,31 @@ public class HistoryService {
     @Transactional
     public ViewedHospitalSaveResDto viewedHospitalSaveProcess(ViewedHospitalSaveReqDto saveReqDto) {
 
-
-
         Hospital hospital = hospitalJpaRepository.findById(saveReqDto.getHospitalId()).orElseThrow(()->new CustomException(ErrorCode.NOT_FOUND_HOSPITAL));
         Users currentUser = userUtil.getCurrentUser();
 
-        Optional<History> optionalHistory = historyJpaRepository.findByUserAndSearchTypeAndHospitalId(currentUser, WATCHHOSPITAL, saveReqDto.getHospitalId());
+        Optional<History> optionalHistory = historyJpaRepository.findFirstByUserAndSearchTypeAndHospitalIdOrderByCreatedAtDesc(currentUser, WATCHHOSPITAL, saveReqDto.getHospitalId());
 
         History history;
+        try{
+            if(optionalHistory.isPresent()){
+                history = optionalHistory.get();
+                history.setCreatedAt(LocalDateTime.now());
+            }else{
+                history = History.builder()
+                        .searchType(WATCHHOSPITAL)
+                        .hospitalName(hospital.getName())
+                        .hospitalId(hospital.getId())
+                        .user(currentUser)
+                        .createdAt(LocalDateTime.now())
+                        .build();
 
-        if(optionalHistory.isPresent()){
-            history = optionalHistory.get();
-            history.setCreatedAt(LocalDateTime.now());
-        }else{
-            history = History.builder()
-                    .searchType(WATCHHOSPITAL)
-                    .hospitalName(hospital.getName())
-                    .hospitalId(hospital.getId())
-                    .user(currentUser)
-                    .createdAt(LocalDateTime.now())
-                    .build();
+                historyJpaRepository.save(history);
 
-            historyJpaRepository.save(history);
+            }
+        } catch (DataIntegrityViolationException e) {
+            history = historyJpaRepository.findFirstByUserAndSearchTypeAndHospitalIdOrderByCreatedAtDesc(currentUser, WATCHHOSPITAL, saveReqDto.getHospitalId()).get();
         }
-
         return new ViewedHospitalSaveResDto(hospital.getId(), history.getCreatedAt());
     }
 

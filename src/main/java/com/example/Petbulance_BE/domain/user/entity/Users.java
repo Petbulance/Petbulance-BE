@@ -10,6 +10,8 @@ import com.example.Petbulance_BE.global.common.type.Gender;
 import com.example.Petbulance_BE.global.common.type.Role;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,7 +23,7 @@ import java.util.Objects;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Users extends BaseTimeEntity {
+public class Users {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -94,6 +96,12 @@ public class Users extends BaseTimeEntity {
     @Column(name = "review_ban_until")
     @Setter
     private LocalDateTime reviewBanUntil;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     @Override
     public boolean equals(Object o) {
