@@ -98,6 +98,7 @@ public class AdminHospitalService {
                     .treatmentAnimalType(types)
                     .worktimes(hospitalWorktimes)
                     .hospitalHistories(list)
+                    .image(hospital.getImage())
                     .build();
 
     }

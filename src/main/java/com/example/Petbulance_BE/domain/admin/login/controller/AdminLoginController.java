@@ -35,11 +35,5 @@ public class AdminLoginController {
         return adminLoginService.adminLoginProcess(adminLoginReqDto);
 
     }
-    @PostMapping("/register")
-    public Map<String, String> adminRegister(@RequestBody AdminRegisterReqDto adminRegisterReqDto) {
-
-        return adminLoginService.adminRegisterProcess(adminRegisterReqDto);
-
-    }
 
 }
