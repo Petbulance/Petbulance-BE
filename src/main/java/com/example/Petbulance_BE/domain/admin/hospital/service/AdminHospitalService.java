@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 public class AdminHospitalService {
 
     private final HospitalsHistoryJpaRepository hospitalsHistoryJpaRepository;
-    private final List<String> DAY_ORDER = List.of("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT");
+    private final List<String> DAY_ORDER = List.of("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT", "공휴일");
     private final HospitalJpaRepository hospitalJpaRepository;
     private final HospitalWorktimeJpaRepository hospitalWorktimeJpaRepository;
     private final TagJpaRepository tagJpaRepository;
