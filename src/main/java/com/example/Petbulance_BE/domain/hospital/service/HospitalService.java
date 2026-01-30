@@ -286,9 +286,6 @@ public class HospitalService {
                     }
 
                     if(hw.getIsOpen()){
-                        if(dayOfWeek.equals("공휴일")){
-                            openHours.setHours("정상 진료");
-                        }
                         openHours.setHours(hw.getOpenTime() + "-" + hw.getCloseTime());
                         return openHours;
                     }
