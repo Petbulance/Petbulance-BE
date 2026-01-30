@@ -37,6 +37,7 @@ import static com.example.Petbulance_BE.domain.hospital.entity.QHospital.hospita
 import static com.example.Petbulance_BE.domain.hospitalWorktime.entity.QHospitalWorktime.hospitalWorktime;
 import static com.example.Petbulance_BE.domain.review.entity.QUserReview.userReview;
 import static com.example.Petbulance_BE.domain.treatmentAnimal.entity.QTreatmentAnimal.treatmentAnimal;
+import static com.example.Petbulance_BE.domain.hospital.entity.QTag.tag1;
 import static com.querydsl.core.types.dsl.MathExpressions.*;
 
 @Repository
