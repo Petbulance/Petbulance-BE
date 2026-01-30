@@ -5,7 +5,9 @@ import com.example.Petbulance_BE.domain.hospital.dto.*;
 import com.example.Petbulance_BE.domain.hospital.dto.req.HospitalSearchReqDto;
 import com.example.Petbulance_BE.domain.hospital.dto.res.*;
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
+import com.example.Petbulance_BE.domain.hospital.entity.Tag;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
+import com.example.Petbulance_BE.domain.hospital.repository.TagJpaRepository;
 import com.example.Petbulance_BE.domain.hospitalWorktime.entity.HospitalWorktime;
 import com.example.Petbulance_BE.domain.review.entity.UserReview;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -33,7 +35,9 @@ public class HospitalService {
 
     private final HospitalJpaRepository hospitalRepository;
     private final DashboardMetricRedisService dashboardMetricRedisService;
+    private final TagJpaRepository tagJpaRepository;
 
+    @Transactional
     public HospitalSearchResDto searchHospitalsProcess(HospitalSearchReqDto hospitalSearchReqDto) {
 
         if (hospitalSearchReqDto.getQ() != null
@@ -171,6 +175,14 @@ public class HospitalService {
                         if (nextOpen == null) openHours = null;
                     }
 
+                    List<Tag> byHospitalId = tagJpaRepository.findByHospitalId(hs.getId());
+                    List<HospitalsResDto.Tags> list = byHospitalId.stream().sorted(Comparator.comparing(Tag::getTagType)).map(t -> HospitalsResDto.Tags.builder()
+                                    .type(t.getTagType())
+                                    .value(t.getTag())
+                                    .build())
+                            .toList();
+
+
                     return HospitalsResDto.builder()
                             .hospitalId(hs.getId())
                             .name(hs.getName())
@@ -185,6 +197,7 @@ public class HospitalService {
                             .rating(hs.getRating())
                             .reviewCount(hs.getReviewCount())
                             .image(hs.getImage())
+                            .tags(list)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -291,6 +304,13 @@ public class HospitalService {
 
         Double overallRating = hospital.getUserReviews().stream().mapToDouble(UserReview::getOverallRating).average().orElse(0.0);
 
+        List<Tag> byHospitalId = tagJpaRepository.findByHospitalId(hospitalId);
+        List<HospitalsResDto.Tags> list = byHospitalId.stream().sorted(Comparator.comparing(Tag::getTagType)).map(t -> HospitalsResDto.Tags.builder()
+                        .type(t.getTagType())
+                        .value(t.getTag())
+                        .build())
+                .toList();
+
         return HospitalDetailResDto.builder()
                 .hospitalId(hospitalId)
                 .name(hospital.getName())
@@ -307,6 +327,7 @@ public class HospitalService {
                 .distanceMeter(distanceMeters)
                 .reviewCount((long) hospital.getUserReviews().size())
                 .overallRating(overallRating)
+                .tags(list)
                 .build();
 
     }
