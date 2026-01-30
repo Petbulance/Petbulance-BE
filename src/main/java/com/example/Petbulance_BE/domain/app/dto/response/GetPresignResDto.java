@@ -18,5 +18,6 @@ public class GetPresignResDto {
     public static class UrlInfo {
         private String preSignedUrl; // S3 업로드용 URL
         private String imageUrl;     // 나중에 DB 저장 및 조회 시 사용할 URL (또는 Key)
+        private int order;
     }
 }

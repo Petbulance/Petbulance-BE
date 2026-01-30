@@ -111,21 +111,30 @@ public class S3Service {
     }
 
     public URL createPresignedGetUrl(String key, long expireSeconds) {
+        if (!doesObjectExist(key)) {
+            log.error("S3 파일이 존재하지 않습니다: {}", key);
+            throw new CustomException(ErrorCode.FILE_NOT_FOUND);
+        }
 
-        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucket)
-                .key(key)
-                .build();
+        try {
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .build();
 
-        GetObjectPresignRequest presignRequest =
-                GetObjectPresignRequest.builder()
-                        .getObjectRequest(getObjectRequest)
-                        .signatureDuration(Duration.ofSeconds(expireSeconds))
-                        .build();
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .getObjectRequest(getObjectRequest)
+                    .signatureDuration(Duration.ofSeconds(expireSeconds))
+                    .build();
 
-        PresignedGetObjectRequest presignedRequest =
-                presigner.presignGetObject(presignRequest);
+            PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(presignRequest);
 
-        return presignedRequest.url();
+            log.info("Pre-signed Get URL 생성 완료: {}", key);
+            return presignedRequest.url();
+
+        } catch (Exception e) {
+            log.error("Pre-signed Get URL 생성 중 오류 발생: {}", e.getMessage());
+            throw new CustomException(ErrorCode.FAIL_CREATE_PRESIGNED_URL);
+        }
     }
 }
