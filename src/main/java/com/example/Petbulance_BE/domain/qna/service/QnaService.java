@@ -108,6 +108,7 @@ public class QnaService {
 
 
     @Transactional
+    @CacheEvict(value = {"qnaList", "qnaDetail"}, allEntries = true)
     public AnswerQnaResDto answerQna(Long qnaId, @Valid AnswerQnaReqDto reqDto) {
         Qna qna = getQna(qnaId);
 
