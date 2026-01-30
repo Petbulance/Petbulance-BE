@@ -1,6 +1,10 @@
 package com.example.Petbulance_BE.domain.hospital.dto.res;
 
+import com.example.Petbulance_BE.domain.hospital.type.TagType;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -34,5 +38,21 @@ public class HospitalsResDto {
     private Long reviewCount;
 
     private String image;
+
+    @Builder.Default
+    private List<Tags> tags = new ArrayList<>();
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class Tags{
+
+        private TagType type;
+
+        private String value;
+
+    }
 
 }

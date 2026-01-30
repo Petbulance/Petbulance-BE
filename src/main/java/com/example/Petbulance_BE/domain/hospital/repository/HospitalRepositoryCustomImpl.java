@@ -37,6 +37,7 @@ import static com.example.Petbulance_BE.domain.hospital.entity.QHospital.hospita
 import static com.example.Petbulance_BE.domain.hospitalWorktime.entity.QHospitalWorktime.hospitalWorktime;
 import static com.example.Petbulance_BE.domain.review.entity.QUserReview.userReview;
 import static com.example.Petbulance_BE.domain.treatmentAnimal.entity.QTreatmentAnimal.treatmentAnimal;
+import static com.example.Petbulance_BE.domain.treatmentAnimal.entity.QMajorTreatMentAnimal.majorTreatMentAnimal;
 import static com.example.Petbulance_BE.domain.hospital.entity.QTag.tag1;
 import static com.querydsl.core.types.dsl.MathExpressions.*;
 
@@ -253,9 +254,9 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
     private BooleanExpression filterByAnimalArray(String[] animalArray) {
         if (animalArray == null || animalArray.length == 0) return null;
         return hospital.id.in(
-                JPAExpressions.select(treatmentAnimal.hospital.id)
-                        .from(treatmentAnimal)
-                        .where(treatmentAnimal.animalType.stringValue().in(animalArray))
+                JPAExpressions.select(majorTreatMentAnimal.hospital.id)
+                        .from(majorTreatMentAnimal)
+                        .where(majorTreatMentAnimal.animalType.stringValue().in(animalArray))
         );
     }
 

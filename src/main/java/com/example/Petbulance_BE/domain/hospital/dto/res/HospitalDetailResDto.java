@@ -45,4 +45,7 @@ public class HospitalDetailResDto {
     private AtomicReference<Boolean> openNow;
 
     private String description;
+
+    @Builder.Default
+    private List<HospitalsResDto.Tags> tags = new ArrayList<>();
 }
