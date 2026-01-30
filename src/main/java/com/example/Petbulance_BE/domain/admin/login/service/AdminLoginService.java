@@ -6,11 +6,13 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.common.type.Role;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.Map;
@@ -43,11 +45,27 @@ public class AdminLoginService {
 
     }
 
+    @Transactional
     public Map<String, String> adminRegisterProcess(AdminRegisterReqDto adminRegisterReqDto) {
 
-//        usersJpaRepository.findById();
+        String nickname = adminRegisterReqDto.getNickname();
+        String password = adminRegisterReqDto.getPassword();
 
-        return null;
+        String encodePW = bCryptPasswordEncoder.encode(password);
+
+        if(usersJpaRepository.existsByNickname(nickname)) throw new CustomException(ErrorCode.FAIL_READ_RANDOM_NICKNAME_FILE);
+
+        Users user = Users.builder()
+                .nickname(nickname)
+                .password(encodePW)
+                .role(Role.ROLE_ADMIN)
+                .suspended(false)
+                .deleted(false)
+                .build();
+
+        usersJpaRepository.save(user);
+
+        return Map.of("message", "success");
 
     }
 }
