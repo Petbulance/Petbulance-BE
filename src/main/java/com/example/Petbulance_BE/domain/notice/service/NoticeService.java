@@ -74,11 +74,10 @@ public class NoticeService {
     public NoticeResDto createNotice(@Valid CreateNoticeReqDto reqDto) {
         Users currentUser = UserUtil.getCurrentUser();
 
+        // 1. Banner 생성
         Banner banner = null;
-        if (reqDto.isBannerRegistered()) {
-            // DTO에서 넘어온 이미지가 Full URL일 경우를 대비해 Key만 추출
+        if (reqDto.isBannerRegistered() && reqDto.getBannerInfo() != null) {
             String bannerKey = extractKeyFromUrl(reqDto.getBannerInfo().getImageUrl());
-
             if (!s3Service.doesObjectExist(bannerKey)) {
                 throw new CustomException(ErrorCode.FAIL_IMAGE_UPLOAD);
             }
@@ -86,55 +85,39 @@ public class NoticeService {
             banner = Banner.builder()
                     .startDate(reqDto.getBannerInfo().getStartDate())
                     .endDate(reqDto.getBannerInfo().getEndDate())
-                    .fileUrl(reqDto.getBannerInfo().getImageUrl()) // 또는 s3Service.getResizedObjectUrl(bannerKey)
+                    .fileUrl(reqDto.getBannerInfo().getImageUrl())
                     .build();
         }
 
-        // 공지사항 파일 존재 여부 확인
-        for (String fileUrl : reqDto.getFileUrls()) {
-            if (!s3Service.doesObjectExist(extractKeyFromUrl(fileUrl))) {
-                throw new CustomException(ErrorCode.FAIL_FILE_UPLOAD);
+        // 2. Notice 객체 빌드
+        Notice notice = Notice.builder()
+                .user(currentUser)
+                .noticeStatus(reqDto.getNoticeStatus())
+                .postStatus(reqDto.getPostStatus())
+                .title(reqDto.getTitle())
+                .content(reqDto.getContent())
+                .bannerRegistered(reqDto.isBannerRegistered())
+                .banner(banner)
+                .build();
+
+        // 3. 파일 존재 여부 확인 및 파일 추가 (루프 통합)
+        if (reqDto.getFileUrls() != null && !reqDto.getFileUrls().isEmpty()) {
+            for (String fileUrl : reqDto.getFileUrls()) {
+                String key = extractKeyFromUrl(fileUrl);
+                if (!s3Service.doesObjectExist(key)) {
+                    throw new CustomException(ErrorCode.FAIL_FILE_UPLOAD);
+                }
+
+                notice.addFile(NoticeFile.builder()
+                        .fileUrl(fileUrl)
+                        .fileName(extractFileName(key))
+                        .build());
             }
         }
 
-        Notice notice = noticeRepository.save(
-                Notice.builder()
-                        .user(currentUser)
-                        .noticeStatus(reqDto.getNoticeStatus())
-                        .postStatus(reqDto.getPostStatus())
-                        .title(reqDto.getTitle())
-                        .content(reqDto.getContent())
-                        .bannerRegistered(reqDto.isBannerRegistered())
-                        .banner(banner)
-                        .build()
-        );
+        noticeRepository.save(notice);
 
-        if(!reqDto.getFileUrls().isEmpty()) {
-            adminActionLogRepository.save(AdminActionLog.builder()
-                    .actorType(AdminActorType.ADMIN)
-                    .admin(currentUser)
-                    .pageType(AdminPageType.CONTENT_MANAGEMENT)
-                    .actionType(AdminActionType.UPLOAD)
-                    .targetType(AdminTargetType.FILE)
-                    .resultType(AdminActionResult.SUCCESS)
-                    .description(String.format("[업로드] %d번 공지 첨부파일 업로드", notice.getId()))
-                    .build()
-            );
-        }
-
-        // NoticeFile 저장 로직 (필요 시 호출)
-        saveNoticeFilesOrThrow(notice, reqDto.getFileUrls());
-
-        adminActionLogRepository.save(AdminActionLog.builder()
-                .actorType(AdminActorType.ADMIN)
-                .admin(currentUser)
-                .pageType(AdminPageType.CONTENT_MANAGEMENT)
-                .actionType(AdminActionType.CREATE)
-                .targetType(AdminTargetType.NOTICE)
-                .resultType(AdminActionResult.SUCCESS)
-                .description(String.format("[생성] 신규 공지 %s 등록", reqDto.getTitle()))
-                .build()
-        );
+        saveActionLogs(currentUser, notice, reqDto);
 
         return new NoticeResDto(notice.getId(), "공지사항이 정상적으로 작성되었습니다.");
     }
@@ -142,56 +125,100 @@ public class NoticeService {
     @CacheEvict(value = "adminNotice", allEntries = true)
     @Transactional
     public UpdateNoticeResDto updateNotice(Long noticeId, UpdateNoticeReqDto reqDto) {
-        Notice notice = getNotice(noticeId); // 수정하고자하는 공지사항
+        Notice notice = getNotice(noticeId);
         Users currentUser = UserUtil.getCurrentUser();
 
-        // 추가하고자하는 파일이 있다면 최대 첨부 파일 갯수를 넘는지 확인
-        int adding = reqDto.getAddFiles() == null ? 0 : reqDto.getAddFiles().size();
-        validateFileCount(notice.getFiles().size(), adding);
+        // 1. 파일 개수 검증 (현재 - 삭제 + 추가)
+        int currentCount = notice.getFiles().size();
+        int deleteCount = reqDto.getDeleteFileIds() == null ? 0 : reqDto.getDeleteFileIds().size();
+        int addingCount = reqDto.getAddFiles() == null ? 0 : reqDto.getAddFiles().size();
+        validateFileCount(currentCount - deleteCount, addingCount);
 
-        // 파일 삭제
-        if (reqDto.getDeleteFileIds() != null && !reqDto.getDeleteFileIds().isEmpty()) {
-            noticeFileRepository.findAllById(reqDto.getDeleteFileIds()) // db 상에서 삭제
-                    .forEach(file -> {
-                        s3Service.deleteObject(extractKeyFromUrl(file.getFileUrl())); // s3 상에서 삭제
-                        notice.removeFile(file); // orphanRemoval
-                    });
+        // 2. 파일 삭제 (S3 및 DB 연관관계 제거)
+        if (deleteCount > 0) {
+            List<NoticeFile> filesToDelete = noticeFileRepository.findAllById(reqDto.getDeleteFileIds());
+            filesToDelete.forEach(file -> {
+                s3Service.deleteObject(extractKeyFromUrl(file.getFileUrl()));
+                notice.removeFile(file);
+            });
         }
 
-        // 파일 추가
-        if (adding > 0) {
-            saveNoticeFilesOrThrow(notice, reqDto.getAddFiles());
-        }
-
-        String changeImageUrl = reqDto.getBannerInfo().getImageUrl();
-        if(changeImageUrl != null) {{
-            if(!changeImageUrl.equals(notice.getBanner().getFileUrl())) {
-                // 배너 이미지를 변경하고자 함
-                String key = extractKeyFromUrl(changeImageUrl);
+        // 3. 파일 추가 (S3 존재 확인 및 연관관계 추가)
+        if (addingCount > 0) {
+            for (String url : reqDto.getAddFiles()) {
+                String key = extractKeyFromUrl(url);
                 if (!s3Service.doesObjectExist(key)) {
-                    throw new CustomException(ErrorCode.FAIL_IMAGE_UPLOAD);
+                    throw new CustomException(ErrorCode.FAIL_FILE_UPLOAD);
                 }
+                notice.addFile(NoticeFile.builder()
+                        .fileUrl(url)
+                        .fileName(extractFileName(key))
+                        .build());
             }
-        }}
+        }
 
-        if(!reqDto.getPostStatus().equals(notice.getPostStatus())) {
+        // 4. 배너 정보 업데이트 및 S3 검증
+        updateBannerInfo(notice, reqDto.getBannerInfo());
+
+        // 5. 상태 변경 로그 기록
+        if (!reqDto.getPostStatus().equals(notice.getPostStatus())) {
+            saveStatusChangeLog(currentUser, noticeId, reqDto.getPostStatus());
+        }
+
+        // 6. 엔티티 정보 업데이트 (Dirty Checking)
+        notice.update(reqDto);
+
+        // 수정 완료 로그
+        saveUpdateLog(currentUser, noticeId);
+
+        return new UpdateNoticeResDto(notice.getId(), "공지사항이 성공적으로 수정되었습니다.");
+    }
+
+    private void saveActionLogs(Users user, Notice notice, CreateNoticeReqDto reqDto) {
+        // 첨부파일 로그
+        if (reqDto.getFileUrls() != null && !reqDto.getFileUrls().isEmpty()) {
             adminActionLogRepository.save(AdminActionLog.builder()
                     .actorType(AdminActorType.ADMIN)
-                    .admin(currentUser)
+                    .admin(user)
                     .pageType(AdminPageType.CONTENT_MANAGEMENT)
-                    .actionType(AdminActionType.UPDATE)
-                    .targetType(AdminTargetType.NOTICE)
+                    .actionType(AdminActionType.UPLOAD)
+                    .targetType(AdminTargetType.FILE)
                     .resultType(AdminActionResult.SUCCESS)
-                    .description(String.format("[상태 변경] %d번 공지 %S", noticeId, reqDto.getPostStatus().equals(PostStatus.ACTIVE) ? "중단->게시" : "게시->중단"))
-                    .build()
-            );
+                    .description(String.format("[업로드] %d번 공지 첨부파일 업로드", notice.getId()))
+                    .build());
         }
 
-        notice.update(reqDto);
+        // 공지 생성 로그
+        adminActionLogRepository.save(AdminActionLog.builder()
+                .actorType(AdminActorType.ADMIN)
+                .admin(user)
+                .pageType(AdminPageType.CONTENT_MANAGEMENT)
+                .actionType(AdminActionType.CREATE)
+                .targetType(AdminTargetType.NOTICE)
+                .resultType(AdminActionResult.SUCCESS)
+                .description(String.format("[생성] 신규 공지 %s 등록", reqDto.getTitle()))
+                .build());
+    }
+
+    private void saveStatusChangeLog(Users user, Long noticeId, PostStatus newStatus) {
+        String statusDescription = newStatus.equals(PostStatus.ACTIVE) ? "중단->게시" : "게시->중단";
 
         adminActionLogRepository.save(AdminActionLog.builder()
                 .actorType(AdminActorType.ADMIN)
-                .admin(currentUser)
+                .admin(user)
+                .pageType(AdminPageType.CONTENT_MANAGEMENT)
+                .actionType(AdminActionType.UPDATE)
+                .targetType(AdminTargetType.NOTICE)
+                .resultType(AdminActionResult.SUCCESS)
+                .description(String.format("[상태 변경] %d번 공지 %s", noticeId, statusDescription))
+                .build()
+        );
+    }
+
+    private void saveUpdateLog(Users user, Long noticeId) {
+        adminActionLogRepository.save(AdminActionLog.builder()
+                .actorType(AdminActorType.ADMIN)
+                .admin(user)
                 .pageType(AdminPageType.CONTENT_MANAGEMENT)
                 .actionType(AdminActionType.UPDATE)
                 .targetType(AdminTargetType.NOTICE)
@@ -199,11 +226,26 @@ public class NoticeService {
                 .description(String.format("[수정] %d번 공지 본문 내용 수정", noticeId))
                 .build()
         );
+    }
 
-        return new UpdateNoticeResDto(
-                notice.getId(),
-                "공지사항이 성공적으로 수정되었습니다."
-        );
+    private void updateBannerInfo(Notice notice, UpdateNoticeReqDto.BannerReqDto bannerReq) {
+        if (bannerReq == null || bannerReq.getImageUrl() == null) return;
+
+        String newImageUrl = bannerReq.getImageUrl();
+        Banner banner = notice.getBanner();
+
+        // 기존 배너가 없거나 이미지가 변경된 경우 S3 존재 확인
+        if (banner == null || !newImageUrl.equals(banner.getFileUrl())) {
+            String key = extractKeyFromUrl(newImageUrl);
+            if (!s3Service.doesObjectExist(key)) {
+                throw new CustomException(ErrorCode.FAIL_IMAGE_UPLOAD);
+            }
+
+            // 기존 배너 파일이 있었다면 S3에서 삭제 (선택 사항)
+            if (banner != null && banner.getFileUrl() != null) {
+                s3Service.deleteObject(extractKeyFromUrl(banner.getFileUrl()));
+            }
+        }
     }
 
     /* =======================
