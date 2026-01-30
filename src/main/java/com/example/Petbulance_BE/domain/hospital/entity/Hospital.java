@@ -7,6 +7,7 @@ import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import org.hibernate.annotations.BatchSize;
 import org.locationtech.jts.geom.Point;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -59,18 +60,22 @@ public class Hospital extends BaseTimeEntity {
     //일대다 다중 페치조인은 list불가 set으로 지정
     @Builder.Default
     @OneToMany(mappedBy = "hospital")
+    @BatchSize(size = 100)
     private Set<UserReview> userReviews = new HashSet<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "hospital", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @BatchSize(size = 100)
     private Set<HospitalWorktime> hospitalWorktimes = new HashSet<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "hospital", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @BatchSize(size = 100)
     private Set<TreatmentAnimal> treatmentAnimals = new HashSet<>();
 
     @OneToMany(mappedBy = "hospital", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @Builder.Default
+    @BatchSize(size = 100)
     @OrderBy("id ASC")
     private Set<Tag> tags = new HashSet<>();
 
