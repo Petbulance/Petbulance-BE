@@ -72,7 +72,7 @@ public class AppService {
 
         for (GetPresignReqDto.NoticeFileReqDto fileDto : reqDto.getFiles()) {
             // 1. S3에 저장할 고유 키 생성 (noticeImage/UUID_파일명)
-            String key = "image/" + UUID.randomUUID() + "_" + fileDto.getFilename();
+            String key = fileDto.getUsage().toString().toLowerCase() + "/" + UUID.randomUUID() + "_" + fileDto.getFilename();
 
             // 2. S3업로드용 Presigned URL 생성 (만료시간 5분 등 설정)
             URL presignedUrl = s3Service.createPresignedPutUrl(key, fileDto.getContentType(), 300);
@@ -83,7 +83,8 @@ public class AppService {
 
             urlInfos.add(new GetPresignResDto.UrlInfo(
                     presignedUrl.toString(),
-                    fileUrl
+                    fileUrl,
+                    fileDto.getOrder()
             ));
         }
         return new GetPresignResDto(urlInfos);
