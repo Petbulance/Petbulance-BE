@@ -48,7 +48,7 @@ public class Notice extends BaseTimeEntity {
 
     private boolean bannerRegistered; // 배너 설정 여부
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "banner_id")
     private Banner banner;
 
