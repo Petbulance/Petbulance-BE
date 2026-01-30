@@ -32,6 +32,8 @@ public class HospitalDetailResDto {
 
     private Double overallRating;
 
+    private String image;
+
     @Builder.Default
     private List<String> acceptedAnimals = new ArrayList<>();
 
