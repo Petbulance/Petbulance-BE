@@ -72,7 +72,7 @@ public class AdminHospitalService {
         List<HospitalWorktimeResDto> hospitalWorktimes = hospital.getHospitalWorktimes().stream().sorted(Comparator.comparingInt(worktime->DAY_ORDER.indexOf(worktime.getId().getDayOfWeek()))).map(HospitalWorktimeResDto::new).toList();
         String types = hospital.getTreatmentAnimals().stream().map(type -> type.getAnimalType().toString()).collect(Collectors.joining(","));
         String tags = hospital.getTags().stream().map(tag -> "#" + tag.getTag()).collect(Collectors.joining(" "));
-        List<AdminHospitalDetailResDto.HospitalHistoriesResDto> list = hospitalHistory.stream().map(hh -> AdminHospitalDetailResDto.HospitalHistoriesResDto.builder()
+        List<AdminHospitalDetailResDto.HospitalHistoriesResDto> list = hospitalHistory.stream().sorted(Comparator.comparing(HospitalHistory::getCreatedAt).reversed()).map(hh -> AdminHospitalDetailResDto.HospitalHistoriesResDto.builder()
                 .hospitalId(hh.getHospital().getId())
                 .modifySubject(hh.getModifySubject())
                 .beforeModify(hh.getBeforeModify())
