@@ -22,6 +22,8 @@ public class HospitalCardResDto {
 
     private Double distanceMeters;
 
+    private String image;
+
     private String phone;
 
     private List<String> types = new LinkedList<>();
