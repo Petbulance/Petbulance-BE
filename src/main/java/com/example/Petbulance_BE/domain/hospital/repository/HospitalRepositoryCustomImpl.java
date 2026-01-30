@@ -80,7 +80,8 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                 hospital.url.as("url"),
                                 safeDistance.as("distanceMeters"),
                                 getReviewCountSub().as("reviewCount"),
-                                getRatingSub().as("rating")
+                                getRatingSub().as("rating"),
+                                hospital.image.as("image")
                         )
                 )
                 .from(hospital)

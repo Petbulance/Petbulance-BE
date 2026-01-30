@@ -33,4 +33,6 @@ public class HospitalsResDto {
 
     private Long reviewCount;
 
+    private String image;
+
 }
