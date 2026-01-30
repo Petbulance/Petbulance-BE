@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.hospital.entity;
 
+import com.example.Petbulance_BE.domain.hospital.type.TagType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,6 +18,9 @@ public class Tag {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Hospital hospital;
+
+    @Enumerated(EnumType.STRING)
+    private TagType tagType;
 
     private String tag;
 
