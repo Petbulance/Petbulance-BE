@@ -242,7 +242,7 @@ public class HospitalService {
 
         Set<HospitalWorktime> hospitalWorktimes = hospital.getHospitalWorktimes();
 
-        List<String> order = List.of("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN");
+        List<String> order = List.of("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN", "공휴일");
 
         Map<String, String> dayMap = Map.of(
                 "MON", "월요일",
@@ -251,7 +251,8 @@ public class HospitalService {
                 "THU", "목요일",
                 "FRI", "금요일",
                 "SAT", "토요일",
-                "SUN", "일요일"
+                "SUN", "일요일",
+                "공휴일", "공휴일"
         );
         List<String> noteList = new LinkedList<>();
 
@@ -272,6 +273,9 @@ public class HospitalService {
                     }
 
                     if(hw.getIsOpen()){
+                        if(dayOfWeek.equals("공휴일")){
+                            openHours.setHours("정상 진료");
+                        }
                         openHours.setHours(hw.getOpenTime() + "-" + hw.getCloseTime());
                         return openHours;
                     }
