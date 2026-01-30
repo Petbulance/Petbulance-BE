@@ -26,7 +26,7 @@ public class CreateNoticeReqDto {
     @NotBlank(message = "내용(content)은 비워둘 수 없습니다.")
     private String content;
 
-    @Size(min = 1, max = 5, message = "첨부파일은 1개 이상 5개 이하만 가능합니다.")
+    @Size(max = 5, message = "첨부파일은 최대 5개까지만 가능합니다.")
     private List<String> fileUrls;
 
     private boolean bannerRegistered; // 배너 설정 여부
