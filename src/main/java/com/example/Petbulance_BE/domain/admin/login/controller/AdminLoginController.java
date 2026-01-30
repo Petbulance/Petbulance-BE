@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.admin.login.controller;
 
 import com.example.Petbulance_BE.domain.admin.login.dto.AdminLoginReqDto;
+import com.example.Petbulance_BE.domain.admin.login.dto.AdminRegisterReqDto;
 import com.example.Petbulance_BE.domain.admin.login.service.AdminLoginService;
 import com.example.Petbulance_BE.domain.adminlog.aop.AdminLoggable;
 import com.example.Petbulance_BE.domain.adminlog.type.AdminActionType;
@@ -32,6 +33,12 @@ public class AdminLoginController {
     public Map<String, String> adminLogin(@RequestBody AdminLoginReqDto adminLoginReqDto) {
         System.out.println("서비스 진입 성공! 유저네임: " + adminLoginReqDto.getUsername());
         return adminLoginService.adminLoginProcess(adminLoginReqDto);
+
+    }
+    @PostMapping("/register")
+    public Map<String, String> adminRegister(@RequestBody AdminRegisterReqDto adminRegisterReqDto) {
+
+        return adminLoginService.adminRegisterProcess(adminRegisterReqDto);
 
     }
 

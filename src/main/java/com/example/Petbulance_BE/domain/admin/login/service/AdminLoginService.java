@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.admin.login.service;
 
 import com.example.Petbulance_BE.domain.admin.login.dto.AdminLoginReqDto;
+import com.example.Petbulance_BE.domain.admin.login.dto.AdminRegisterReqDto;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -39,6 +40,14 @@ public class AdminLoginService {
         String jwt = jwtUtil.createAdminJwt(user.getId(), "access", user.getRole().name());
 
         return Map.of("access_token", jwt);
+
+    }
+
+    public Map<String, String> adminRegisterProcess(AdminRegisterReqDto adminRegisterReqDto) {
+
+//        usersJpaRepository.findById();
+
+        return null;
 
     }
 }

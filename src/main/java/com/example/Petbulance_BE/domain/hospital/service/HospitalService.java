@@ -184,6 +184,7 @@ public class HospitalService {
                             .thumbnailUrl(hs.getUrl())
                             .rating(hs.getRating())
                             .reviewCount(hs.getReviewCount())
+                            .image(hs.getImage())
                             .build();
                 })
                 .collect(Collectors.toList());

@@ -21,6 +21,7 @@ public class HospitalSearchDto {
     private String treatedAnimalTypes;
     private Long reviewCount;
     private Double rating;
+    private String image;
 
     // 요일별 영업시간
     private LocalTime monOpenTime;
