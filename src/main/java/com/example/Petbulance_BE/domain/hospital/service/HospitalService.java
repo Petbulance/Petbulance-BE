@@ -286,6 +286,10 @@ public class HospitalService {
                     }
 
                     if(hw.getIsOpen()){
+                        if(hw.getOpenTime()==null || hw.getCloseTime()==null) {
+                            openHours.setHours("정상진료");
+                            return openHours;
+                        }
                         openHours.setHours(hw.getOpenTime() + "-" + hw.getCloseTime());
                         return openHours;
                     }
