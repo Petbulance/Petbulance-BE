@@ -1,7 +1,12 @@
 package com.example.Petbulance_BE.domain.admin.review.dto;
 
+import com.example.Petbulance_BE.domain.admin.page.PageResponse;
+import com.example.Petbulance_BE.domain.report.entity.Report;
+import com.example.Petbulance_BE.domain.report.type.ReportActionType;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Setter
@@ -36,5 +41,34 @@ public class AdminDetailReviewResDto {
     private Double kindnessRating;
 
     private String reviewContent;
+
+    PageResponse<ReviewHistoryResDto> history;
+
+    @Setter
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ReviewHistoryResDto {
+
+        public ReviewHistoryResDto(Report report){
+
+            this.date = report.getCreatedAt();
+            this.description = report.getReportReason();
+            this.reportActionType = report.getActionType();
+            this.reporterId = report.getReporter().getId();
+
+        }
+
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        private LocalDateTime date;
+
+        private String description;
+
+        private ReportActionType reportActionType;
+
+        private String reporterId;
+
+    }
 
 }
