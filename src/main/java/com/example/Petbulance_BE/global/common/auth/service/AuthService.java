@@ -27,6 +27,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -146,6 +148,7 @@ public class AuthService {
                 .nickname(nickname)
                 .firstLogin(provider)
                 .role(Role.ROLE_CLIENT)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         usersJpaRepository.save(newUser);
