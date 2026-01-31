@@ -75,7 +75,7 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                                                                 .and(userReviewLike.user.id.eq(user.getId()))),
                                         "liked"
                                 ),
-                            hospital.userReviews.size().as("reviewCount")
+                                hospital.userReviews.size().longValue().as("reviewCount")
                             )
                     )
                     .from(userReview)
