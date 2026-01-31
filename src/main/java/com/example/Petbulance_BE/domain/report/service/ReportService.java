@@ -32,6 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -113,23 +115,41 @@ public class ReportService {
     @Transactional
     public ReportActionResDto processReport(Long reportId, ReportActionReqDto reqDto) {
         Report report = reportRepository.findById(reportId).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REPORT));
-
         Users currentUser = UserUtil.getCurrentUser();
-        adminActionLogRepository.save(AdminActionLog.builder()
-                .actorType(AdminActorType.ADMIN)
-                .admin(currentUser)
-                .pageType(AdminPageType.COMMUNITY_MANAGEMENT)
-                .actionType(AdminActionType.UPDATE)
-                .targetType(AdminTargetType.COMMUNITY_ACTION)
-                .targetId(reportId.toString())
-                .resultType(AdminActionResult.SUCCESS)
-                .description(
-                        report.getReportType().equals(ReportType.POST) ?
-                        String.format("[제재] %d번 게시글 %s 조치", report.getPostId(), reqDto.getActionType().getDescription())
-                        : String.format("[제재] %d번 댓글 %s 조치", report.getCommentId(), reqDto.getActionType().getDescription())
-                        )
-                .build()
-        );
+
+        if (report.getReportType()!=ReportType.REVIEW) {
+
+            adminActionLogRepository.save(AdminActionLog.builder()
+                    .actorType(AdminActorType.ADMIN)
+                    .admin(currentUser)
+                    .pageType(AdminPageType.COMMUNITY_MANAGEMENT)
+                    .actionType(AdminActionType.UPDATE)
+                    .targetType(AdminTargetType.COMMUNITY_ACTION)
+                    .targetId(reportId.toString())
+                    .resultType(AdminActionResult.SUCCESS)
+                    .description(
+                            report.getReportType().equals(ReportType.POST) ?
+                            String.format("[제재] %d번 게시글 %s 조치", report.getPostId(), reqDto.getActionType().getDescription())
+                            : String.format("[제재] %d번 댓글 %s 조치", report.getCommentId(), reqDto.getActionType().getDescription())
+                            )
+                    .build()
+            );
+        }else{
+
+            adminActionLogRepository.save(AdminActionLog.builder()
+                    .actorType(AdminActorType.ADMIN)
+                    .admin(currentUser)
+                    .pageType(AdminPageType.REVIEW_MANAGEMENT)
+                    .actionType(AdminActionType.UPDATE)
+                    .targetType(AdminTargetType.REVIEW_ACTION)
+                    .targetId(reportId.toString())
+                    .resultType(AdminActionResult.SUCCESS)
+                    .description(
+                            String.format("[제재] %d번 리뷰 %s 조치", report.getReviewId(), reqDto.getActionType().getDescription())
+                    ).build()
+            );
+
+        }
 
         switch (reqDto.getActionType()) {
             case PUBLISH -> {
@@ -137,14 +157,27 @@ public class ReportService {
                 return new ReportActionResDto(ReportActionType.PUBLISH, "신고 조치가 처리되었습니다.");
             }
             case SUSPEND -> {
-                postAndCommentDelete(report);
-                report.deleteAction(ReportActionType.SUSPEND);
+                if (report.getReportType().equals(ReportType.POST)||report.getReportType().equals(ReportType.COMMENT)) {
+                    postAndCommentDelete(report);
+                    report.deleteAction(ReportActionType.SUSPEND);
 
-                // 커뮤니티 기능 접근 정지
-                communitySanctionService.applySanctionForReport(report, SanctionType.COMMUNITY_BAN);
+                    // 커뮤니티 기능 접근 정지
+                    communitySanctionService.applySanctionForReport(report, SanctionType.COMMUNITY_BAN);
 
-                // 알림 보내기
-                sendAlarm(report);
+                    // 알림 보내기
+                    sendAlarm(report);
+                }else{
+                    UserReview byId = reviewJpaRepository.findById(report.getReviewId()).orElseThrow(()-> new CustomException(ErrorCode.NOT_FOUND_REVIEW));
+
+                    byId.setDeleted(true);
+
+                    report.deleteAction(ReportActionType.SUSPEND);
+
+                    //리뷰 기능 접근 정지
+                    communitySanctionService.applySanctionForReport(report, SanctionType.REVIEW_BAN);
+
+                    sendAlarm(report);
+                }
 
                 return new ReportActionResDto(ReportActionType.SUSPEND, "신고 조치가 처리되었습니다.");
             }
@@ -168,10 +201,10 @@ public class ReportService {
 
     private void postAndCommentDelete(Report report) {
         // 해당 게시글, 댓글 삭제
-        if(report.getReportType().equals(ReportType.POST)) {
+        if(report.getReportType()==ReportType.POST) {
             // 게시글 신고면 해당 게시글 삭제
             postRepository.deleteById(report.getPostId());
-        } else if(report.getReportType().equals(ReportType.COMMENT)) {
+        } else if(report.getReportType()==ReportType.COMMENT) {
             // 댓글 신고면 해당 댓글 삭제
             postCommentService.deletePostComment(report.getCommentId());
         }

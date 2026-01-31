@@ -31,9 +31,9 @@ private final AdminReviewService adminReviewService;
     }
 
     @GetMapping("/{reviewId}")
-    public AdminDetailReviewResDto getDetailReview(@PathVariable Long reviewId) {
+    public AdminDetailReviewResDto getDetailReview(@PathVariable Long reviewId, @PageableDefault(size = 20, sort = "reportId", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        return adminReviewService.getDetailReviewProcess(reviewId);
+        return adminReviewService.getDetailReviewProcess(reviewId, pageable);
 
     }
 

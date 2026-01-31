@@ -5,6 +5,7 @@ import com.example.Petbulance_BE.domain.report.dto.request.ReportActionReqDto;
 import com.example.Petbulance_BE.domain.report.dto.response.ReportActionResDto;
 import com.example.Petbulance_BE.domain.report.service.CommunitySanctionService;
 import com.example.Petbulance_BE.domain.report.service.ReportService;
+import com.example.Petbulance_BE.domain.report.type.ReportType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,7 @@ public class AdminReportController {
     public PagingReportListResDto reportList(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size
-    ) {
+            ) {
         return reportService.reportList(page, size);
     }
 
