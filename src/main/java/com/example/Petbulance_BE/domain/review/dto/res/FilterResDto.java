@@ -30,7 +30,7 @@ public class FilterResDto {
 
     private AnimalType animalType;
 
-    private String detailAnimalType;
+    private DetailAnimalType detailAnimalType;
 
     private String reviewContent;
 
