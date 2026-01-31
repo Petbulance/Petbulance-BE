@@ -47,4 +47,6 @@ public class FilterResDto {
 
     private List<String> images;
 
+    private Long reviewCount;
+
 }
