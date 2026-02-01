@@ -148,6 +148,7 @@ public class AuthService {
                 .nickname(nickname)
                 .firstLogin(provider)
                 .role(Role.ROLE_CLIENT)
+                .profileImage("https://petbulance-s3-bucket.s3.ap-northeast-2.amazonaws.com/default_image/159833.png")
                 .createdAt(LocalDateTime.now())
                 .build();
 
