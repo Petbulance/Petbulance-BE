@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.review.dto.res;
 
 import com.example.Petbulance_BE.global.common.type.AnimalType;
+import com.example.Petbulance_BE.global.common.type.DetailAnimalType;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -30,7 +31,7 @@ public class DetailResDto {
 
     private AnimalType animalType;
 
-    private String detailAnimalType;
+    private DetailAnimalType detailAnimalType;
 
     private String reviewContent;
 
