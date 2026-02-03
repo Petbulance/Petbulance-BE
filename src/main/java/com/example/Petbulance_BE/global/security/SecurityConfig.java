@@ -65,7 +65,7 @@ public class SecurityConfig {
                             "/receipts/{hospitalName}",
                             "/receipts/detail/{reviewId}",
                             "/banners/home",
-                            "/hospitals/card/{hospitalName}",
+                            "/hospitals/**",
                             "/boards",
                             "/receipts/filter",
                             "/receipts/search/{value}",
