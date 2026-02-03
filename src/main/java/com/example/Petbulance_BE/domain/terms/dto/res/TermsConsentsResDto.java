@@ -13,6 +13,4 @@ public class TermsConsentsResDto {
 
     private String accessToken;
 
-    private String refreshToken;
-
 }

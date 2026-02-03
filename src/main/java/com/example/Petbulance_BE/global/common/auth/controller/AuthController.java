@@ -1,5 +1,7 @@
 package com.example.Petbulance_BE.global.common.auth.controller;
 
+import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.auth.service.AuthService;
 import com.example.Petbulance_BE.global.common.dto.LoginRequestDto;
 import com.example.Petbulance_BE.global.common.dto.LoginResponseDto;
@@ -25,11 +27,13 @@ public class AuthController {
     private final JWTUtil jwtUtil;
     private final RefreshTokenRepository refreshTokenRepository;
     private final AuthService authService;
+    private final UsersJpaRepository usersJpaRepository;
 
-    public AuthController(JWTUtil jwtUtil, RefreshTokenRepository refreshTokenRepository, AuthService authService) {
+    public AuthController(JWTUtil jwtUtil, RefreshTokenRepository refreshTokenRepository, AuthService authService, UsersJpaRepository usersJpaRepository) {
         this.jwtUtil = jwtUtil;
         this.refreshTokenRepository = refreshTokenRepository;
         this.authService = authService;
+        this.usersJpaRepository = usersJpaRepository;
     }
 
     @GetMapping("logout")
@@ -41,7 +45,8 @@ public class AuthController {
     public Map<String,String> refreshProcess(@RequestBody RefreshRequestDto refreshRequestDto) {
         String refreshToken = refreshRequestDto.getRefreshToken();
         String userId = jwtUtil.getUserId(refreshToken);
-        String role = jwtUtil.getRole(refreshToken);
+        Users user = usersJpaRepository.findById(userId).orElseThrow(()-> new CustomException(ErrorCode.NON_EXIST_USER));
+        String role = user.getRole().name();
         String provider = jwtUtil.getProvider(refreshToken);
         Optional<RefreshEntity> optionalEntity = refreshTokenRepository.findByUserId(userId);
         if(optionalEntity.isPresent()) {
