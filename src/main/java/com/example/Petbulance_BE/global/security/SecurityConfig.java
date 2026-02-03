@@ -59,11 +59,26 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests((auth)-> auth
                     .requestMatchers(
-                            "/**"
+                            "/app/version",
+                            "/app/metadata",
+                            "/app/health",
+                            "/receipts/{hospitalName}",
+                            "/receipts/detail/{reviewId}",
+                            "/banners/home",
+                            "/hospitals/card/{hospitalName}",
+                            "/boards",
+                            "/receipts/filter",
+                            "/receipts/search/{value}",
+                            "/recents/community/{keywordId}",
+                            "/auth/social/login",
+                            "/terms",
+                            "/terms/{type}"
                     ).permitAll()
-                        .requestMatchers("/client/**").hasRole("CLIENT")
+                        .requestMatchers("/terms/consents").hasAnyRole("CLIENT","TEMPORAL")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
+                        .anyRequest().hasAnyRole("CLIENT")
+                        //.requestMatchers("/client/**").hasRole("CLIENT")
+                        //.anyRequest().authenticated()
                 );
         http
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
