@@ -168,4 +168,12 @@ public class AdminUserService {
 
         return oneUserResDto;
     }
+
+    public Map<String, String> testDeleteUser(String userId) {
+
+        usersJpaRepository.deleteById(userId);
+
+        return Map.of("message", "success");
+
+    }
 }
