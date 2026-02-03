@@ -117,7 +117,7 @@ public class AdminUserController {
 
     }
 
-    @DeleteMapping("/test/delete/{userID}")
+    @DeleteMapping("/test/delete/{userId}")
     public Map<String, String> deleteTestUser(@PathVariable String userId) {
 
         return adminUserService.testDeleteUser(userId);
