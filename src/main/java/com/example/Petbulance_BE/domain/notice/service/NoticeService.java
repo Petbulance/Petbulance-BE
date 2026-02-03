@@ -58,18 +58,12 @@ public class NoticeService {
         return DetailNoticeResDto.from(notice, files, prev, next);
     }
 
-    @Cacheable(
-            value = "adminNotice",
-            key = "'page:' + #page + ':size:' + #size",
-            condition = "#page >= 1 && #page <= 5"
-    )
     @Transactional(readOnly = true)
     public PagingAdminNoticeListResDto adminNoticeList(int page, int size) {
 
         return noticeRepository.adminNoticeList(page, size);
     }
 
-    @CacheEvict(value = "adminNotice", allEntries = true)
     @Transactional
     public NoticeResDto createNotice(@Valid CreateNoticeReqDto reqDto) {
         Users currentUser = UserUtil.getCurrentUser();
@@ -122,7 +116,6 @@ public class NoticeService {
         return new NoticeResDto(notice.getId(), "공지사항이 정상적으로 작성되었습니다.");
     }
 
-    @CacheEvict(value = "adminNotice", allEntries = true)
     @Transactional
     public UpdateNoticeResDto updateNotice(Long noticeId, UpdateNoticeReqDto reqDto) {
         Notice notice = getNotice(noticeId);

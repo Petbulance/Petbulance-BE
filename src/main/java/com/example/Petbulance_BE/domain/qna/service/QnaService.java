@@ -36,7 +36,6 @@ public class QnaService {
 
 
     @Transactional
-    @CacheEvict(value = {"qnaList", "qnaDetail"}, allEntries = true)
     public CreateQnaResDto createQna(CreateQnaReqDto dto) {
 
         Users currentUser = UserUtil.getCurrentUser();
@@ -53,7 +52,6 @@ public class QnaService {
     }
 
     @Transactional
-    @CacheEvict(value = {"qnaList", "qnaDetail"}, allEntries = true)
     public UpdateQnaResDto updateQna(@Valid UpdateQnaReqDto dto, Long qnaId) {
         Qna qna = getQna(qnaId);
         verifyQnaUer(qna, UserUtil.getCurrentUser());
@@ -61,7 +59,6 @@ public class QnaService {
     }
 
     @Transactional
-    @CacheEvict(value = {"qnaList", "qnaDetail"}, allEntries = true)
     public DeleteQnaResDto deleteQna(Long qnaId) {
         Qna qna = getQna(qnaId);
         verifyQnaUer(qna, UserUtil.getCurrentUser());
@@ -71,14 +68,12 @@ public class QnaService {
 
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "qnaList", key = "#currentUser.id + '-' + #lastQnaId + '-' + #pageable.pageNumber")
     public PagingQnaListResDto qnaList(Long lastQnaId, Pageable pageable) {
         Users currentUser = UserUtil.getCurrentUser();
         return qnaRepository.findQnaList(currentUser, lastQnaId, pageable);
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "qnaDetail", key = "#qnaId")
     public DetailQnaResDto detailQna(Long qnaId) {
         Qna qna = getQna(qnaId);
         Users currentUser = UserUtil.getCurrentUser();
@@ -108,7 +103,6 @@ public class QnaService {
 
 
     @Transactional
-    @CacheEvict(value = {"qnaList", "qnaDetail"}, allEntries = true)
     public AnswerQnaResDto answerQna(Long qnaId, @Valid AnswerQnaReqDto reqDto) {
         Qna qna = getQna(qnaId);
 

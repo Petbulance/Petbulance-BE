@@ -9,20 +9,20 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 public class QnaListResDto {
-    private Long qnaId;
+    private Long id;
     private String title;
-    private QnaStatus content;
-    private String createdAt;
-    private String status;
+    private String author;
+    private LocalDateTime createdAt;
+    private QnaStatus status;
 
-    public QnaListResDto(Long qnaId, String title, QnaStatus content, LocalDateTime createdAt, String status) {
-        this.qnaId = qnaId;
+
+    public QnaListResDto(Long id, String title, String author, LocalDateTime createdAt, QnaStatus status) {
+        this.id = id;
         this.title = title;
-        this.content = content;
-        this.createdAt = TimeUtil.formatCreatedAt(createdAt);
+        this.author = author;
+        this.createdAt = createdAt;
         this.status = status;
     }
 }

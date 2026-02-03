@@ -148,6 +148,7 @@ public class AuthService {
                 .nickname(nickname)
                 .firstLogin(provider)
                 .role(Role.ROLE_TEMPORAL)
+                .profileImage("default_image/159833.png")
                 .createdAt(LocalDateTime.now())
                 .build();
 

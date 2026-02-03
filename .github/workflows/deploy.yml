@@ -117,6 +117,8 @@ jobs:
               --restart=always \
               -e SPRING_PROFILES_ACTIVE=$TARGET \
               -e JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Seoul" \
+              -e SPRING_DATA_REDIS_HOST=172.17.0.1 \
+              -e SPRING_DATA_REDIS_PORT=6379 \
               -p $TARGET_PORT:8080 \
               276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
           
