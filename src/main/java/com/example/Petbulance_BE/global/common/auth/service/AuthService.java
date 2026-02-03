@@ -147,8 +147,8 @@ public class AuthService {
         Users newUser = Users.builder()
                 .nickname(nickname)
                 .firstLogin(provider)
-                .role(Role.ROLE_CLIENT)
-                .profileImage("https://petbulance-s3-bucket.s3.ap-northeast-2.amazonaws.com/default_image/159833.png")
+                .role(Role.ROLE_TEMPORAL)
+                .profileImage("default_image/159833.png")
                 .createdAt(LocalDateTime.now())
                 .build();
 

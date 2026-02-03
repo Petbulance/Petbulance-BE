@@ -1,10 +1,12 @@
 package com.example.Petbulance_BE.domain.terms.controller;
 
+import com.example.Petbulance_BE.domain.terms.dto.res.TermsConsentsResDto;
 import com.example.Petbulance_BE.domain.terms.dto.res.TermsStatusResDto;
 import com.example.Petbulance_BE.domain.terms.enums.TermsType;
 import com.example.Petbulance_BE.domain.terms.dto.req.ConsentsReqDto;
 import com.example.Petbulance_BE.domain.terms.dto.res.GetTermsResDto;
 import com.example.Petbulance_BE.domain.terms.service.TermsService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -30,8 +32,8 @@ public class TermsController {
     }
 
     @PostMapping("/consents")
-    public Map<String, String> consents(@RequestBody @Valid ConsentsReqDto consentsReqDto){
-        return termsService.consentsProcess(consentsReqDto);
+    public TermsConsentsResDto consents(@RequestBody @Valid ConsentsReqDto consentsReqDto, HttpServletRequest request){
+        return termsService.consentsProcess(consentsReqDto, request);
     }
 
     @GetMapping("/status")
