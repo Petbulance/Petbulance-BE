@@ -58,33 +58,33 @@ public class SecurityConfig {
                 .sessionManagement((session)->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http
                 .authorizeHttpRequests((auth)-> auth
-                    .requestMatchers(
-                            "/app/version",
-                            "/app/metadata",
-                            "/app/health",
-                            "/receipts/{hospitalName}",
-                            "/receipts/detail/{reviewId}",
-                            "/banners/home",
-                            "/hospitals/**",
-                            "/boards",
-                            "/receipts/filter",
-                            "/receipts/search/{value}",
-                            "/recents/community/{keywordId}",
-                            "/receipts/reviews/{hospitalId}",
-                            "/auth/social/login",
-                            "/terms",
-                            "/terms/{type}",
-                            "/error",
-                            "/acturator/**",
-                            "/v3/api-docs/**",
-                            "/swagger-ui/**",
-                            "/swagger-ui.html",
-                            "/auth/refresh",
-                            "/admin/login"
-                    ).permitAll()
-                        .requestMatchers("/terms/consents").hasAnyRole("CLIENT","TEMPORAL")
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .anyRequest().hasAnyRole("CLIENT", "ADMIN")
+                                .requestMatchers(
+                                        "/app/version",
+                                        "/app/metadata",
+                                        "/app/health",
+                                        "/receipts/{hospitalName}",
+                                        "/receipts/detail/{reviewId}",
+                                        "/banners/home",
+                                        "/hospitals/**",
+                                        "/boards",
+                                        "/receipts/filter",
+                                        "/receipts/search/{value}",
+                                        "/recents/community/{keywordId}",
+                                        "/receipts/reviews/{hospitalId}",
+                                        "/auth/social/login",
+                                        "/terms",
+                                        "/terms/{type}",
+                                        "/error",
+                                        "/acturator/**",
+                                        "/v3/api-docs/**",
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/auth/refresh",
+                                        "/admin/login"
+                                ).permitAll()
+                                .requestMatchers("/terms/consents").hasAnyRole("CLIENT","TEMPORAL")
+                                .requestMatchers("/admin/**").hasRole("ADMIN")
+                                .anyRequest().hasAnyRole("CLIENT", "ADMIN")
                         //.requestMatchers("/client/**").hasRole("CLIENT")
                         //.anyRequest().authenticated()
                 );
@@ -130,7 +130,7 @@ public class SecurityConfig {
                 "http://admin.petbulance.local:5173",
                 "http://admin.petbulance.local:5173/",
                 "https://admin.petbulance.co.kr",
-                 "https://admin.petbulance.co.kr/",
+                "https://admin.petbulance.co.kr/",
                 "https://petbulance.co.kr"
         ));
 
