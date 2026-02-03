@@ -81,7 +81,7 @@ public class Users {
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Device> devices;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE.PERSIST, orphanRemoval = true)
     private List<UserSetting> userSetting;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)

@@ -5,6 +5,7 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.userEmail.entity.UserEmails;
 import com.example.Petbulance_BE.domain.userEmail.repository.UserEmailsJpaRepository;
+import com.example.Petbulance_BE.domain.userSetting.entity.UserSetting;
 import com.example.Petbulance_BE.global.common.auth.component.RandomNicknameGenerator;
 import com.example.Petbulance_BE.global.common.dto.LoginRequestDto;
 import com.example.Petbulance_BE.global.common.dto.LoginResponseDto;
@@ -28,6 +29,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -144,13 +147,23 @@ public class AuthService {
             nickname = randomNicknameGenerator.generateNickname();
         } while (usersJpaRepository.existsByNickname(nickname));
 
+        UserSetting setting = UserSetting.builder()
+                .totalPush(false)
+                .eventPush(false)
+                .marketingPush(false)
+                .build();
+
         Users newUser = Users.builder()
                 .nickname(nickname)
                 .firstLogin(provider)
                 .role(Role.ROLE_TEMPORAL)
                 .profileImage("default_image/159833.png")
+                .userSetting(new ArrayList<>(List.of(setting)))
                 .createdAt(LocalDateTime.now())
                 .build();
+
+        setting.setUser(newUser);
+
 
         usersJpaRepository.save(newUser);
 
@@ -165,6 +178,7 @@ public class AuthService {
         }
 
         userEmailsJpaRepository.save(emails);
+
 
         switch (provider) {
             case "KAKAO" -> newUser.setKakaoConnected(true);

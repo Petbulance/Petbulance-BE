@@ -72,7 +72,8 @@ public class SecurityConfig {
                             "/recents/community/{keywordId}",
                             "/auth/social/login",
                             "/terms",
-                            "/terms/{type}"
+                            "/terms/{type}",
+                            "/error"
                     ).permitAll()
                         .requestMatchers("/terms/consents").hasAnyRole("CLIENT","TEMPORAL")
                         .requestMatchers("/admin/**").hasRole("ADMIN")

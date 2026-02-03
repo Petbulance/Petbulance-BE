@@ -5,10 +5,8 @@ import com.example.Petbulance_BE.domain.userSetting.entity.UserSetting;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
-public interface UserSettingJpaRepository extends JpaRepository<UserSetting, Long> {
+public interface UserSettingJpaRepository extends JpaRepository<UserSetting, String> {
 
     UserSetting findFirstByUser(Users currentUser);
 
