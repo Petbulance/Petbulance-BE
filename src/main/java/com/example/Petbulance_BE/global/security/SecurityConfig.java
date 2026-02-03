@@ -73,7 +73,13 @@ public class SecurityConfig {
                             "/auth/social/login",
                             "/terms",
                             "/terms/{type}",
-                            "/error"
+                            "/error",
+                            "/acturator/**",
+                            "/v3/api-docs/**",
+                            "/swagger-ui/**",
+                            "/swagger-ui.html",
+                            "/auth/refresh",
+                            "/admin/login"
                     ).permitAll()
                         .requestMatchers("/terms/consents").hasAnyRole("CLIENT","TEMPORAL")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
