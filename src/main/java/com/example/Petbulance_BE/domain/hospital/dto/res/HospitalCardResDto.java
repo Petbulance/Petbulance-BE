@@ -26,6 +26,7 @@ public class HospitalCardResDto {
 
     private String phone;
 
+    @Builder.Default
     private List<String> types = new LinkedList<>();
 
     private Boolean isOpenNow;
