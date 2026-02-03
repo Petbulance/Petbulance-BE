@@ -70,6 +70,7 @@ public class SecurityConfig {
                             "/receipts/filter",
                             "/receipts/search/{value}",
                             "/recents/community/{keywordId}",
+                            "/receipts/reviews/{hospitalId}",
                             "/auth/social/login",
                             "/terms",
                             "/terms/{type}",
