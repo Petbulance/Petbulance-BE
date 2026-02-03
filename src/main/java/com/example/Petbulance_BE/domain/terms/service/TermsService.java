@@ -108,10 +108,8 @@ public class TermsService {
         String provider = jwtUtil.getProvider(token);
 
         String access = jwtUtil.createJwt(user.getId(), "access", String.valueOf(user.getRole()), provider);
-        String refresh = jwtUtil.createJwt(user.getId(), "refresh", String.valueOf(user.getRole()), provider);
 
-
-        return new TermsConsentsResDto(access, refresh);
+        return new TermsConsentsResDto(access);
 
     }
 
