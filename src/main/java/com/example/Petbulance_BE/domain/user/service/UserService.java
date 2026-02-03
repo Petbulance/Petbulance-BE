@@ -44,6 +44,7 @@ public class UserService {
     private final JWTUtil jwtUtil;
     private final UserSettingJpaRepository userSettingJpa;
     private final UserSettingJpaRepository userSettingJpaRepository;
+    private final UserUtil userUtil;
 
     public NicknameResponseDto checkNicknameProcess(String nickname) {
         Boolean exists = usersJpaRepository.existsByNickname(nickname);
@@ -349,6 +350,17 @@ public class UserService {
         notificationSettingResponseDto.setMarketingNotificationsEnabled(notificationSettingRequestDto.getMarketingNotificationsEnabled());
 
         return notificationSettingResponseDto;
+
+    }
+
+    public NotificationSettingResponseDto getSettingNotification() {
+
+        Users currentUser = userUtil.getCurrentUser();
+
+        UserSetting firstByUser = userSettingJpaRepository.findFirstByUser(currentUser);
+
+        return new NotificationSettingResponseDto(firstByUser.getTotalPush(), firstByUser.getEventPush(), firstByUser.getMarketingPush());
+
 
     }
 }

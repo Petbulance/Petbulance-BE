@@ -62,7 +62,7 @@ public class SecurityConfig {
                             "/**"
                     ).permitAll()
                         .requestMatchers("/client/**").hasRole("CLIENT")
-                       // .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 );
         http

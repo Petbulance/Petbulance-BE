@@ -42,6 +42,7 @@ public class Users {
     private Boolean phoneNumberConnected;
 
     @Enumerated(EnumType.STRING)
+    @Setter
     private Role role;
 
     @Builder.Default

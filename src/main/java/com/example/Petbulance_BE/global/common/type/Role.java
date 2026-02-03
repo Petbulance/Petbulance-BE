@@ -6,6 +6,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum Role {
+    ROLE_TEMPORAL("필수약관미동의유저"),
     ROLE_CLIENT("유저"),
     ROLE_ADMIN("관리자");
 

@@ -64,4 +64,9 @@ public class UserController {
         return userService.settingNotificationProcess(notificationSettingRequestDto);
     }
 
+    @GetMapping("/settings/notification")
+    public NotificationSettingResponseDto getSettingNotification () {
+        return userService.getSettingNotification();
+    }
+
 }

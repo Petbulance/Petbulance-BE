@@ -147,7 +147,7 @@ public class AuthService {
         Users newUser = Users.builder()
                 .nickname(nickname)
                 .firstLogin(provider)
-                .role(Role.ROLE_CLIENT)
+                .role(Role.ROLE_TEMPORAL)
                 .createdAt(LocalDateTime.now())
                 .build();
 

@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.terms.service;
 
+import com.example.Petbulance_BE.domain.terms.dto.res.TermsConsentsResDto;
 import com.example.Petbulance_BE.domain.terms.dto.res.TermsStatusResDto;
 import com.example.Petbulance_BE.domain.terms.enums.TermsStatus;
 import com.example.Petbulance_BE.domain.terms.enums.TermsType;
@@ -13,8 +14,10 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.common.type.Role;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import com.example.Petbulance_BE.global.util.UserUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -72,14 +76,14 @@ public class TermsService {
     }
 
     @Transactional
-    public Map<String, String> consentsProcess(ConsentsReqDto dto) {
+    public TermsConsentsResDto consentsProcess(ConsentsReqDto dto, HttpServletRequest request) {
 
-        Users userProxy = usersJpaRepository.getReferenceById(userUtil.getCurrentUser().getId());
+        Users user = usersJpaRepository.findById(userUtil.getCurrentUser().getId()).orElseThrow(()-> new CustomException(ErrorCode.NON_EXIST_USER));
 
         // 리스트로 들어온 모든 ID를 한 번에 이력 객체로 변환
         List<UserAgreementHistory> histories = dto.getTermsId().stream()
                 .map(id -> UserAgreementHistory.builder()
-                        .user(userProxy)
+                        .user(user)
                         .terms(termsJpaRepository.getReferenceById(id))
                         .isAgreed(true)
                         .agreedAt(LocalDateTime.now())
@@ -88,13 +92,26 @@ public class TermsService {
 
         userAgreementHistory.saveAll(histories);
 
-        Integer count = userAgreementHistory.countUserAgreement(userProxy);
+        Integer count = userAgreementHistory.countUserAgreement(user);
 
         if(count == null || count < 3){
             throw new CustomException(ErrorCode.REQUIRED_TERMS_MISSING);
         }
 
-        return Map.of("message", "동의 정보가 저장되었습니다.");
+        if(user.getRole() == Role.ROLE_TEMPORAL){
+            user.setRole(Role.ROLE_CLIENT);
+        }
+
+        String authorization = request.getHeader("Authorization");
+        String token = authorization.split(" ")[1];
+
+        String provider = jwtUtil.getProvider(token);
+
+        String access = jwtUtil.createJwt(user.getId(), "access", String.valueOf(user.getRole()), provider);
+        String refresh = jwtUtil.createJwt(user.getId(), "refresh", String.valueOf(user.getRole()), provider);
+
+
+        return new TermsConsentsResDto(access, refresh);
 
     }
 
