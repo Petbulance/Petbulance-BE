@@ -72,11 +72,12 @@ public class SecurityConfig {
                             "/recents/community/{keywordId}",
                             "/auth/social/login",
                             "/terms",
-                            "/terms/{type}"
+                            "/terms/{type}",
+                            "/error"
                     ).permitAll()
                         .requestMatchers("/terms/consents").hasAnyRole("CLIENT","TEMPORAL")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .anyRequest().hasAnyRole("CLIENT")
+                        .anyRequest().hasAnyRole("CLIENT", "ADMIN")
                         //.requestMatchers("/client/**").hasRole("CLIENT")
                         //.anyRequest().authenticated()
                 );
