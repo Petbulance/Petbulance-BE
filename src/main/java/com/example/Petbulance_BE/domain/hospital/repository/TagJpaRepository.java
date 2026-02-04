@@ -12,4 +12,6 @@ public interface TagJpaRepository extends JpaRepository<Tag, Long> {
     void deleteByHospital(Hospital hospital);
 
     List<Tag> findByHospitalId(Long id);
+
+    List<Tag> findByHospitalIdIn(List<Long> hospitalIds);
 }

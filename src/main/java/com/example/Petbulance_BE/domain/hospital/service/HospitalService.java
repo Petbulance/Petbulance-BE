@@ -66,6 +66,16 @@ public class HospitalService {
         String[] dayOrder = {"mon", "tue", "wed", "thu", "fri", "sat", "sun"};
         int todayIndex = Arrays.asList(dayOrder).indexOf(dayPrefix);
 
+        List<Long> hospitalIds = hospitalSearchDtos.stream()
+                .map(HospitalSearchDto::getId)
+                .toList();
+
+
+        List<Tag> allTags = tagJpaRepository.findByHospitalIdIn(hospitalIds);
+
+        Map<Long, List<Tag>> tagMap = allTags.stream()
+                .collect(Collectors.groupingBy(tag -> tag.getHospital().getId()));
+
         // 3. DTO 매핑
         List<HospitalsResDto> content = hospitalSearchDtos.stream()
                 .map(hs -> {
@@ -175,13 +185,15 @@ public class HospitalService {
                         if (nextOpen == null) openHours = null;
                     }
 
-                    List<Tag> byHospitalId = tagJpaRepository.findByHospitalId(hs.getId());
-                    List<HospitalsResDto.Tags> list = byHospitalId.stream().sorted(Comparator.comparing(Tag::getTagType)).map(t -> HospitalsResDto.Tags.builder()
+                    List<Tag> hospitalTags = tagMap.getOrDefault(hs.getId(), List.of());
+
+                    List<HospitalsResDto.Tags> list = hospitalTags.stream()
+                            .sorted(Comparator.comparing(Tag::getTagType, Comparator.nullsLast(Comparator.naturalOrder())))
+                            .map(t -> HospitalsResDto.Tags.builder()
                                     .type(t.getTagType())
                                     .value(t.getTag())
                                     .build())
                             .toList();
-
 
                     return HospitalsResDto.builder()
                             .hospitalId(hs.getId())
@@ -241,7 +253,7 @@ public class HospitalService {
 
 
     @Transactional(readOnly = true)
-    public HospitalDetailResDto searchHospitalDetailProcess(Long hospitalId, Double lat, Double lng) {
+    public HospitalDetailResDto searchHospitalDetailProcess(Long hospitalId) {
 
         LocalTime now = LocalTime.now();
         DayOfWeek today = LocalDate.now().getDayOfWeek();
@@ -271,6 +283,8 @@ public class HospitalService {
 
         AtomicReference<Boolean> openNow = new AtomicReference<>(false);
 
+        LocalTime[] todayCloseTime = new LocalTime[1];
+
         List<OpenHours> openHoursList = hospitalWorktimes.stream()
                 .distinct()
                 .sorted(Comparator.comparing(hw ->
@@ -280,6 +294,10 @@ public class HospitalService {
                     OpenHours openHours = new OpenHours();
                     String dayOfWeek = hw.getId().getDayOfWeek();
                     openHours.setDay(dayOfWeek);
+
+                    if(dayOfWeek.equals(dayPrefix)){
+                        todayCloseTime[0] = hw.getCloseTime();
+                    }
 
                     if(dayOfWeek.equals(dayPrefix)&& hw.getIsOpen() && now.isAfter(hw.getOpenTime()) && now.isBefore(hw.getCloseTime())) {
                         openNow.set(true);
@@ -301,7 +319,9 @@ public class HospitalService {
 
         String note = "매주 " + noteList.stream().map(n->dayMap.get(n)).collect(Collectors.joining("/")) + " 휴무";
 
-        double distanceMeters = SloppyMath.haversinMeters(lat, lng, hospital.getLat(), hospital.getLng());
+        //double distanceMeters = SloppyMath.haversinMeters(lat, lng, hospital.getLat(), hospital.getLng());
+
+        double distanceMeters = 0.0;
 
         Double overallRating = hospital.getUserReviews().stream().mapToDouble(UserReview::getOverallRating).average().orElse(0.0);
 
@@ -328,6 +348,7 @@ public class HospitalService {
                 .distanceMeter(distanceMeters)
                 .reviewCount((long) hospital.getUserReviews().size())
                 .overallRating(overallRating)
+                .todayCloseTime(todayCloseTime[0])
                 .tags(list)
                 .build();
 

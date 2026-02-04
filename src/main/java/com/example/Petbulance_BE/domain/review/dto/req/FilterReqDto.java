@@ -1,10 +1,7 @@
 package com.example.Petbulance_BE.domain.review.dto.req;
 
 import com.example.Petbulance_BE.global.common.type.AnimalType;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 
@@ -12,6 +9,7 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class FilterReqDto {
 
     private String region;
@@ -22,5 +20,14 @@ public class FilterReqDto {
 
     private Long cursorId;
 
+    private Double cursorRating;
+
+    private Long cursorLikes;
+
     private int size = 10;
+
+    private String sort; //null, rating, likeCount
+
+    @Builder.Default
+    private Boolean images = false; //true, false
 }
