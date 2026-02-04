@@ -91,4 +91,16 @@ public class JWTUtil {
                 .getPayload()
                 .getExpiration();
     }
+
+    public String appCreateJwt(String userId, String category, String role, String provider) {
+        return Jwts.builder()
+                .claim("userId", userId)
+                .claim("category", category)
+                .claim("role", role)
+                .claim("provider", provider)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiration*60*10000000L))
+                .signWith(SecretKEY)
+                .compact();
+    }
 }

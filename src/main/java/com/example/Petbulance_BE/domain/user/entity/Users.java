@@ -1,4 +1,6 @@
 package com.example.Petbulance_BE.domain.user.entity;
+import com.example.Petbulance_BE.domain.inquiry.entity.Inquiry;
+import com.example.Petbulance_BE.domain.qna.entity.Qna;
 import lombok.experimental.SuperBuilder;
 import com.example.Petbulance_BE.domain.device.entity.Device;
 import com.example.Petbulance_BE.domain.recent.entity.History;
@@ -97,6 +99,12 @@ public class Users {
     @Column(name = "review_ban_until")
     @Setter
     private LocalDateTime reviewBanUntil;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Inquiry> inquiries;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Qna> qnas;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

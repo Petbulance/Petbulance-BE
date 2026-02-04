@@ -80,7 +80,8 @@ public class SecurityConfig {
                                         "/swagger-ui/**",
                                         "/swagger-ui.html",
                                         "/auth/refresh",
-                                        "/admin/login"
+                                        "/admin/login",
+                                        "/auth/only/app/login"
                                 ).permitAll()
                                 .requestMatchers("/terms/consents").hasAnyRole("CLIENT","TEMPORAL")
                                 .requestMatchers("/admin/**").hasRole("ADMIN")

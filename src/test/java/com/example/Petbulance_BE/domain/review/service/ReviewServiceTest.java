@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -21,6 +23,12 @@ class ReviewServiceTest {
         String userId = "8c722002-8507-4a49-a801-722e905b3b4a";
         log.info("{}", jwtUtil.createJwt(userId, "access", "ROLE_ADMIN", "NAVER"));
 
+    }
+
+    @Test
+    public void makeUUID () {
+        String string = UUID.randomUUID().toString();
+        log.info("{}", string);
     }
 
 }

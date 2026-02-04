@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.global.common.auth.controller;
 
+import com.example.Petbulance_BE.domain.admin.login.dto.AdminLoginReqDto;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.auth.service.AuthService;
@@ -74,6 +75,20 @@ public class AuthController {
     @PostMapping("/social/login")
     public LoginResponseDto loginProcess(@RequestBody LoginRequestDto loginRequestDto){
         return authService.loginService(loginRequestDto);
+    }
+
+    @PostMapping("/only/app/login")
+    public Map<String,String> appLogin (@RequestBody AdminLoginReqDto adminLoginReqDto){
+        Users user = usersJpaRepository.findByNickname(adminLoginReqDto.getUsername()).orElseThrow(()-> new CustomException(ErrorCode.NON_EXIST_USER));
+        String password = user.getPassword();
+        if(password.equals(adminLoginReqDto.getPassword())){
+            Map<String, String> tokenResponse = new HashMap<>();
+            String accessToken = jwtUtil.appCreateJwt(user.getId(), "access", user.getRole().name(), null);
+            tokenResponse.put("accessToken", "Bearer " + accessToken);
+            return tokenResponse;
+        }else{
+            throw new CustomException(ErrorCode.NON_EXIST_USER);
+        }
     }
 
 }
