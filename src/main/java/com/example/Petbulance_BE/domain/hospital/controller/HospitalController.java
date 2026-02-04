@@ -23,8 +23,8 @@ public class HospitalController {
     }
 
     @GetMapping("/{hospitalId}")
-    public HospitalDetailResDto searchHospitalDetail(@PathVariable Long hospitalId, @RequestParam Double lat, @RequestParam Double lng){
-        return hospitalService.searchHospitalDetailProcess(hospitalId, lat, lng);
+    public HospitalDetailResDto searchHospitalDetail(@PathVariable Long hospitalId){
+        return hospitalService.searchHospitalDetailProcess(hospitalId);
     }
 
     @GetMapping("/card/{hospitalId}")

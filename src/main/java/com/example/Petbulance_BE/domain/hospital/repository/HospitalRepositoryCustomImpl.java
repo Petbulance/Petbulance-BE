@@ -12,14 +12,12 @@ import com.example.Petbulance_BE.domain.treatmentAnimal.entity.QTreatmentAnimal;
 import com.example.Petbulance_BE.domain.treatmentAnimal.entity.TreatmentAnimal;
 import com.example.Petbulance_BE.global.common.type.AnimalType;
 import com.example.Petbulance_BE.global.common.type.DetailAnimalType;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
-import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.NumberExpression;
-import com.querydsl.core.types.dsl.NumberPath;
+import com.querydsl.core.types.dsl.*;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -80,7 +78,7 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
                                 hospital.lng.as("lng"),
                                 hospital.phoneNumber.as("phoneNumber"),
                                 hospital.url.as("url"),
-                                safeDistance.as("distanceMeters"),
+                                Expressions.asNumber(Expressions.constant(0.0)).as("distanceMeters"),
                                 getReviewCountSub().as("reviewCount"),
                                 getRatingSub().as("rating"),
                                 hospital.image.as("image")
@@ -248,7 +246,18 @@ public class HospitalRepositoryCustomImpl implements HospitalRepositoryCustom {
 
     private BooleanExpression likeRegion(String region) {
         if (!StringUtils.hasText(region)) return null;
-        return Expressions.stringTemplate("REPLACE({0}, ' ', '')", hospital.address).like(region + "%");
+
+        String[] regions = region.split(",");
+        BooleanBuilder builder = new BooleanBuilder();
+
+        StringTemplate addressNoSpace = Expressions.stringTemplate("REPLACE({0}, ' ', '')", hospital.address);
+        for (String r : regions) {
+            String trimmedRegion = r.trim();
+            if (StringUtils.hasText(trimmedRegion)) {
+                builder.or(addressNoSpace.like(trimmedRegion + "%"));
+            }
+        }
+        return Expressions.asBoolean(builder.getValue());
     }
 
     private BooleanExpression filterByAnimalArray(String[] animalArray) {

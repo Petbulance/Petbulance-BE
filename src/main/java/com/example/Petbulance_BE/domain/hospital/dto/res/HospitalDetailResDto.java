@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.hospital.dto.res;
 import com.example.Petbulance_BE.domain.hospital.dto.OpenHours;
 import lombok.*;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,6 +34,8 @@ public class HospitalDetailResDto {
     private Double overallRating;
 
     private String image;
+
+    private LocalTime todayCloseTime;
 
     @Builder.Default
     private List<String> acceptedAnimals = new ArrayList<>();

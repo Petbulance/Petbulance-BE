@@ -10,9 +10,11 @@ import com.querydsl.core.Tuple;
 import com.querydsl.core.group.GroupBy;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.dsl.NumberPath;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -45,6 +47,10 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
         String region = filterReqDto.getRegion();
         Boolean onlyReceipt = filterReqDto.getReceipt();
         Long cursorId = filterReqDto.getCursorId();
+        Boolean onlyImage = filterReqDto.getImages();
+        String sort = filterReqDto.getSort();
+        Double cursorRating = filterReqDto.getCursorRating();
+        Long cursorLikes = filterReqDto.getCursorLikes();
 
         return queryFactory.select(
                     Projections.fields(FilterResDto.class,
@@ -81,11 +87,45 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                     .from(userReview)
                     .join(userReview.user, users)
                     .join(userReview.hospital, hospital)
-                    .where(checkAnimalType(animalType), checkRegion(region), checkReceiptReview(onlyReceipt), checkHidden(), checkDeleted(), ltCursorId(cursorId))
-                    .orderBy(userReview.createdAt.desc(), userReview.id.desc())
+                    .where(checkAnimalType(animalType), checkRegion(region), checkReceiptReview(onlyReceipt), checkHidden(), checkDeleted(), imageValid(onlyImage), cursorCondition(sort, cursorId, cursorRating, cursorLikes))
+                    .orderBy(getOrderBy(sort))
                     .limit(filterReqDto.getSize() + 1)
                     .fetch();
 
+    }
+
+    private OrderSpecifier<?>[] getOrderBy(String sort) {
+        if ("rating".equals(sort)) { // 별점순
+            return new OrderSpecifier[]{userReview.overallRating.desc(), userReview.id.desc()};
+        } else if ("likeCount".equals(sort)) { // 좋아요순
+            return new OrderSpecifier[]{userReview.likes.size().desc(), userReview.id.desc()};
+        }
+        // 기본값: 최신순
+        return new OrderSpecifier[]{userReview.createdAt.desc(), userReview.id.desc()};
+    }
+
+    private BooleanExpression cursorCondition(String sort, Long cursorId, Double cursorRating, Long cursorLikeCount) {
+
+        if (cursorId == null || cursorId == 0) {
+            return null;
+        }
+
+        // 2. 여기서부터는 '두 번째 페이지' 이후일 때만 실행됨
+        if ("rating".equals(sort)) {
+            if (cursorRating == null) return null;
+            return userReview.overallRating.lt(cursorRating)
+                    .or(userReview.overallRating.eq(cursorRating).and(userReview.id.lt(cursorId)));
+        }
+
+        if ("likeCount".equals(sort)) {
+            if (cursorLikeCount == null) return null;
+            NumberExpression<Long> reviewSize = userReview.likes.size().longValue();
+            return reviewSize.lt(cursorLikeCount)
+                    .or(reviewSize.eq(cursorLikeCount).and(userReview.id.lt(cursorId)));
+        }
+
+        // 3. 기본 최신순의 '두 번째 페이지' 조건
+        return userReview.id.lt(cursorId);
     }
 
     private BooleanExpression ltCursorId(Long cursorId) {
@@ -94,6 +134,18 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
         }
 
         return userReview.id.lt(cursorId);
+    }
+
+    private BooleanExpression imageValid(Boolean onlyImage) {
+        if (onlyImage == null || !onlyImage) {
+            return null;
+        }
+
+        return JPAExpressions
+                .selectOne()
+                .from(userReviewImage)
+                .where(userReviewImage.review.id.eq(userReview.id))
+                .exists();
     }
 
     private BooleanExpression eqId(Long id) {
