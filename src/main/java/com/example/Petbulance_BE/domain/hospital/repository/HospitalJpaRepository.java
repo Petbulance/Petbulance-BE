@@ -57,7 +57,7 @@ public interface HospitalJpaRepository extends JpaRepository<Hospital, Long>, Ho
         )
         LIMIT 1
         """, nativeQuery = true)
-    List<Hospital> findNearestHospitals(@Param("lng") double lng, @Param("lat") double lat, @Param("radius") int radius);
+        List<Hospital> findNearestHospitals(@Param("lat") double lat, @Param("lng") double lng, @Param("radius") int radius);
 
     @Query("select h FROM Hospital  h WHERE h.name LIKE CONCAT(:hospitalName, '%')")
     List<Hospital> findByNameStartsWith(String hospitalName);

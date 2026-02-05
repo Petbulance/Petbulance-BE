@@ -135,7 +135,7 @@ public class ReviewService {
                          log.info("x위도{}", lat);
                          log.info("y경도{}", lng);
 
-                         List<Hospital> nearestHospitals = hospitalJpaRepository.findNearestHospitals(lng, lat, 3000);
+                         List<Hospital> nearestHospitals = hospitalJpaRepository.findNearestHospitals(lat, lng, 3000);
 
                          if(nearestHospitals.isEmpty()) {
 
@@ -704,7 +704,7 @@ public class ReviewService {
                                 log.info("x위도{}", lat);
                                 log.info("y경도{}", lng);
 
-                                List<Hospital> nearestHospitals = hospitalJpaRepository.findNearestHospitals(lng, lat,3000);
+                                List<Hospital> nearestHospitals = hospitalJpaRepository.findNearestHospitals(lat, lng,3000);
                                 if(nearestHospitals.isEmpty()) {
                                     throw new CustomException(ErrorCode.NOT_FOUND_RECEIPT_HOSPITAL);
                                 }
