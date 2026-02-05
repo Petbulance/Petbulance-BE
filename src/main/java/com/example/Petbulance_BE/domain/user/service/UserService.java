@@ -245,6 +245,7 @@ public class UserService {
         String imageUUID = checkProfileImageRequestDto.getSaveId();
         String filename = checkProfileImageRequestDto.getFilename();
 
+
         String key = "profileImage/" + imageUUID + "/" + filename;
         boolean isExist = s3Service.doesObjectExist(key);
 
@@ -261,7 +262,9 @@ public class UserService {
                 user.setProfileImage(imageUUID);
             }else{
                 String profileImage = user.getProfileImage();
-                s3Service.deleteObject(profileImage);
+                if(!profileImage.equals("default_image/159833.png")){
+                    s3Service.deleteObject(profileImage);
+                }
                 user.setProfileImage("profileImage/" + imageUUID + "/" + filename);
             }
 

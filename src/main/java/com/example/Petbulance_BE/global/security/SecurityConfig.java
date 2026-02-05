@@ -58,6 +58,7 @@ public class SecurityConfig {
                 .sessionManagement((session)->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http
                 .authorizeHttpRequests((auth)-> auth
+                                .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC).permitAll()
                                 .requestMatchers(
                                         "/app/version",
                                         "/app/metadata",
