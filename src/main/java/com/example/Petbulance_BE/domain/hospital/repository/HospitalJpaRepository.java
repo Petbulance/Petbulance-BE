@@ -44,14 +44,21 @@ public interface HospitalJpaRepository extends JpaRepository<Hospital, Long>, Ho
     Optional<Double> getOverallRating(@Param("id") Long id);
 
     @Query(value = """
-    SELECT *
-    FROM hospitals
-    WHERE ST_Distance_Sphere(location, ST_GeomFromText(:wkt, 4326)) <= :radius
-    ORDER BY ST_Distance_Sphere(location, ST_GeomFromText(:wkt, 4326))
+    SELECT *, (
+        6371000 * acos(
+            cos(radians(:lat)) * cos(radians(h.lat)) 
+            * cos(radians(h.lng) - radians(:lng)) 
+            + sin(radians(:lat)) * sin(radians(h.lat))
+        )
+    ) AS distance
+    FROM hospitals h
+    HAVING distance <= :radius
+    ORDER BY distance
     LIMIT 1
     """, nativeQuery = true)
     List<Hospital> findNearestHospitals(
-            @Param("wkt") String wkt,
+            @Param("lat") double lat,
+            @Param("lng") double lng,
             @Param("radius") int radius
     );
 
