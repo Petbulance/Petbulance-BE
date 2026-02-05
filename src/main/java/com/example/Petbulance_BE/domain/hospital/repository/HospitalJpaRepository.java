@@ -47,8 +47,8 @@ public interface HospitalJpaRepository extends JpaRepository<Hospital, Long>, Ho
     @Query(value = """
         SELECT *
         FROM hospitals
-        WHERE ST_Distance_Sphere(location, ST_GeomFromText(CONCAT('POINT(', :lng, ' ', :lat, ')'), 4326)) <= :radius
-        ORDER BY ST_Distance_Sphere(location, ST_GeomFromText(CONCAT('POINT(', :lng, ' ', :lat, ')'), 4326))
+        WHERE ST_Distance_Sphere(location, ST_GeomFromText(CONCAT('POINT(', :lat, ' ', :lng, ')'), 4326)) <= :radius
+        ORDER BY ST_Distance_Sphere(location, ST_GeomFromText(CONCAT('POINT(', :lat, ' ', :lng, ')'), 4326))
         LIMIT 1
         """, nativeQuery = true)
     List<Hospital> findNearestHospitals(
