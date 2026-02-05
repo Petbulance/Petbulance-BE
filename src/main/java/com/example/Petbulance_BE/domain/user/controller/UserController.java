@@ -49,7 +49,7 @@ public class UserController {
         return userService.updateProfileImageProcess(profileImageUpdateRequestDto);
     }
 
-    @GetMapping("/profile/success")
+    @PostMapping("/profile/success")
     public Map<String, String> checkImageUpdate (@RequestBody CheckProfileImageRequestDto checkProfileImageRequestDto){
         return userService.profileImageCheckProcess(checkProfileImageRequestDto);
     }
