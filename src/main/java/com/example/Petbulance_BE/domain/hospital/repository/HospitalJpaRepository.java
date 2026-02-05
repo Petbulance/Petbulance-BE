@@ -43,19 +43,20 @@ public interface HospitalJpaRepository extends JpaRepository<Hospital, Long>, Ho
     @Query("SELECT AVG(r.overallRating) FROM UserReview r WHERE r.hospital.id = :id")
     Optional<Double> getOverallRating(@Param("id") Long id);
 
-    //POINT(위도 경도)
     @Query(value = """
         SELECT *
         FROM hospitals
-        WHERE ST_Distance_Sphere(location, ST_GeomFromText(CONCAT('POINT(', :lat, ' ', :lng, ')'), 4326)) <= :radius
-        ORDER BY ST_Distance_Sphere(location, ST_GeomFromText(CONCAT('POINT(', :lat, ' ', :lng, ')'), 4326))
+        WHERE ST_Distance_Sphere(
+            location, 
+            ST_GeomFromText(CONCAT('POINT(', ?1, ' ', ?2, ')'), 4326)
+        ) <= ?3
+        ORDER BY ST_Distance_Sphere(
+            location, 
+            ST_GeomFromText(CONCAT('POINT(', ?1, ' ', ?2, ')'), 4326)
+        )
         LIMIT 1
         """, nativeQuery = true)
-    List<Hospital> findNearestHospitals(
-        @Param("lat") double lat, 
-        @Param("lng") double lng, 
-        @Param("radius") int radius
-    );
+    List<Hospital> findNearestHospitals(double lat, double lng, int radius);
         
     @Query("select h FROM Hospital  h WHERE h.name LIKE CONCAT(:hospitalName, '%')")
     List<Hospital> findByNameStartsWith(String hospitalName);
