@@ -47,17 +47,17 @@ public interface HospitalJpaRepository extends JpaRepository<Hospital, Long>, Ho
     @Query(value = """
         SELECT *
         FROM hospitals
-        WHERE MBRContains(
-            ST_BUFFER(
-                ST_PointFromText(CONCAT('POINT(', :lat, ' ', :lng, ')'), 4326),
-                :radius
-            ),
-            hospitals.location
+        WHERE ST_Distance_Sphere(
+            location, 
+            ST_GeomFromText(CONCAT('POINT(', :lng, ' ', :lat, ')'), 4326, 'axis-order=long-lat')
+        ) <= :radius
+        ORDER BY ST_Distance_Sphere(
+            location, 
+            ST_GeomFromText(CONCAT('POINT(', :lng, ' ', :lat, ')'), 4326, 'axis-order=long-lat')
         )
-        ORDER BY ST_Distance_Sphere(hospitals.location, ST_PointFromText(CONCAT('POINT(', :lat, ' ', :lng, ')'), 4326))
         LIMIT 1
         """, nativeQuery = true)
-        List<Hospital> findNearestHospitals(@Param("lng") double lng, @Param("lat") double lat, @Param("radius") int radius);
+    List<Hospital> findNearestHospitals(@Param("lng") double lng, @Param("lat") double lat, @Param("radius") int radius);
 
     @Query("select h FROM Hospital  h WHERE h.name LIKE CONCAT(:hospitalName, '%')")
     List<Hospital> findByNameStartsWith(String hospitalName);
