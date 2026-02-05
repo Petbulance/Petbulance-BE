@@ -128,27 +128,31 @@ public class ReviewService {
                      .publishOn(Schedulers.boundedElastic()) //이 시점 이후의 작업은 블로킹 스레드 풀에서 동작, 논블로킹 스레드 풀은 막히지 않음
 //                     .doOnNext(point ->
 //                             log.info("💾 [{}] DB 조회 시작 (boundedElastic)", Thread.currentThread().getName()))
-                     .map(point ->{
-                     double lng = point.x(); //경도
-                     double lat = point.y(); //위도
+                     .flatMap(point -> { // 1. map 대신 flatMap 사용
+                         double lng = point.x();
+                         double lat = point.y();
 
-                     log.info("x위도{}", lat);
-                     log.info("y경도{}", lng);
+                         log.info("x위도{}", lat);
+                         log.info("y경도{}", lng);
 
-                     List<Hospital> nearestHospitals = hospitalJpaRepository.findNearestHospitals(lng, lat,3000);
-                     if(nearestHospitals.isEmpty()) {
-                         throw new CustomException(ErrorCode.NOT_FOUND_RECEIPT_HOSPITAL);
-                     }
-                     Hospital hospital = nearestHospitals.get(0);
+                         List<Hospital> nearestHospitals = hospitalJpaRepository.findNearestHospitals(lng, lat, 3000);
 
-                     return ReceiptResDto.builder()
-                             .hospitalId(hospital.getId())
-                             .hospitalName(hospital.getName())
-                             .visitDateTime(finalPaymentDateTime)
-                             .price(price)
-                             .items(items)
-                             .build();
-                 });
+                         if(nearestHospitals.isEmpty()) {
+
+                             return Mono.error(new CustomException(ErrorCode.NOT_FOUND_RECEIPT_HOSPITAL));
+                         }
+
+                         Hospital hospital = nearestHospitals.get(0);
+
+                         // 3. 정상 결과는 Mono.just로 감싸서 반환
+                         return Mono.just(ReceiptResDto.builder()
+                                 .hospitalId(hospital.getId())
+                                 .hospitalName(hospital.getName())
+                                 .visitDateTime(finalPaymentDateTime)
+                                 .price(price)
+                                 .items(items)
+                                 .build());
+                     });
 
          });
 
@@ -200,7 +204,9 @@ public class ReviewService {
                 + "       - name: 품목명 또는 진료명 (String, 괄호나 대괄호가 있다면 포함해서 전체 이름 추출)"
                 + "       - price: 해당 항목의 가격 (Integer, 숫자만, 콤마 제거)"
                 + "   - totalAmount: 총 결제 금액 (Integer, 숫자만)"
-                + "   - address: '사업장 소재지' 혹은 '주소' 필드를 추출하세요. **[주의] 주소가 두 줄 이상으로 나뉘어 적혀 있습니다. 첫 줄(예: 경기도 성남시 분당구)만 읽지 말고, 바로 아랫줄에 적힌 상세 주소(예: 내정로 58)를 반드시 찾아내어 하나로 합친 풀텍스트를 반환하세요.** 번지수나 건물번호가 누락되면 절대 안 됩니다. (결과 예시: '경기도 성남시 분당구 내정로 58')"
+                + "   - address: '사업장 소재지' 혹은 '주소' 필드를 추출하세요. \n" +
+                "               1. 주소가 여러 줄이면 하나로 합칩니다.\n" +
+                "               2. **중요: 지오코딩 성공률을 위해 '동/호수, 상가 이름, 건물 내부 위치(예: 2층 213호, 위브더스테이트 등)'는 제외하고, '시/도 구/군 도로명 건물번호'까지만 정제해서 추출하세요.** (예: '경기 부천시 원미구 신흥로 190, 위브더스테이트 1단지상가 2층 213호' -> '경기 부천시 원미구 신흥로 190' 까지만 추출)"
                 + "   - addressType: 'address필드이 값이 도로명 주소라면 (\"road\"), 지번 주소라면 (\"parcel\")을 출력하세요.'"
                 + "   - paymentTime: 결제 시간 ('YYYY-MM-DD HH:MM:SS' 형식. 날짜만 있으면 'YYYY-MM-DD')"
                 + "4. 동물병원 영수증이 맞지만, 위 5개 항목을 추출할 수 없다면 `{\"status\": \"fail\", \"message\": \"데이터 추출에 실패하였습니다.\"}` 를 반환하세요."
@@ -219,15 +225,15 @@ public class ReviewService {
                 .bodyToMono(GeminiResponse.class)
 
                 // (응답 Mono를 String Mono로 변환 - 기존과 동일)
-                .map(geminiResponse -> {
+                .flatMap(geminiResponse -> {
                     try {
                         String rawText = geminiResponse.candidates().get(0)
                                 .content().parts().get(0)
                                 .text();
-                        return rawText.replace("```json", "").replace("```", "").trim();
+                        return Mono.just(rawText.replace("```json", "").replace("```", "").trim());
                     } catch (Exception e) {
                         // 이 경우 Gemini가 아예 잘못된 응답을 준 것
-                        throw new RuntimeException("Gemini 응답 구조 파싱 실패", e);
+                        return Mono.error(new CustomException(ErrorCode.FAIL_RECEIPT_EXTRACT));
                     }
                 })
 
