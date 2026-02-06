@@ -83,7 +83,9 @@ public class SecurityConfig {
                                         "/auth/refresh",
                                         "/admin/login",
                                         "/auth/only/app/login",
-                                        "/notices"
+                                        "/notices",
+                                        "/notices/{noticeId}",
+                                        "/notices/{noticeId}/attachments/{fileId}/download"
                                 ).permitAll()
                                 .requestMatchers("/terms/consents").hasAnyRole("CLIENT","TEMPORAL")
                                 .requestMatchers("/admin/**").hasRole("ADMIN")
