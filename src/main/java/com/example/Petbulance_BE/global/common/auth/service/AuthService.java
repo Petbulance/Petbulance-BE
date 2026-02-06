@@ -5,6 +5,7 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.userEmail.entity.UserEmails;
 import com.example.Petbulance_BE.domain.userEmail.repository.UserEmailsJpaRepository;
+import com.example.Petbulance_BE.domain.userSetting.entity.UserAuthority;
 import com.example.Petbulance_BE.domain.userSetting.entity.UserSetting;
 import com.example.Petbulance_BE.global.common.auth.component.RandomNicknameGenerator;
 import com.example.Petbulance_BE.global.common.dto.LoginRequestDto;
@@ -153,6 +154,12 @@ public class AuthService {
                 .marketingPush(false)
                 .build();
 
+        UserAuthority authority = UserAuthority.builder()
+                .locationService(false)
+                .marketing(false)
+                .camera(false)
+                .build();
+
         Users newUser = Users.builder()
                 .nickname(nickname)
                 .firstLogin(provider)
@@ -160,6 +167,7 @@ public class AuthService {
                 .profileImage("default_image/159833.png")
                 .userSetting(new ArrayList<>(List.of(setting)))
                 .createdAt(LocalDateTime.now())
+                .userAuthority(authority)
                 .build();
 
         setting.setUser(newUser);

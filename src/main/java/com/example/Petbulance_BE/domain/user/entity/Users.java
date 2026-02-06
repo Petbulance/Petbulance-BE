@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.user.entity;
 import com.example.Petbulance_BE.domain.inquiry.entity.Inquiry;
 import com.example.Petbulance_BE.domain.qna.entity.Qna;
+import com.example.Petbulance_BE.domain.userSetting.entity.UserAuthority;
 import lombok.experimental.SuperBuilder;
 import com.example.Petbulance_BE.domain.device.entity.Device;
 import com.example.Petbulance_BE.domain.recent.entity.History;
@@ -105,6 +106,10 @@ public class Users {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Qna> qnas;
+
+    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE, CascadeType.PERSIST}, orphanRemoval = true)
+    @JoinColumn(name = "user_authority_id")
+    private UserAuthority userAuthority;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

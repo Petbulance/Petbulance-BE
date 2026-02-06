@@ -9,6 +9,7 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.userEmail.entity.UserEmails;
 import com.example.Petbulance_BE.domain.userEmail.repository.UserEmailsJpaRepository;
+import com.example.Petbulance_BE.domain.userSetting.entity.UserAuthority;
 import com.example.Petbulance_BE.domain.userSetting.entity.UserSetting;
 import com.example.Petbulance_BE.domain.userSetting.repository.UserSettingJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
@@ -19,7 +20,6 @@ import com.example.Petbulance_BE.global.util.UserUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -27,6 +27,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URL;
@@ -364,6 +365,35 @@ public class UserService {
 
         return new NotificationSettingResponseDto(firstByUser.getTotalPush(), firstByUser.getEventPush(), firstByUser.getMarketingPush());
 
+
+    }
+
+    @Transactional
+    public Map<String, String> userCloseAccountProcess() {
+
+        Users currentUser = userUtil.getCurrentUser();
+
+        Users users = usersJpaRepository.findById(currentUser.getId()).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
+
+        users.setDeleted(true);
+
+        return Map.of("message", "success");
+    }
+
+    @Transactional(readOnly = true)
+    public AuthorityResDto getAuthorityProcess() {
+
+        Users currentUser = userUtil.getCurrentUser();
+
+        Users users = usersJpaRepository.findById(currentUser.getId()).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
+
+        UserAuthority userAuthority1 = users.getUserAuthority();
+
+        return AuthorityResDto.builder()
+                    .locationService(userAuthority1.getLocationService())
+                    .camera(userAuthority1.getCamera())
+                    .marketing(userAuthority1.getMarketing())
+                    .build();
 
     }
 }

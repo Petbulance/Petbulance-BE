@@ -3,6 +3,7 @@ package com.example.Petbulance_BE.domain.user.controller;
 import com.example.Petbulance_BE.domain.user.dto.request.*;
 import com.example.Petbulance_BE.domain.user.dto.response.*;
 import com.example.Petbulance_BE.domain.user.service.UserService;
+import com.example.Petbulance_BE.domain.userSetting.entity.UserAuthority;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -67,6 +68,16 @@ public class UserController {
     @GetMapping("/settings/notification")
     public NotificationSettingResponseDto getSettingNotification () {
         return userService.getSettingNotification();
+    }
+
+    @DeleteMapping("/users")
+    public Map<String, String> userCloseAccount() {
+        return userService.userCloseAccountProcess();
+    }
+
+    @GetMapping("/authority")
+    public AuthorityResDto getAuthority() {
+        return userService.getAuthorityProcess();
     }
 
 }
