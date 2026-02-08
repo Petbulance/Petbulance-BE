@@ -1,6 +1,8 @@
 package com.example.Petbulance_BE.domain.user.entity;
 import com.example.Petbulance_BE.domain.inquiry.entity.Inquiry;
 import com.example.Petbulance_BE.domain.qna.entity.Qna;
+import com.example.Petbulance_BE.domain.report.entity.Report;
+import com.example.Petbulance_BE.domain.review.entity.UserReview;
 import com.example.Petbulance_BE.domain.userSetting.entity.UserAuthority;
 import lombok.experimental.SuperBuilder;
 import com.example.Petbulance_BE.domain.device.entity.Device;
@@ -89,6 +91,12 @@ public class Users {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<History> histories;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<UserReview> reviews;
+
+    @OneToMany(mappedBy = "reporter", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Report> reports;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<UserAgreementHistory> userAgreementHistories;
