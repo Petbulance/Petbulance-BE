@@ -33,6 +33,8 @@ public class CreateNoticeReqDto {
 
     private BannerReqDto bannerInfo;
 
+    private List<ButtonReqDto> buttons;
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -40,6 +42,16 @@ public class CreateNoticeReqDto {
         private LocalDate startDate;
         private LocalDate endDate;
         private String imageUrl;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ButtonReqDto {
+        private String text;
+        private String position;
+        private String link;
+        private String target;
     }
 
     @AssertTrue(message = "배너 시작일은 종료일보다 이전이거나 같아야 하며, 배너 정보는 필수입니다.")

@@ -6,8 +6,10 @@ import com.example.Petbulance_BE.domain.adminlog.type.*;
 import com.example.Petbulance_BE.domain.banner.entity.Banner;
 import com.example.Petbulance_BE.domain.notice.dto.request.*;
 import com.example.Petbulance_BE.domain.notice.dto.response.*;
+import com.example.Petbulance_BE.domain.notice.entity.Button;
 import com.example.Petbulance_BE.domain.notice.entity.Notice;
 import com.example.Petbulance_BE.domain.notice.entity.NoticeFile;
+import com.example.Petbulance_BE.domain.notice.repository.ButtonRepository;
 import com.example.Petbulance_BE.domain.notice.repository.NoticeFileRepository;
 import com.example.Petbulance_BE.domain.notice.repository.NoticeRepository;
 import com.example.Petbulance_BE.domain.notice.type.PostStatus;
@@ -41,6 +43,7 @@ public class NoticeService {
     private final NoticeFileRepository noticeFileRepository;
     private final S3Service s3Service;
     private final AdminActionLogRepository adminActionLogRepository;
+    private final ButtonRepository buttonRepository;
 
     @Transactional(readOnly = true)
     public PagingNoticeListResDto noticeList(Long lastNoticeId, int pageSize) {
@@ -94,6 +97,17 @@ public class NoticeService {
                 .banner(banner)
                 .build();
 
+        // CTA 버튼 생성 추가
+        reqDto.getButtons().forEach(dto -> {
+            buttonRepository.save(Button.builder()
+                    .notice(notice)
+                    .text(dto.getText())
+                    .position(dto.getPosition())
+                    .link(dto.getLink())
+                    .target(dto.getTarget())
+                    .build());
+        });
+
         // 3. 파일 존재 여부 확인 및 파일 추가 (루프 통합)
         if (reqDto.getFileUrls() != null && !reqDto.getFileUrls().isEmpty()) {
             for (String fileUrl : reqDto.getFileUrls()) {
@@ -110,7 +124,6 @@ public class NoticeService {
         }
 
         noticeRepository.save(notice);
-
         saveActionLogs(currentUser, notice, reqDto);
 
         return new NoticeResDto(notice.getId(), "공지사항이 정상적으로 작성되었습니다.");
