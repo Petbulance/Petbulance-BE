@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.global.security;
 
+import com.example.Petbulance_BE.global.common.auth.component.CustomAuthenticationEntryPoint;
 import com.example.Petbulance_BE.global.filter.JWTFilter;
 import com.example.Petbulance_BE.global.filter.LogoutFilter;
 import org.springframework.context.annotation.Bean;
@@ -27,10 +28,12 @@ public class SecurityConfig {
 
     private final JWTFilter jwtFilter;
     private final LogoutFilter logoutFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
-    public SecurityConfig(LogoutFilter logoutFilter, JWTFilter jwtFilter) {
+    public SecurityConfig(LogoutFilter logoutFilter, JWTFilter jwtFilter, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
         this.jwtFilter = jwtFilter;
         this.logoutFilter = logoutFilter;
+        this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
     }
 
     @Bean
@@ -103,6 +106,10 @@ public class SecurityConfig {
                 );*/
         http
                 .addFilterBefore(logoutFilter, UsernamePasswordAuthenticationFilter.class);
+        http
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                );
 
 
 

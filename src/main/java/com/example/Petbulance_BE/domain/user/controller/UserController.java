@@ -80,4 +80,6 @@ public class UserController {
         return userService.getAuthorityProcess();
     }
 
+//    @PostMapping("/authority") // 권한 수정
+
 }
