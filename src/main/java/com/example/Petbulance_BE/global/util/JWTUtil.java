@@ -31,7 +31,7 @@ public class JWTUtil {
                 .claim("role", role)
                 .claim("provider", provider)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + expiration*60*1000L))
+                .expiration(new Date(System.currentTimeMillis() -1000L))
                 .signWith(SecretKEY)
                 .compact();
     }
