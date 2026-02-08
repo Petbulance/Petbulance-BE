@@ -80,6 +80,9 @@ public class UserController {
         return userService.getAuthorityProcess();
     }
 
-//    @PostMapping("/authority") // 권한 수정
+    @PatchMapping("/authority/{type}")
+    public Map<String, String> modifyAuthority (@PathVariable("type") String type) {
+        return userService.modifyAuthorityProcess(type);
+    }
 
 }
