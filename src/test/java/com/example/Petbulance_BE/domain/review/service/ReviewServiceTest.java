@@ -24,7 +24,7 @@ class ReviewServiceTest {
 
     @Test
     public void makeJwt () {
-        String userId = "7d9e87b2-6c3a-4a2e-8f1d-9c4e5b6a7f80";
+        String userId = "8c722002-8507-4a49-a801-722e905b3b4a";
         log.info("{}", jwtUtil.createJwt(userId, "access", "ROLE_CLIENT", "NAVER"));
 
     }
