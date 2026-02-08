@@ -161,12 +161,32 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
     }
 
 
-    public BooleanExpression checkRegion(String region){
-        if(region == null) return null;
+    public BooleanExpression checkRegion(String region) {
+        if (region == null || region.isBlank()) {
+            return null;
+        }
 
-        return Expressions.stringTemplate(
-                "REPLACE({0}, ' ', '')", hospital.address
-        ).like(region + "%");
+        String[] regions = region.split(",");
+
+        BooleanExpression expression = null;
+
+        for (String r : regions) {
+            String trimmedRegion = r.trim();
+            if (trimmedRegion.isEmpty()) continue;
+
+            //각 지역 키워드에 대해 LIKE 조건 생성
+            BooleanExpression condition = Expressions.stringTemplate(
+                    "REPLACE({0}, ' ', '')", hospital.address
+            ).like(trimmedRegion + "%");
+
+            if (expression == null) {
+                expression = condition;
+            } else {
+                expression = expression.or(condition);
+            }
+        }
+
+        return expression;
     }
 
     public BooleanExpression checkReceiptReview(Boolean receiptCheck){
