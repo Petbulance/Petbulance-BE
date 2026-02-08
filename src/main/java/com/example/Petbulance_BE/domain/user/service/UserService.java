@@ -396,4 +396,26 @@ public class UserService {
                     .build();
 
     }
+
+    @Transactional
+    public Map<String, String> modifyAuthorityProcess(String type) {
+
+        Users currentUser = userUtil.getCurrentUser();
+        Users users = usersJpaRepository.findById(currentUser.getId()).orElseThrow(() -> new CustomException(ErrorCode.NON_EXIST_USER));
+
+        UserAuthority userAuthority = users.getUserAuthority();
+
+        if(type.equals("location")){
+            userAuthority.setLocationService(!userAuthority.getLocationService());
+        }else if(type.equals("marketing")){
+            userAuthority.setMarketing(!userAuthority.getMarketing());
+        }else if(type.equals("camera")){
+            userAuthority.setLocationService(!userAuthority.getLocationService());
+        }else{
+            throw new CustomException(ErrorCode.INVALID_TYPE);
+        }
+
+        return Map.of("message", "success");
+
+    }
 }
