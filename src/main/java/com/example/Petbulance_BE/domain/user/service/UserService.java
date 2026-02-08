@@ -405,12 +405,12 @@ public class UserService {
 
         UserAuthority userAuthority = users.getUserAuthority();
 
-        if(type.equals("location")){
+        if(type.equals("locationService")){
             userAuthority.setLocationService(!userAuthority.getLocationService());
         }else if(type.equals("marketing")){
             userAuthority.setMarketing(!userAuthority.getMarketing());
         }else if(type.equals("camera")){
-            userAuthority.setLocationService(!userAuthority.getLocationService());
+            userAuthority.setCamera(!userAuthority.getCamera());
         }else{
             throw new CustomException(ErrorCode.INVALID_TYPE);
         }
