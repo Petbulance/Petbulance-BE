@@ -96,7 +96,7 @@ public class ReviewService {
             .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
             .toFormatter();
 
-    //@DailyLimit
+    @DailyLimit
     public Mono<ReceiptResDto> receiptExtractProcess(MultipartFile image) {
 
         //log.info("🚀 [{}] 요청 시작", Thread.currentThread().getName());
