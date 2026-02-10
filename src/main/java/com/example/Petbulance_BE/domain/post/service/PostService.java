@@ -6,6 +6,7 @@ import com.example.Petbulance_BE.domain.adminlog.type.*;
 import com.example.Petbulance_BE.domain.board.entity.Board;
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.dashboard.service.DashboardMetricRedisService;
+import com.example.Petbulance_BE.domain.notice.repository.NoticeRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.request.UpdatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.*;
@@ -33,13 +34,11 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -56,6 +55,7 @@ public class PostService {
     private final RecentService recentService;
     private final DashboardMetricRedisService dashboardMetricRedisService;
     private final AdminActionLogRepository adminActionLogRepository;
+    private final NoticeRepository noticeRepository;
 
     private static final String CACHE_KEY_FORMAT = "post::inquiry::%d";
 
@@ -303,16 +303,12 @@ public class PostService {
 
     @Transactional(readOnly = true)
     @CheckCommunityAvailable
-    public PagingPostListResDto postList(Long boardId, String category, String sort, Long lastPostId, Integer pageSize) {
-
-        // 카테고리/정렬/게시판 검증
-        Category c = Category.fromString(category);
-
+    public PagingPostListResDto postList(Long boardId, Category category, String sort, Long lastPostId, Integer pageSize) {
         validateSortCondition(sort);
         validationBoardId(boardId);
 
         // 게시글 목록 조회
-        Slice<PostListResDto> postSlice = postRepository.findPostList(boardId, c, sort, lastPostId, pageSize);
+        Slice<PostListResDto> postSlice = postRepository.findPostList(boardId, category, sort, lastPostId, pageSize);
         List<PostListResDto> posts = postSlice.getContent();
 
         if (posts.isEmpty()) {
@@ -335,10 +331,21 @@ public class PostService {
         posts.forEach(dto -> {
             dto.setViewCount(viewCountMap.getOrDefault(dto.getPostId(), 0L));
             dto.setLikedByUser(likedPostIds.contains(dto.getPostId()));
-            dto.setCreatedAt(TimeUtil.formatCreatedAt(LocalDateTime.parse(dto.getCreatedAt())));
         });
 
-        return new PagingPostListResDto(postSlice);
+        PagingPostListResDto resDto = new PagingPostListResDto(postSlice);
+
+        if (lastPostId == null) {
+            resDto.setNoticeBanner(getNoticeBannerInfo());
+        }
+
+        // 썸네일용 이미지 반환 (추가 예정)
+
+        return resDto;
+    }
+
+    private PagingPostListResDto.NoticeBannerInfo getNoticeBannerInfo() {
+       return PagingPostListResDto.NoticeBannerInfo.from(Objects.requireNonNull(noticeRepository.findFirstByOrderByCreatedAtDesc().orElse(null)));
     }
 
 
@@ -358,8 +365,7 @@ public class PostService {
 
     @Transactional(readOnly = true)
     @CheckCommunityAvailable
-    public PagingPostSearchListResDto postSearchList(Long boardId, List<String> category, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
-        Category.convertToCategoryList(category);
+    public PagingPostSearchListResDto postSearchList(Long boardId, List<Category> category, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
         validateSortCondition(sort);
         validationBoardId(boardId);
         validateSearchScope(searchScope);
@@ -369,7 +375,7 @@ public class PostService {
             throw new CustomException(ErrorCode.INVALID_SEARCH_KEYWORD);
         }
 
-        if(currentUser != null) {
+        if(currentUser != null && StringUtils.hasText(searchKeyword)) {
             recentService.saveRecentCommunitySearch(searchKeyword, currentUser);
         }
 

@@ -12,6 +12,7 @@ import com.example.Petbulance_BE.domain.post.dto.request.UpdatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.*;
 import com.example.Petbulance_BE.domain.post.service.PostLikeService;
 import com.example.Petbulance_BE.domain.post.service.PostService;
+import com.example.Petbulance_BE.domain.post.type.Category;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -57,7 +58,7 @@ public class PostController {
 
     @GetMapping
     public PagingPostListResDto postList(@RequestParam(required = false) Long boardId,
-                                         @RequestParam(required = false) String category,
+                                         @RequestParam(required = false) Category category,
                                          @RequestParam(defaultValue = "popular") String sort,
                                          @RequestParam(required = false) Long lastPostId,
                                          @RequestParam(defaultValue = "10") Integer pageSize) {
@@ -66,7 +67,7 @@ public class PostController {
 
     @GetMapping("/search")
     public PagingPostSearchListResDto postSearchList(@RequestParam(required = false) Long boardId,
-                                                     @RequestParam(required = false) List<String> category,
+                                                     @RequestParam(required = false) List<Category> category,
                                                      @RequestParam(defaultValue = "popular") String sort,
                                                      @RequestParam(required = false) Long lastPostId,
                                                      @RequestParam(defaultValue = "10") Integer pageSize,

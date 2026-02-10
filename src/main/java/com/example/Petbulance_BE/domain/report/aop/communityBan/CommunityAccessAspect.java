@@ -19,7 +19,10 @@ public class CommunityAccessAspect {
     @Before("@annotation(com.example.Petbulance_BE.domain.report.aop.communityBan.CheckCommunityAvailable)")
     public void check() {
         Users currentUser = UserUtil.getCurrentUser();
-        assert currentUser != null;
+
+        if (currentUser == null) {
+            return;
+        }
         communitySanctionService.checkCommunityAccess(currentUser);
     }
 }

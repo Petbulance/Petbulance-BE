@@ -26,14 +26,13 @@ public class CommunitySanctionService {
 
     private final UserSanctionRepository userSanctionRepository;
     private final UsersJpaRepository userRepository;
-    private final UserUtil userUtil;
 
     /**
      * 관리자 페이지에서 report actionType 을 SUSPEND 로 변경했을 때 호출
      */
     public void applySanctionForReport(Report report, SanctionType sanctionType) {
 
-        Users currentUser = userUtil.getCurrentUser();
+        Users currentUser = UserUtil.getCurrentUser();
 
         if (report.getActionType() != ReportActionType.SUSPEND) {
             // SUSPEND 가 아니면 제재 안 함

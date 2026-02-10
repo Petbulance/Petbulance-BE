@@ -16,4 +16,6 @@ public interface NoticeRepository extends JpaRepository<Notice, Long>, NoticeRep
              "LEFT JOIN FETCH n.buttons " + // 하나만 Fetch Join 유지
              "WHERE n.id = :noticeId")
      Optional<Notice> findWithButtons(@Param("noticeId") Long noticeId);
+
+     Optional<Notice> findFirstByOrderByCreatedAtDesc();
 }

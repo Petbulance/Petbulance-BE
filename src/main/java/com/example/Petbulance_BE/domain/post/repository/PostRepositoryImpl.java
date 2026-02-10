@@ -155,8 +155,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         p.id,
                         b.id,
                         b.nameKr,
-                        p.category.stringValue(),
-                        p.createdAt.stringValue(),
+                        p.category,
+                        p.createdAt,
                         img.imageUrl,
                         p.imageNum.longValue(),
                         p.title,
@@ -219,7 +219,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
 
     @Override
-    public PagingPostSearchListResDto findPostSearchList(Long boardId, List<String> category, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
+    public PagingPostSearchListResDto findPostSearchList(Long boardId, List<Category> category, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
         QPost p = QPost.post;
         QPostLikeCount like = QPostLikeCount.postLikeCount1;
         QPostCommentCount comment = QPostCommentCount.postCommentCount1;
@@ -235,7 +235,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         }
 
         if (category != null && !category.isEmpty()) {
-            condition.and(p.category.stringValue().in(category));
+            condition.and(p.category.in(category));
         }
 
         if (searchKeyword != null && !searchKeyword.isBlank()) {
