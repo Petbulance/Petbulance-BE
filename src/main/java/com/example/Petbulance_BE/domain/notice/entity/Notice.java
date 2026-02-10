@@ -62,6 +62,27 @@ public class Notice extends BaseTimeEntity {
     @Builder.Default
     private List<NoticeFile> files = new ArrayList<>();
 
+    @OneToMany(
+            mappedBy = "notice", // Button 엔티티의 notice 필드와 매핑
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    @Builder.Default
+    private List<Button> buttons = new ArrayList<>();
+
+    public void addButton(Button button) {
+        this.buttons.add(button);
+        button.setNotice(this);
+    }
+
+    public void updateButtons(List<Button> newButtons) {
+        this.buttons.clear();
+        if (newButtons != null) {
+            newButtons.forEach(this::addButton);
+        }
+    }
+
     public void addFile(NoticeFile file) {
         files.add(file);
         file.setNotice(this);

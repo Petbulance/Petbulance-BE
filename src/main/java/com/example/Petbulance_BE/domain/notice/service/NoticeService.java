@@ -6,8 +6,10 @@ import com.example.Petbulance_BE.domain.adminlog.type.*;
 import com.example.Petbulance_BE.domain.banner.entity.Banner;
 import com.example.Petbulance_BE.domain.notice.dto.request.*;
 import com.example.Petbulance_BE.domain.notice.dto.response.*;
+import com.example.Petbulance_BE.domain.notice.entity.Button;
 import com.example.Petbulance_BE.domain.notice.entity.Notice;
 import com.example.Petbulance_BE.domain.notice.entity.NoticeFile;
+import com.example.Petbulance_BE.domain.notice.repository.ButtonRepository;
 import com.example.Petbulance_BE.domain.notice.repository.NoticeFileRepository;
 import com.example.Petbulance_BE.domain.notice.repository.NoticeRepository;
 import com.example.Petbulance_BE.domain.notice.type.PostStatus;
@@ -16,6 +18,7 @@ import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.s3.S3Service;
 import com.example.Petbulance_BE.global.util.UserUtil;
+import io.jsonwebtoken.lang.Strings;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,9 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URL;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -41,6 +42,7 @@ public class NoticeService {
     private final NoticeFileRepository noticeFileRepository;
     private final S3Service s3Service;
     private final AdminActionLogRepository adminActionLogRepository;
+    private final ButtonRepository buttonRepository;
 
     @Transactional(readOnly = true)
     public PagingNoticeListResDto noticeList(Long lastNoticeId, int pageSize) {
@@ -49,13 +51,13 @@ public class NoticeService {
 
     @Transactional(readOnly = true)
     public DetailNoticeResDto detailNotice(Long noticeId) {
-        Notice notice = getNotice(noticeId);
+        Notice notice = noticeRepository.findWithButtons(noticeId)
+                .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
 
-        List<NoticeFile> files = noticeFileRepository.findAllByNoticeId(noticeId);
         Notice prev = noticeRepository.findPreviousNotice(noticeId);
         Notice next = noticeRepository.findNextNotice(noticeId);
 
-        return DetailNoticeResDto.from(notice, files, prev, next);
+        return DetailNoticeResDto.from(notice, notice.getFiles(), prev, next);
     }
 
     @Transactional(readOnly = true)
@@ -71,15 +73,17 @@ public class NoticeService {
         // 1. Banner 생성
         Banner banner = null;
         if (reqDto.isBannerRegistered() && reqDto.getBannerInfo() != null) {
-            String bannerKey = extractKeyFromUrl(reqDto.getBannerInfo().getImageUrl());
-            if (!s3Service.doesObjectExist(bannerKey)) {
-                throw new CustomException(ErrorCode.FAIL_IMAGE_UPLOAD);
+            if(Strings.hasText(reqDto.getBannerInfo().getImageUrl())) {
+                String bannerKey = extractKeyFromUrl(reqDto.getBannerInfo().getImageUrl());
+                if (!s3Service.doesObjectExist(bannerKey)) {
+                    throw new CustomException(ErrorCode.FAIL_IMAGE_UPLOAD);
+                }
             }
 
             banner = Banner.builder()
                     .startDate(reqDto.getBannerInfo().getStartDate())
                     .endDate(reqDto.getBannerInfo().getEndDate())
-                    .fileUrl(reqDto.getBannerInfo().getImageUrl())
+                    .fileUrl(reqDto.getBannerInfo().getImageUrl() == null ? null : reqDto.getBannerInfo().getImageUrl())
                     .build();
         }
 
@@ -94,7 +98,19 @@ public class NoticeService {
                 .banner(banner)
                 .build();
 
-        // 3. 파일 존재 여부 확인 및 파일 추가 (루프 통합)
+        // CTA 버튼 생성 추가
+        if (reqDto.getButtons() != null) {
+            reqDto.getButtons().forEach(dto -> {
+                notice.addButton(Button.builder() // 개별 save 호출 없이 리스트에 추가
+                        .text(dto.getText())
+                        .position(dto.getPosition())
+                        .link(dto.getLink())
+                        .target(dto.getTarget())
+                        .build());
+            });
+        }
+
+        // 3. 파일 존재 여부 확인 및 파일 추가
         if (reqDto.getFileUrls() != null && !reqDto.getFileUrls().isEmpty()) {
             for (String fileUrl : reqDto.getFileUrls()) {
                 String key = extractKeyFromUrl(fileUrl);
@@ -110,7 +126,6 @@ public class NoticeService {
         }
 
         noticeRepository.save(notice);
-
         saveActionLogs(currentUser, notice, reqDto);
 
         return new NoticeResDto(notice.getId(), "공지사항이 정상적으로 작성되었습니다.");
@@ -158,8 +173,39 @@ public class NoticeService {
             saveStatusChangeLog(currentUser, noticeId, reqDto.getPostStatus());
         }
 
-        // 6. 엔티티 정보 업데이트 (Dirty Checking)
+        // 6. 엔티티 정보 업데이트
         notice.update(reqDto);
+
+        // 7. CTA 수정
+        List<UpdateNoticeReqDto.ButtonReqDto> buttonDtos = reqDto.getButtons() == null ? new ArrayList<>() : reqDto.getButtons();
+        List<Button> existingButtons = notice.getButtons();
+
+        // 1. 삭제 로직: 요청 리스트에 없는 기존 버튼 삭제
+        List<Long> reqButtonIds = buttonDtos.stream()
+                .map(UpdateNoticeReqDto.ButtonReqDto::getButtonId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        existingButtons.removeIf(button -> !reqButtonIds.contains(button.getId()));
+
+        // 2. 수정 및 추가 로직
+        for (UpdateNoticeReqDto.ButtonReqDto dto : buttonDtos) {
+            if (dto.getButtonId() != null) {
+                // 수정: 기존 버튼 찾아서 업데이트
+                notice.getButtons().stream()
+                        .filter(b -> b.getId().equals(dto.getButtonId()))
+                        .findFirst()
+                        .ifPresent(b -> b.update(dto));
+            } else {
+                // 추가: ID가 없으면 신규 버튼 생성
+                notice.addButton(Button.builder()
+                        .text(dto.getText())
+                        .position(dto.getPosition())
+                        .link(dto.getLink())
+                        .target(dto.getTarget())
+                        .build());
+            }
+        }
 
         // 수정 완료 로그
         saveUpdateLog(currentUser, noticeId);

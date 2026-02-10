@@ -2,7 +2,7 @@ name: Deploy To EC2 (Blue-Green via Bastion)
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
