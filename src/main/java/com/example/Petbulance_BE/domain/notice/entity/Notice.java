@@ -1,0 +1,105 @@
+package com.example.Petbulance_BE.domain.notice.entity;
+
+import com.example.Petbulance_BE.domain.banner.entity.Banner;
+import com.example.Petbulance_BE.domain.notice.dto.request.UpdateNoticeReqDto;
+import com.example.Petbulance_BE.domain.notice.type.NoticeStatus;
+import com.example.Petbulance_BE.domain.notice.type.PostStatus;
+import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
+import jakarta.persistence.*;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "notices")
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Notice extends BaseTimeEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "notice_id")
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private Users user;
+
+
+    @Enumerated(EnumType.STRING)
+    private NoticeStatus noticeStatus;
+
+    @Enumerated(EnumType.STRING)
+    private PostStatus postStatus;
+
+    @Column(length = 200)
+    private String title;
+
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    private boolean bannerRegistered; // 배너 설정 여부
+
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "banner_id")
+    private Banner banner;
+
+
+    @OneToMany(
+            mappedBy = "notice",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    @Builder.Default
+    private List<NoticeFile> files = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "notice", // Button 엔티티의 notice 필드와 매핑
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    @Builder.Default
+    private List<Button> buttons = new ArrayList<>();
+
+    public void addButton(Button button) {
+        this.buttons.add(button);
+        button.setNotice(this);
+    }
+
+    public void updateButtons(List<Button> newButtons) {
+        this.buttons.clear();
+        if (newButtons != null) {
+            newButtons.forEach(this::addButton);
+        }
+    }
+
+    public void addFile(NoticeFile file) {
+        files.add(file);
+        file.setNotice(this);
+    }
+
+    public void removeFile(NoticeFile file) {
+        files.remove(file);
+        file.setNotice(null);
+    }
+
+    public void update(@Valid UpdateNoticeReqDto reqDto) {
+        this.noticeStatus = reqDto.getNoticeStatus();
+        this.postStatus = reqDto.getPostStatus();
+        this.title = reqDto.getTitle();
+        this.content = reqDto.getContent();
+        this.bannerRegistered = reqDto.isBannerRegistered();
+        this.banner.updateBanner(reqDto.getBannerInfo());
+
+    }
+}

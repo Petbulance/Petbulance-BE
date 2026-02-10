@@ -1,0 +1,174 @@
+package com.example.Petbulance_BE.domain.notice.repository;
+
+import com.example.Petbulance_BE.domain.notice.dto.response.*;
+import com.example.Petbulance_BE.domain.notice.entity.Notice;
+import com.example.Petbulance_BE.domain.notice.entity.QNotice;
+import com.example.Petbulance_BE.domain.notice.type.PostStatus;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Projections;
+import com.querydsl.jpa.JPAExpressions;
+import com.querydsl.jpa.JPQLQuery;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+@RequiredArgsConstructor
+public class NoticeRepositoryImpl implements NoticeRepositoryCustom{
+    private final JPAQueryFactory queryFactory;
+    QNotice n = QNotice.notice;
+
+
+    @Override
+    public PagingNoticeListResDto findNoticeList(Long lastNoticeId, int pageSize) {
+        BooleanBuilder whereBuilder = new BooleanBuilder();
+
+        if (lastNoticeId != null) {
+            JPQLQuery<LocalDateTime> subCreatedAt = JPAExpressions
+                    .select(n.createdAt)
+                    .from(n)
+                    .where(n.id.eq(lastNoticeId));
+
+            whereBuilder.and(
+                    n.createdAt.lt(subCreatedAt)
+                            .or(
+                                    n.createdAt.eq(subCreatedAt)
+                                            .and(n.id.lt(lastNoticeId))
+                            )
+            );
+        }
+
+        whereBuilder.and(n.postStatus.eq(PostStatus.ACTIVE));
+
+        List<NoticeListResDto> results = queryFactory
+                .select(Projections.constructor(
+                        NoticeListResDto.class,
+                        n.id,
+                        n.noticeStatus,
+                        n.title,
+                        n.content,
+                        n.createdAt
+                ))
+                .from(n)
+                .where(whereBuilder)
+                .orderBy(n.createdAt.desc(), n.id.desc())
+                .limit(pageSize + 1)
+                .fetch();
+
+        boolean hasNext = results.size() > pageSize;
+        if (hasNext) {
+            results.remove(results.size() - 1);
+        }
+
+        return new PagingNoticeListResDto(results, hasNext);
+    }
+
+    @Override
+    public Notice findPreviousNotice(Long noticeId) {
+
+        Notice current = queryFactory
+                .selectFrom(n)
+                .where(n.id.eq(noticeId))
+                .fetchOne();
+
+        if (current == null) return null;
+
+        return queryFactory
+                .selectFrom(n)
+                .where(
+                        n.createdAt.lt(current.getCreatedAt())
+                                .or(
+                                        n.createdAt.eq(current.getCreatedAt())
+                                                .and(n.id.lt(noticeId))
+                                )
+                )
+                .orderBy(n.createdAt.desc(), n.id.desc())
+                .fetchFirst();
+    }
+
+    @Override
+    public Notice findNextNotice(Long noticeId) {
+
+        Notice current = queryFactory
+                .selectFrom(n)
+                .where(n.id.eq(noticeId))
+                .fetchOne();
+
+        if (current == null) return null;
+
+        return queryFactory
+                .selectFrom(n)
+                .where(
+                        n.createdAt.gt(current.getCreatedAt())
+                                .or(
+                                        n.createdAt.eq(current.getCreatedAt())
+                                                .and(n.id.gt(noticeId))
+                                )
+                )
+                .orderBy(n.createdAt.asc(), n.id.asc())
+                .fetchFirst();
+    }
+
+    @Override
+    public PagingAdminNoticeListResDto adminNoticeList(int page, int size) {
+        QNotice notice = QNotice.notice;
+
+        long offset = (long) (page - 1) * size;
+
+        List<Long> ids = queryFactory
+                .select(notice.id)
+                .from(notice)
+                .orderBy(notice.createdAt.desc(), notice.id.desc())
+                .offset(offset)
+                .limit(size)
+                .fetch();
+
+        if (ids.isEmpty()) {
+            return new PagingAdminNoticeListResDto(
+                    List.of(), page, size, 0, 0, false, page > 1
+            );
+        }
+
+        List<AdminNoticeListResDto> content = queryFactory
+                .select(
+                        Projections.constructor(
+                                AdminNoticeListResDto.class,
+                                notice.id,
+                                notice.title,
+                                notice.noticeStatus,
+                                notice.postStatus,
+                                notice.createdAt,
+                                notice.bannerRegistered
+                        )
+                )
+                .from(notice)
+                .where(notice.id.in(ids))
+                .orderBy(notice.createdAt.desc(), notice.id.desc())
+                .fetch();
+
+        long totalElements = queryFactory
+                .select(notice.id.count())
+                .from(notice)
+                .fetchOne();
+
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+
+        boolean hasNext = page < totalPages;
+        boolean hasPrev = page > 1;
+
+        return new PagingAdminNoticeListResDto(
+                content,
+                page,
+                size,
+                totalPages,
+                totalElements,
+                hasNext,
+                hasPrev
+        );
+    }
+
+}
