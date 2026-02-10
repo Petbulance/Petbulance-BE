@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.notice.dto.response;
 
+import com.example.Petbulance_BE.domain.notice.entity.Button;
 import com.example.Petbulance_BE.domain.notice.entity.Notice;
 import com.example.Petbulance_BE.domain.notice.entity.NoticeFile;
 import com.example.Petbulance_BE.global.util.TimeUtil;
@@ -25,6 +26,7 @@ public class DetailNoticeResDto {
     private List<AttachmentDto> attachments;
     private AdjacentNoticeDto previousNotice;
     private AdjacentNoticeDto nextNotice;
+    private List<ButtonDto> buttons;
 
     public static DetailNoticeResDto from(Notice n, List<NoticeFile> files, Notice prev, Notice next) {
         return DetailNoticeResDto.builder()
@@ -35,6 +37,9 @@ public class DetailNoticeResDto {
                 .content(n.getContent())
                 .attachments(files.stream()
                         .map(AttachmentDto::from)
+                        .collect(Collectors.toList()))
+                .buttons(n.getButtons().stream()
+                        .map(ButtonDto::from)
                         .collect(Collectors.toList()))
                 .previousNotice(prev != null ? AdjacentNoticeDto.from(prev) : null)
                 .nextNotice(next != null ? AdjacentNoticeDto.from(next) : null)
@@ -71,6 +76,28 @@ public class DetailNoticeResDto {
             return AdjacentNoticeDto.builder()
                     .noticeId(n.getId())
                     .title(n.getTitle())
+                    .build();
+        }
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ButtonDto {
+        private Long buttonId;
+        private String text;
+        private String position;
+        private String link;
+        private String target;
+
+        public static ButtonDto from(Button b) {
+            return ButtonDto.builder()
+                    .buttonId(b.getId())
+                    .text(b.getText())
+                    .position(b.getPosition())
+                    .link(b.getLink())
+                    .target(b.getTarget())
                     .build();
         }
     }

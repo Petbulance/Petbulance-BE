@@ -18,6 +18,7 @@ import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.s3.S3Service;
 import com.example.Petbulance_BE.global.util.UserUtil;
+import io.jsonwebtoken.lang.Strings;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,13 +51,13 @@ public class NoticeService {
 
     @Transactional(readOnly = true)
     public DetailNoticeResDto detailNotice(Long noticeId) {
-        Notice notice = getNotice(noticeId);
+        Notice notice = noticeRepository.findWithButtons(noticeId)
+                .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
 
-        List<NoticeFile> files = noticeFileRepository.findAllByNoticeId(noticeId);
         Notice prev = noticeRepository.findPreviousNotice(noticeId);
         Notice next = noticeRepository.findNextNotice(noticeId);
 
-        return DetailNoticeResDto.from(notice, files, prev, next);
+        return DetailNoticeResDto.from(notice, notice.getFiles(), prev, next);
     }
 
     @Transactional(readOnly = true)
@@ -72,15 +73,17 @@ public class NoticeService {
         // 1. Banner 생성
         Banner banner = null;
         if (reqDto.isBannerRegistered() && reqDto.getBannerInfo() != null) {
-            String bannerKey = extractKeyFromUrl(reqDto.getBannerInfo().getImageUrl());
-            if (!s3Service.doesObjectExist(bannerKey)) {
-                throw new CustomException(ErrorCode.FAIL_IMAGE_UPLOAD);
+            if(Strings.hasText(reqDto.getBannerInfo().getImageUrl())) {
+                String bannerKey = extractKeyFromUrl(reqDto.getBannerInfo().getImageUrl());
+                if (!s3Service.doesObjectExist(bannerKey)) {
+                    throw new CustomException(ErrorCode.FAIL_IMAGE_UPLOAD);
+                }
             }
 
             banner = Banner.builder()
                     .startDate(reqDto.getBannerInfo().getStartDate())
                     .endDate(reqDto.getBannerInfo().getEndDate())
-                    .fileUrl(reqDto.getBannerInfo().getImageUrl())
+                    .fileUrl(reqDto.getBannerInfo().getImageUrl() == null ? null : reqDto.getBannerInfo().getImageUrl())
                     .build();
         }
 
