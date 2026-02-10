@@ -33,6 +33,8 @@ public class UpdateNoticeReqDto {
     private boolean bannerRegistered; // 배너 설정 여부
     private BannerReqDto bannerInfo;
 
+    private List<ButtonReqDto> buttons;
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -40,6 +42,17 @@ public class UpdateNoticeReqDto {
         private LocalDate startDate;
         private LocalDate endDate;
         private String imageUrl;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ButtonReqDto {
+        private Long buttonId;
+        private String text;
+        private String position;
+        private String link;
+        private String target;
     }
 
 }

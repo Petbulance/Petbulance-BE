@@ -28,9 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URL;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -98,17 +96,18 @@ public class NoticeService {
                 .build();
 
         // CTA 버튼 생성 추가
-        reqDto.getButtons().forEach(dto -> {
-            buttonRepository.save(Button.builder()
-                    .notice(notice)
-                    .text(dto.getText())
-                    .position(dto.getPosition())
-                    .link(dto.getLink())
-                    .target(dto.getTarget())
-                    .build());
-        });
+        if (reqDto.getButtons() != null) {
+            reqDto.getButtons().forEach(dto -> {
+                notice.addButton(Button.builder() // 개별 save 호출 없이 리스트에 추가
+                        .text(dto.getText())
+                        .position(dto.getPosition())
+                        .link(dto.getLink())
+                        .target(dto.getTarget())
+                        .build());
+            });
+        }
 
-        // 3. 파일 존재 여부 확인 및 파일 추가 (루프 통합)
+        // 3. 파일 존재 여부 확인 및 파일 추가
         if (reqDto.getFileUrls() != null && !reqDto.getFileUrls().isEmpty()) {
             for (String fileUrl : reqDto.getFileUrls()) {
                 String key = extractKeyFromUrl(fileUrl);
@@ -171,8 +170,39 @@ public class NoticeService {
             saveStatusChangeLog(currentUser, noticeId, reqDto.getPostStatus());
         }
 
-        // 6. 엔티티 정보 업데이트 (Dirty Checking)
+        // 6. 엔티티 정보 업데이트
         notice.update(reqDto);
+
+        // 7. CTA 수정
+        List<UpdateNoticeReqDto.ButtonReqDto> buttonDtos = reqDto.getButtons() == null ? new ArrayList<>() : reqDto.getButtons();
+        List<Button> existingButtons = notice.getButtons();
+
+        // 1. 삭제 로직: 요청 리스트에 없는 기존 버튼 삭제
+        List<Long> reqButtonIds = buttonDtos.stream()
+                .map(UpdateNoticeReqDto.ButtonReqDto::getButtonId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        existingButtons.removeIf(button -> !reqButtonIds.contains(button.getId()));
+
+        // 2. 수정 및 추가 로직
+        for (UpdateNoticeReqDto.ButtonReqDto dto : buttonDtos) {
+            if (dto.getButtonId() != null) {
+                // 수정: 기존 버튼 찾아서 업데이트
+                notice.getButtons().stream()
+                        .filter(b -> b.getId().equals(dto.getButtonId()))
+                        .findFirst()
+                        .ifPresent(b -> b.update(dto));
+            } else {
+                // 추가: ID가 없으면 신규 버튼 생성
+                notice.addButton(Button.builder()
+                        .text(dto.getText())
+                        .position(dto.getPosition())
+                        .link(dto.getLink())
+                        .target(dto.getTarget())
+                        .build());
+            }
+        }
 
         // 수정 완료 로그
         saveUpdateLog(currentUser, noticeId);
