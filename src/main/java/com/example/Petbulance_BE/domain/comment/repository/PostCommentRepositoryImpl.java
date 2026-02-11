@@ -274,7 +274,8 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                         p.title,
                         pc.content,
                         pc.createdAt,
-                        pc.hidden
+                        pc.hidden,
+                        pc.isSecret
                 ))
                 .from(pc)
                 .leftJoin(pc.post, p)

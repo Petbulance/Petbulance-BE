@@ -20,8 +20,9 @@ public class MyCommentListResDto {
     private String commentContent;
     private String createdAt;
     private boolean hidden;
+    private boolean isSecret;
 
-    public MyCommentListResDto(Long commentId, Long boardId, Long postId, String postTitle, String commentContent, LocalDateTime createdAt, boolean hidden) {
+    public MyCommentListResDto(Long commentId, Long boardId, Long postId, String postTitle, String commentContent, LocalDateTime createdAt, boolean hidden, boolean isSecret) {
         this.commentId = commentId;
         this.boardId = boardId;
         this.postId = postId;
@@ -29,5 +30,6 @@ public class MyCommentListResDto {
         this.commentContent = commentContent;
         this.createdAt = TimeUtil.formatCreatedAt(createdAt);
         this.hidden = hidden;
+        this.isSecret = isSecret;
     }
 }
