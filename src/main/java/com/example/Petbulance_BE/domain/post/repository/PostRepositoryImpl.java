@@ -95,6 +95,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         return queryFactory
                 .select(Projections.constructor(
                         DetailPostResDto.ImageInfo.class,
+                        pi.id,
                         pi.imageUrl,
                         pi.imageOrder,
                         pi.thumbnail

@@ -50,6 +50,7 @@ public class DetailPostResDto {
     @AllArgsConstructor
     @Builder
     public static class ImageInfo {
+        private Long imageId;
         private String imageUrl;
         private Integer imageOrder;
         private Boolean thumbnail;

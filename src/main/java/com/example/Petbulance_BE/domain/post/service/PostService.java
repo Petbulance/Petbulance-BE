@@ -22,6 +22,7 @@ import com.example.Petbulance_BE.domain.report.aop.communityBan.CheckCommunityAv
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.common.s3.S3Service;
 import com.example.Petbulance_BE.global.common.type.Role;
 import com.example.Petbulance_BE.global.util.TimeUtil;
 import com.example.Petbulance_BE.global.util.UserUtil;
@@ -56,6 +57,7 @@ public class PostService {
     private final DashboardMetricRedisService dashboardMetricRedisService;
     private final AdminActionLogRepository adminActionLogRepository;
     private final NoticeRepository noticeRepository;
+    private final S3Service s3Service;
 
     private static final String CACHE_KEY_FORMAT = "post::inquiry::%d";
 
@@ -156,9 +158,10 @@ public class PostService {
                 if (target != null) {
                     postImageRepository.delete(target);
                     ;try {
-                        //s3Service.deleteFile(url);
+                        String key = s3Service.extractKeyFromUrl(url);
+                        s3Service.deleteObject(key);
                     } catch (Exception e) {
-                        //  log.warn("S3 파일 삭제 실패: {}", url, e);
+                        log.warn("S3 파일 삭제 실패: {}", url, e);
                     }
                 }
             });
@@ -261,13 +264,11 @@ public class PostService {
 
         // 현재 로그인 유저 (게시글 작성자인지 확인하기 위함)
         Users currentUser = UserUtil.getCurrentUser();
-
         boolean currentUserIsPostAuthor = currentUserIsPostAuthor(post.getUser(), currentUser); // 현재 유저가 게시글 작성자인지
 
 
         // Redis 기반 조회수 증가
-        assert currentUser != null;
-        long viewCount = postViewCountRepository.increaseIfNotViewed(postId, currentUser.getId()); // 해당 게시글을 조회한 적 없는 사용자에 대해서만 카윤트 집계
+        long viewCount = postViewCountRepository.increaseIfNotViewed(postId, currentUser == null ? null : currentUser.getId()); // 해당 게시글을 조회한 적 없는 사용자에 대해서만 카윤트 집계
 
         // 정적 데이터 캐싱
         String key = String.format(CACHE_KEY_FORMAT, postId); // 키 생성
