@@ -364,9 +364,9 @@ public class HospitalService {
                 .orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_HOSPITAL));
 
         // 2. 거리 계산
-        Double distance = hospitalRepository
-                .calculateDistance(lng, lat, hospitalId)
-                .orElse(0.0);
+//        Double distance = hospitalRepository
+//                .calculateDistance(lng, lat, hospitalId)
+//                .orElse(0.0);
 
         // 3. 나머지 로직은 그대로
         List<String> list = hospital.getTreatmentAnimals().stream()
@@ -423,7 +423,7 @@ public class HospitalService {
                 .name(hospital.getName())
                 .lat(hospital.getLat())
                 .lng(hospital.getLng())
-                .distanceMeters(distance)
+                .distanceMeters(0.0)
                 .phone(hospital.getPhoneNumber())
                 .types(list)
                 .isOpenNow(isOpen)
