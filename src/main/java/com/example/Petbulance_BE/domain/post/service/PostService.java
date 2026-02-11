@@ -103,6 +103,13 @@ public class PostService {
         if (imageUrls == null || imageUrls.isEmpty()) return;
 
         for (int i = 0; i < imageUrls.size(); i++) {
+            String imageUrl = imageUrls.get(i);
+            String key = s3Service.extractKeyFromUrl(imageUrl);
+
+            if (!s3Service.doesObjectExist(key)) {
+                throw new CustomException(ErrorCode.FAIL_IMAGE_UPLOAD);
+            }
+
             boolean isThumbnail = (i == 0); // 첫 번째 이미지를 썸네일로 설정
             postImageRepository.save(PostImage.create(post, imageUrls.get(i), i+1, isThumbnail));
         }
