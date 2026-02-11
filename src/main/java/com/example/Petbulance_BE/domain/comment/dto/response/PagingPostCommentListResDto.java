@@ -14,6 +14,8 @@ import java.util.List;
 @Builder
 public class PagingPostCommentListResDto {
     private List<PostCommentListResDto> content;
+    private Long lastParentCommentId;
+    private Long lastCommentId;
     private boolean hasNext;
     private Long totalCommentCount;
 
@@ -21,5 +23,14 @@ public class PagingPostCommentListResDto {
         this.content = slice.getContent();
         this.hasNext = slice.hasNext();
         this.totalCommentCount = totalCommentCount;
+
+        if (this.content != null && !this.content.isEmpty()) {
+            PostCommentListResDto last = this.content.get(this.content.size() - 1);
+            this.lastParentCommentId = last.getParentId();
+            this.lastCommentId = last.getCommentId();
+        } else {
+            this.lastParentCommentId = null;
+            this.lastCommentId = null;
+        }
     }
 }
