@@ -1,4 +1,4 @@
-name: Deploy To EC2 (Blue-Green via Bastion)
+name: Deploy To EC2 (Blue-Green Public)
 
 on:
   push:
@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  # 1️⃣ BUILD JOB
+  # 1️⃣ BUILD JOB: 애플리케이션 빌드 및 ECR 푸시
   build:
     runs-on: ubuntu-latest
     steps:
@@ -25,7 +25,7 @@ jobs:
           ${{ secrets.FILEBASE_JSON }}
           EOF
 
-      - name: Create application-prod.yml
+      - name: Create application.yml
         run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application.yml
 
       - name: Build Spring Boot
@@ -33,7 +33,8 @@ jobs:
           chmod +x ./gradlew
           ./gradlew clean build -x test
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ap-northeast-2
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -50,43 +51,35 @@ jobs:
           docker tag petbulance:latest 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
           docker push 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
 
-  # 2️⃣ DEPLOY JOB
+  # 2️⃣ DEPLOY JOB: Public EC2에 직접 접속하여 블루-그린 배포
   deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Configure SSH (Bastion → Private)
+      - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
           cat <<EOF >> ~/.ssh/config
-          Host bastion
-            HostName ${{ secrets.BASTION_HOST }}
+          Host ec2-server
+            HostName ${{ secrets.EC2_PUBLIC_IP }}
             User ubuntu
             IdentityFile ~/.ssh/id_rsa
-            StrictHostKeyChecking no
-
-          Host private
-            HostName ${{ secrets.EC2_PRIVATE_HOST }}
-            User ubuntu
-            IdentityFile ~/.ssh/id_rsa
-            ProxyJump bastion
             StrictHostKeyChecking no
           EOF
 
-      - name: Blue-Green Deploy
+      - name: Blue-Green Deploy via SSH
         run: |
-          ssh private << 'EOF'
+          ssh ec2-server << 'EOF'
             set -e
-          
-            echo "▶ Detect current upstream from nginx env file"
-            if [ -f /etc/nginx/conf.d/service-env.inc ]; then
-              CURRENT_VAL=$(grep -oP '(?<=set \$service_url ).*(?=;)' /etc/nginx/conf.d/service-env.inc || echo "blue")
-            else
-              CURRENT_VAL="blue"
+
+            echo "▶ Nginx 환경 설정 확인 및 현재 서비스 감지"
+            if [ ! -f /etc/nginx/conf.d/service-env.inc ]; then
+              echo "set \$service_url blue;" | sudo tee /etc/nginx/conf.d/service-env.inc
             fi
+          
+            CURRENT_VAL=$(grep -oP '(?<=set \$service_url ).*(?=;)' /etc/nginx/conf.d/service-env.inc || echo "blue")
           
             if [ "$CURRENT_VAL" = "blue" ]; then
               TARGET="green"
@@ -98,20 +91,20 @@ jobs:
               OLD_TARGET="green"
             fi
           
-            echo "▶ 현재 서비스: $CURRENT_VAL -> 타겟: $TARGET (포트: $TARGET_PORT)"
+            echo "▶ 현재 서비스: $CURRENT_VAL -> 신규 배포 대상: $TARGET (포트: $TARGET_PORT)"
           
-            # ECR 로그인 및 이미지 풀 (주소 수정됨)
+            # ECR 로그인
             aws ecr get-login-password --region ap-northeast-2 \
               | docker login --username AWS --password-stdin 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com
           
-            echo "▶ Pull image"
+            echo "▶ 최신 이미지 Pull"
             docker pull 276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
           
-            echo "▶ Stop & remove target $TARGET (if exists)"
+            echo "▶ 기존 $TARGET 컨테이너 제거"
             docker stop $TARGET || true
             docker rm $TARGET || true
           
-            echo "▶ Run new $TARGET"
+            echo "▶ $TARGET 컨테이너 실행"
             docker run -d \
               --name $TARGET \
               --restart=always \
@@ -122,33 +115,32 @@ jobs:
               -p $TARGET_PORT:8080 \
               276995858259.dkr.ecr.ap-northeast-2.amazonaws.com/petbulance:latest
           
-            echo "▶ Health Check"
+            echo "▶ 헬스 체크 시작 (/app/health)"
             HEALTH_OK=false
             for i in {1..50}; do
               if curl -sf http://localhost:$TARGET_PORT/app/health; then
-                echo "✅ Health OK"
+                echo "✅ 헬스 체크 성공!"
                 HEALTH_OK=true
                 break
               fi
-              echo "Waiting... ($i/50)"
+              echo "대기 중... ($i/50)"
               sleep 5
             done
           
             if [ "$HEALTH_OK" != "true" ]; then
-              echo "❌ Health check failed. Rollback."
+              echo "❌ 헬스 체크 실패. 배포를 중단합니다."
               docker logs $TARGET
               exit 1
             fi
           
-            echo "▶ Switching Nginx upstream to $TARGET"
+            echo "▶ Nginx 스위칭 (Upstream 변경)"
             echo "set \$service_url $TARGET;" | sudo tee /etc/nginx/conf.d/service-env.inc
+            sudo nginx -t && sudo nginx -s reload
           
-            sudo nginx -t
-            sudo nginx -s reload
-          
-            echo "▶ Stopping OLD container: $OLD_TARGET"
+            echo "▶ 이전 컨테이너($OLD_TARGET) 정리 및 미사용 이미지 삭제"
             docker stop $OLD_TARGET || true
             docker rm $OLD_TARGET || true
+            docker image prune -af
           
-            echo "✅ Deployment complete. Now running: $TARGET"
+            echo "✅ 배포 완료! 현재 실행 중: $TARGET"
           EOF
