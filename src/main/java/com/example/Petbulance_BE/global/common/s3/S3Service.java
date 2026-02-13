@@ -136,4 +136,12 @@ public class S3Service {
             throw new CustomException(ErrorCode.FAIL_CREATE_PRESIGNED_URL);
         }
     }
+
+    public String extractKeyFromUrl(String fileUrl) {
+        if (fileUrl == null || !fileUrl.contains(".com/")) {
+            return fileUrl; // 이미 Key 형태인 경우 그대로 반환
+        }
+        // ".com/" 이후의 모든 문자열을 Key로 간주
+        return fileUrl.substring(fileUrl.indexOf(".com/") + 5);
+    }
 }

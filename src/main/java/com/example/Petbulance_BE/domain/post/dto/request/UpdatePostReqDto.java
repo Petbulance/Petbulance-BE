@@ -26,7 +26,7 @@ public class UpdatePostReqDto {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public class ImageUpdateDto {
+    public static class ImageUpdateDto {
         private String imageUrl;
         private int imageOrder;
         private boolean thumbnail;

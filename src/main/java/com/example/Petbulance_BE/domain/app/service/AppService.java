@@ -71,14 +71,19 @@ public class AppService {
         List<GetPresignResDto.UrlInfo> urlInfos = new ArrayList<>();
 
         for (GetPresignReqDto.NoticeFileReqDto fileDto : reqDto.getFiles()) {
-            // 1. S3에 저장할 고유 키 생성 (noticeImage/UUID_파일명)
-            String key = fileDto.getUsage().toString().toLowerCase() + "/" + UUID.randomUUID() + "_" + fileDto.getFilename();
+            String usageName = fileDto.getUsage().name(); // enum은 name()가 안전
+            boolean isTest = usageName.startsWith("TEST_");
 
-            // 2. S3업로드용 Presigned URL 생성 (만료시간 5분 등 설정)
+            String baseFolder = isTest
+                    ? usageName.substring("TEST_".length())  // NOTICE_FILE / BANNER / POST
+                    : usageName;
+
+            String folderPath = (isTest ? "test/" : "") + baseFolder.toLowerCase();
+
+            String key = folderPath + "/" + UUID.randomUUID() + "_" + fileDto.getFilename();
+
             URL presignedUrl = s3Service.createPresignedPutUrl(key, fileDto.getContentType(), 300);
 
-            // 3. 나중에 DB 저장 및 조회에 사용할 URL 구성
-            // (S3Service에서 구현한 getObject 또는 직접 문자열 구성)
             String fileUrl = getFileUrlFromPresignedUrl(presignedUrl);
 
             urlInfos.add(new GetPresignResDto.UrlInfo(

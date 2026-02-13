@@ -50,15 +50,23 @@ public class PostViewCountRepository {
 
     // 아직 조회하지 않은 경우에만 조회수 증가
     public Long increaseIfNotViewed(Long postId, String userId) {
-        String usersKey = generateUsersKey(postId);
         String countKey = generateCountKey(postId);
 
-        // 사용자 집합(Set)에 추가 → 새로 추가되었을 때만 true 반환
+        // 비로그인(또는 빈 값): 조회수 증가 X, 현재 조회수만 반환
+        if (userId == null || userId.isBlank()) {
+            String result = redisTemplate.opsForValue().get(countKey);
+            return result == null ? 0L : Long.parseLong(result);
+        }
+
+        // 로그인 사용자만 "처음 조회"일 때 조회수 증가
+        String usersKey = generateUsersKey(postId);
+
         Boolean isNewViewer = redisTemplate.opsForSet().add(usersKey, userId) == 1;
 
         if (Boolean.TRUE.equals(isNewViewer)) {
-            return redisTemplate.opsForValue().increment(countKey); // 게시글을 처음 조회하는 유저에 대해서만 조회수 증가
+            return redisTemplate.opsForValue().increment(countKey);
         }
+
         // 이미 조회한 사용자면 현재 조회수 그대로 반환
         String result = redisTemplate.opsForValue().get(countKey);
         return result == null ? 0L : Long.parseLong(result);
