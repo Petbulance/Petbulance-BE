@@ -47,7 +47,11 @@ public class AdminSaveHospitalReqDto {
     @NotBlank(message = "빈값은 입력할 수 없습니다.")
     private String image;
 
-    private List<String> tags = new ArrayList<>();
+    private List<String> workTypeTag = new ArrayList<>();
+
+    private List<String> animalTypeTag = new ArrayList<>();
+
+    private List<String> locationTypeTag = new ArrayList<>();
 
     private List<DetailAnimalType> animalTypes = new ArrayList<>();
 

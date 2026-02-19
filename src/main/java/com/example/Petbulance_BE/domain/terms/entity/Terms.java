@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Setter
@@ -26,5 +28,9 @@ public class Terms {
     private Boolean isRequired; // 필수 여부
 
     private Boolean isActive;
+
+    private LocalDateTime effectiveDate;
+
+    private LocalDateTime cancellationDate;
 
 }
