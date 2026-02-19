@@ -18,7 +18,7 @@ public interface TermsJpaRepository extends JpaRepository<Terms, Long> {
     @Query("SELECT t FROM Terms t WHERE t.isActive=true")
     List<Terms> findAllActive();
 
-    @Query("UPDATE Terms t SET t.isActive = false WHERE t.isActive = true and t.type = :type")
+    @Query("UPDATE Terms t SET t.isActive = false, t.cancellationDate = now() WHERE t.isActive = true and t.type = :type")
     @Modifying
     Integer updateUnActive(@Param("type") TermsType type);
 

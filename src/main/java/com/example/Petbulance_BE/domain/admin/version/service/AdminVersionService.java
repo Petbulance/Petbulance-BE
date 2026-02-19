@@ -14,14 +14,17 @@ import com.example.Petbulance_BE.domain.region2.repository.Region2JpaRepository;
 import com.example.Petbulance_BE.domain.species.entity.Species;
 import com.example.Petbulance_BE.domain.species.repository.SpeciesJpaRepository;
 import com.example.Petbulance_BE.domain.terms.entity.Terms;
+import com.example.Petbulance_BE.domain.terms.enums.TermsType;
 import com.example.Petbulance_BE.domain.terms.repository.TermsJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -135,15 +138,33 @@ public class AdminVersionService {
         terms.setContent(termsReqDto.getContent());
         terms.setVersion(termsReqDto.getVersion());
         terms.setIsRequired(termsReqDto.getIsRequired());
-        terms.setIsActive(true);
+        terms.setIsActive(false);
 
         Boolean exists = termsJpaRepository.existsByVersion(termsReqDto.getVersion());
 
         if(exists) throw new CustomException(ErrorCode.ALREADY_EXIST_VERSION);
 
-        Integer i = termsJpaRepository.updateUnActive(termsReqDto.getTermsType());
-
         termsJpaRepository.save(terms);
+
+        return Map.of("message", "success");
+
+    }
+
+    @Transactional
+    public Map<String, String> applyTermsProcess(TermsApplyReqDto termsApplyReqDto) {
+
+        Terms byId = termsJpaRepository.findById(termsApplyReqDto.getId()).orElseThrow(()-> new CustomException(ErrorCode.NON_EXIST_TERMS));
+
+        if(byId.getIsActive() == Boolean.TRUE){
+            throw new CustomException(ErrorCode.NON_EXIST_TERMS);
+        }
+
+        TermsType type = byId.getType();
+        termsJpaRepository.updateUnActive(type);
+
+        byId.setIsActive(Boolean.TRUE);
+
+        byId.setEffectiveDate(LocalDateTime.now());
 
         return Map.of("message", "success");
 

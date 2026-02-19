@@ -12,6 +12,7 @@ import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.hospital.entity.Tag;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
 import com.example.Petbulance_BE.domain.hospital.repository.TagJpaRepository;
+import com.example.Petbulance_BE.domain.hospital.type.TagType;
 import com.example.Petbulance_BE.domain.hospitalWorktime.entity.HospitalWorktime;
 import com.example.Petbulance_BE.domain.hospitalWorktime.entity.HospitalWorktimeKey;
 import com.example.Petbulance_BE.domain.hospitalWorktime.repository.HospitalWorktimeJpaRepository;
@@ -71,13 +72,17 @@ public class AdminHospitalService {
         List<HospitalHistory> hospitalHistory = hospitalsHistoryJpaRepository.findByHospitalId(id);
         List<HospitalWorktimeResDto> hospitalWorktimes = hospital.getHospitalWorktimes().stream().sorted(Comparator.comparingInt(worktime->DAY_ORDER.indexOf(worktime.getId().getDayOfWeek()))).map(HospitalWorktimeResDto::new).toList();
         String types = hospital.getTreatmentAnimals().stream().map(type -> type.getAnimalType().toString()).collect(Collectors.joining(","));
-        String tags = hospital.getTags().stream().map(tag -> "#" + tag.getTag()).collect(Collectors.joining(" "));
+        Map<TagType, String> groupedTags = hospital.getTags().stream()
+                .collect(Collectors.groupingBy(
+                        Tag::getTagType,
+                        Collectors.mapping(tag -> "#" + tag.getTag(), Collectors.joining(" "))
+                ));
         List<AdminHospitalDetailResDto.HospitalHistoriesResDto> list = hospitalHistory.stream().sorted(Comparator.comparing(HospitalHistory::getCreatedAt).reversed()).map(hh -> AdminHospitalDetailResDto.HospitalHistoriesResDto.builder()
                 .hospitalId(hh.getHospital().getId())
                 .modifySubject(hh.getModifySubject())
                 .beforeModify(hh.getBeforeModify())
                 .afterModify(hh.getAfterModify())
-                .actorId(hh.getUsers().getId())
+                .actorId(hh.getUsers().getNickname())
                 .createdAt(hh.getCreatedAt())
                 .build())
                 .toList();
@@ -94,7 +99,9 @@ public class AdminHospitalService {
                     .image(hospital.getImage())
                     .nighCare(hospital.isNighCare())
                     .twentyFourHours(hospital.isTwentyFourHours())
-                    .tag(tags)
+                    .locationTag(groupedTags.getOrDefault(TagType.LOCATIONTYPE, ""))
+                    .workTypeTag(groupedTags.getOrDefault(TagType.WORKTYPE, ""))
+                    .animalTypeTag(groupedTags.getOrDefault(TagType.ANIMALTYPE, ""))
                     .treatmentAnimalType(types)
                     .worktimes(hospitalWorktimes)
                     .hospitalHistories(list)
@@ -148,11 +155,13 @@ public class AdminHospitalService {
 
         treatmentAnimalJpaRepository.saveAll(animalList1);
 
-        List<Tag> tagsList = ah.getTags().stream().map(tag -> Tag.builder()
-                .hospital(hospital)
-                .tag(tag.replace("#", "").trim())
-                .build()
-        ).toList();
+        // [수정] 태그 저장 로직
+        List<Tag> tagsList = new ArrayList<>();
+
+        // 각 타입별 리스트를 순회하며 Tag 엔티티 생성
+        addTagsToSaveList(tagsList, hospital, ah.getAnimalTypeTag(), TagType.ANIMALTYPE);
+        addTagsToSaveList(tagsList, hospital, ah.getLocationTypeTag(), TagType.LOCATIONTYPE);
+        addTagsToSaveList(tagsList, hospital, ah.getWorkTypeTag(), TagType.WORKTYPE);
 
         tagJpaRepository.saveAll(tagsList);
 
@@ -218,16 +227,22 @@ public class AdminHospitalService {
                 .collect(Collectors.joining(", "));
         compareAndAddHistory(histories, hospital, "진료동물", beforeAnimals, afterAnimals, currentUser);
 
-        // 4. 태그 비교 (추가)
-        String beforeTags = hospital.getTags().stream()
-                .map(Tag::getTag)
-                .sorted()
-                .collect(Collectors.joining(", "));
-        String afterTags = ah.getTags().stream()
-                .map(tag -> tag.replace("#", "").trim())
-                .sorted()
-                .collect(Collectors.joining(", "));
-        compareAndAddHistory(histories, hospital, "태그", beforeTags, afterTags, currentUser);
+        // 4. 태그 비교 (타입별로 세분화)
+
+// 4-1. 진료동물 태그 비교
+        String beforeAnimalTags = getTagStringByType(hospital, TagType.ANIMALTYPE);
+        String afterAnimalTags = getFormattedTagList(ah.getAnimalTypeTag());
+        compareAndAddHistory(histories, hospital, "태그(진료동물)", beforeAnimalTags, afterAnimalTags, currentUser);
+
+// 4-2. 위치/장소 태그 비교
+        String beforeLocationTags = getTagStringByType(hospital, TagType.LOCATIONTYPE);
+        String afterLocationTags = getFormattedTagList(ah.getLocationTypeTag());
+        compareAndAddHistory(histories, hospital, "태그(위치)", beforeLocationTags, afterLocationTags, currentUser);
+
+// 4-3. 진료방식 태그 비교
+        String beforeWorkTags = getTagStringByType(hospital, TagType.WORKTYPE);
+        String afterWorkTags = getFormattedTagList(ah.getWorkTypeTag());
+        compareAndAddHistory(histories, hospital, "태그(진료방식)", beforeWorkTags, afterWorkTags, currentUser);
 
         // ------------------------------------------
         // 5. 실제 값 업데이트 (데이터베이스 반영)
@@ -274,12 +289,26 @@ public class AdminHospitalService {
         treatmentAnimalJpaRepository.saveAll(animalList);
 
         tagJpaRepository.deleteByHospital(hospital);
-        List<Tag> tagsList = ah.getTags().stream().map(tag ->
-                Tag.builder()
-                        .hospital(hospital)
-                        .tag(tag.replace("#", "").trim())
-                        .build()
-        ).toList();
+        List<Tag> tagsList = new ArrayList<>();
+
+        ah.getAnimalTypeTag().forEach(t->tagsList.add(Tag.builder()
+                .hospital(hospital)
+                .tagType(TagType.ANIMALTYPE)
+                .tag(t.replace("#","")).build()
+        ));
+
+        ah.getLocationTypeTag().forEach(t->tagsList.add(Tag.builder()
+                .hospital(hospital)
+                .tagType(TagType.LOCATIONTYPE)
+                .tag(t.replace("#","")).build()
+        ));
+
+        ah.getWorkTypeTag().forEach(t->tagsList.add(Tag.builder()
+                .hospital(hospital)
+                .tagType(TagType.WORKTYPE)
+                .tag(t.replace("#","")).build()
+        ));
+
         tagJpaRepository.saveAll(tagsList);
 
         // 6. 변경 이력(History) 일괄 저장
@@ -305,6 +334,38 @@ public class AdminHospitalService {
                     .beforeModify(safeBefore)
                     .afterModify(safeAfter)
                     .build());
+        }
+    }
+
+    /**
+     * DB에 저장된 태그 중 특정 타입만 추출하여 정렬된 문자열로 반환
+     */
+    private String getTagStringByType(Hospital hospital, TagType type) {
+        return hospital.getTags().stream()
+                .filter(t -> t.getTagType() == type)
+                .map(Tag::getTag)
+                .sorted()
+                .collect(Collectors.joining(", "));
+    }
+
+    /**
+     * DTO에서 넘어온 태그 리스트를 # 제거 및 정렬하여 문자열로 반환
+     */
+    private String getFormattedTagList(List<String> tags) {
+        if (tags == null || tags.isEmpty()) return "";
+        return tags.stream()
+                .map(tag -> tag.replace("#", "").trim())
+                .sorted()
+                .collect(Collectors.joining(", "));
+    }
+
+    private void addTagsToSaveList(List<Tag> list, Hospital hospital, List<String> source, TagType type) {
+        if (source != null) {
+            source.forEach(t -> list.add(Tag.builder()
+                    .hospital(hospital)
+                    .tagType(type)
+                    .tag(t.replace("#", "").trim())
+                    .build()));
         }
     }
 

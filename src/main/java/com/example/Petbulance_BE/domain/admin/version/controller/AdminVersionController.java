@@ -74,5 +74,12 @@ public class AdminVersionController {
 
     }
 
+    @PatchMapping("/terms/apply")
+    public Map<String, String> applyTerms (@RequestBody TermsApplyReqDto termsApplyReqDto) {
+
+        return adminVersionService.applyTermsProcess(termsApplyReqDto);
+
+    }
+
 
 }

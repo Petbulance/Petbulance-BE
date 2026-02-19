@@ -40,7 +40,11 @@ public class AdminHospitalDetailResDto {
 
     private boolean twentyFourHours;
 
-    private String tag;
+    private String animalTypeTag;
+
+    private String locationTag;
+
+    private String workTypeTag;
 
     private String treatmentAnimalType;
 
