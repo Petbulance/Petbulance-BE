@@ -79,7 +79,7 @@ public class SecurityConfig {
                                         "/terms",
                                         "/terms/{type}",
                                         "/error",
-                                        "/acturator/**",
+                                        "/actuator/**",
                                         "/v3/api-docs/**",
                                         "/swagger-ui/**",
                                         "/swagger-ui.html",
