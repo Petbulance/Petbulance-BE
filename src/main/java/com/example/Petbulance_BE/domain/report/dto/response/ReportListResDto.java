@@ -21,6 +21,7 @@ public class ReportListResDto {
     private String reportedAt;
     private ReportStatus status;     // PUBLISHED, DELETED
     private ReportActionType actionType;
+    private String reportReason;
 
     @Data
     @AllArgsConstructor
@@ -30,12 +31,14 @@ public class ReportListResDto {
         private String title;
         private String writerNickname;
         private String createdAt;
+        private int reportCount;
 
-        public PostDto(Long postId, String title, String writerNickname, LocalDateTime localDateTime) {
+        public PostDto(Long postId, String title, String writerNickname, LocalDateTime localDateTime, int reportCount) {
             this.postId = postId;
             this.title = title;
             this.writerNickname = writerNickname;
             this.createdAt = TimeUtil.formatCreatedAt(localDateTime);
+            this.reportCount = reportCount;
         }
     }
 
@@ -47,16 +50,20 @@ public class ReportListResDto {
         private String content;
         private String writerNickname;
         private String createdAt;
+        private int reportCount;
+        private Long postId;
 
-        public CommentDto(Long commentId, String content, String writerNickname, LocalDateTime localDateTime) {
+        public CommentDto(Long commentId, String content, String writerNickname, LocalDateTime localDateTime, int reportCount, Long postId) {
             this.commentId = commentId;
             this.content = content;
             this.writerNickname = writerNickname;
             this.createdAt = TimeUtil.formatCreatedAt(localDateTime);
+            this.reportCount = reportCount;
+            this.postId = postId;
         }
     }
 
-    public ReportListResDto(Long reportId, ReportType reportType, PostDto post, CommentDto comment, LocalDateTime reportedAt, ReportStatus status, ReportActionType actionType) {
+    public ReportListResDto(Long reportId, ReportType reportType, PostDto post, CommentDto comment, LocalDateTime reportedAt, ReportStatus status, ReportActionType actionType, String reportReason) {
         this.reportId = reportId;
         this.reportType = reportType;
         this.post = post;
@@ -64,6 +71,7 @@ public class ReportListResDto {
         this.reportedAt = TimeUtil.formatCreatedAt(reportedAt);;
         this.status = status;
         this.actionType = actionType;
+        this.reportReason = reportReason;
     }
 }
 

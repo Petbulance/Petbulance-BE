@@ -40,7 +40,7 @@ public class Report {
     private ReportType reportType;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 30)
     private ReportStatus status;
 
     @Enumerated(EnumType.STRING)
@@ -79,7 +79,7 @@ public class Report {
     public void deleteAction(ReportActionType reportActionType) {
         this.processed = true;
         this.actionType = reportActionType;
-        this.status = ReportStatus.DELETED;
+        this.status = ReportStatus.COMPLETED;
     }
 }
 

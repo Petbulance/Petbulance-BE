@@ -68,7 +68,7 @@ public class ReportService {
                         .targetUser(post.getUser())
                         .reporter(reporter)
                         .reportType(ReportType.POST)
-                        .status(post.isDeleted() ? ReportStatus.DELETED : ReportStatus.REPORTED)
+                        .status(post.isDeleted() ? ReportStatus.COMPLETED : ReportStatus.PENDING)
                         .postId(post.getId())
                         .build();
                 post.increaseReportCount();
@@ -88,7 +88,7 @@ public class ReportService {
                         .targetUser(comment.getUser())
                         .reporter(reporter)
                         .reportType(ReportType.COMMENT)
-                        .status(comment.getDeleted() ? ReportStatus.DELETED : ReportStatus.REPORTED)
+                        .status(comment.getDeleted() ? ReportStatus.COMPLETED : ReportStatus.PENDING)
                         .commentId(comment.getId())
                         .build();
                 comment.increaseReportCount();
@@ -107,7 +107,7 @@ public class ReportService {
                         .targetUser(review.getUser())
                         .reporter(reporter)
                         .reportType(ReportType.REVIEW)
-                        .status(review.getDeleted() ? ReportStatus.DELETED : ReportStatus.REPORTED)
+                        .status(review.getDeleted() ? ReportStatus.COMPLETED : ReportStatus.PENDING)
                         .reviewId(review.getId())
                         .build();
                 review.increaseReportCount();

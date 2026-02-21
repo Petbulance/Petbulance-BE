@@ -138,7 +138,7 @@ class ReportServiceTest {
                         .reportType(ReportType.POST)
                         .reporter(reporter)
                         .targetUser(targetUser)
-                        .status(ReportStatus.REPORTED)
+                        .status(ReportStatus.PENDING)
                         .postId(post.getId())
                         .build()
         );
