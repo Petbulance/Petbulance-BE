@@ -62,8 +62,6 @@ public class Report {
     @Builder.Default
     private Long reviewId = null;
 
-    @Builder.Default
-    private boolean processed = false;
 
     @PrePersist
     protected void onCreate() {
@@ -72,14 +70,13 @@ public class Report {
 
     // 조치가 취해질 때
     public void publish() {
-        this.processed = true;
-        this.actionType = ReportActionType.PUBLISH;
+        this.status = ReportStatus.COMPLETED; // 처리 완료
+        this.actionType = ReportActionType.PUBLISH; // 게시 처리는 별다른 조치 없음
     }
 
     public void deleteAction(ReportActionType reportActionType) {
-        this.processed = true;
-        this.actionType = reportActionType;
         this.status = ReportStatus.COMPLETED;
+        this.actionType = reportActionType;
     }
 }
 
