@@ -20,4 +20,10 @@ public interface ReportRepository extends JpaRepository<Report, Long>, ReportRep
     int countByReportTypeAndProcessedFalse(ReportType type);
 
     Page<Report> findAllByReportType(ReportType reportType, Pageable pageable);
+
+    boolean existsByReporterIdAndPostId(String reporterId, Long postId);
+
+    boolean existsByReporterIdAndCommentId(String reporterId, Long commentId);
+
+    boolean existsByReporterIdAndReviewId(String reporterId, Long reviewId);
 }

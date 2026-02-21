@@ -51,10 +51,6 @@ public class ReportService {
     public ReportCreateResDto createReport(@Valid ReportCreateReqDto reqDto) {
 
         Users reporter = UserUtil.getCurrentUser();
-
-        // 동일 사용자가 동일한 콘텐츠에 대해 신고를 하는 경우 예외 처리
-
-
         Report report;
 
         switch (reqDto.getReportType()) {
@@ -62,6 +58,10 @@ public class ReportService {
             case POST -> {
                 Post post = postRepository.findById(reqDto.getPostId())
                         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+                if(reportRepository.existsByReporterIdAndPostId(reporter.getId(), post.getId())) {
+                    throw new CustomException(ErrorCode.ALREADY_REPORTED);
+                }
 
                 report = Report.builder()
                         .reportReason(reqDto.getReportReason())
@@ -83,6 +83,10 @@ public class ReportService {
                 PostComment comment = postCommentRepository.findById(reqDto.getCommentId())
                         .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
+                if(reportRepository.existsByReporterIdAndCommentId(reporter.getId(), comment.getId())) {
+                    throw new CustomException(ErrorCode.ALREADY_REPORTED);
+                }
+
                 report = Report.builder()
                         .reportReason(reqDto.getReportReason())
                         .targetUser(comment.getUser())
@@ -101,6 +105,10 @@ public class ReportService {
             case REVIEW -> {
                 UserReview review = reviewJpaRepository.findById(reqDto.getReviewId())
                         .orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REVIEW));
+
+                if(reportRepository.existsByReporterIdAndReviewId(reporter.getId(), review.getId())) {
+                    throw new CustomException(ErrorCode.ALREADY_REPORTED);
+                }
 
                 report = Report.builder()
                         .reportReason(reqDto.getReportReason())
