@@ -51,6 +51,10 @@ public class ReportService {
     public ReportCreateResDto createReport(@Valid ReportCreateReqDto reqDto) {
 
         Users reporter = UserUtil.getCurrentUser();
+
+        // 동일 사용자가 동일한 콘텐츠에 대해 신고를 하는 경우 예외 처리
+
+
         Report report;
 
         switch (reqDto.getReportType()) {
@@ -67,6 +71,12 @@ public class ReportService {
                         .status(post.isDeleted() ? ReportStatus.DELETED : ReportStatus.REPORTED)
                         .postId(post.getId())
                         .build();
+                post.increaseReportCount();
+
+                // 신고가 5회이상 누적되면 숨김 처리 하기
+                if(post.getReportCount() >= 5) {
+                    post.updateHidden();
+                }
             }
 
             case COMMENT -> {
@@ -81,6 +91,11 @@ public class ReportService {
                         .status(comment.getDeleted() ? ReportStatus.DELETED : ReportStatus.REPORTED)
                         .commentId(comment.getId())
                         .build();
+                comment.increaseReportCount();
+
+                if(comment.getReportCount() >= 5) {
+                    comment.updateHidden();
+                }
             }
 
             case REVIEW -> {
@@ -95,6 +110,11 @@ public class ReportService {
                         .status(review.getDeleted() ? ReportStatus.DELETED : ReportStatus.REPORTED)
                         .reviewId(review.getId())
                         .build();
+                review.increaseReportCount();
+
+                if(review.getReportCount() >= 5) {
+                    review.updateHidden();
+                }
             }
 
             default -> throw new IllegalStateException("잘못된 신고 타입입니다.");

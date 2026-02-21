@@ -61,6 +61,9 @@ public class PostComment extends BaseTimeEntity {
     @Column(name = "is_comment_from_post_author")
     private boolean isCommentFromPostAuthor;
 
+    @Builder.Default
+    private int reportCount = 0;
+
     public void update(UpdatePostCommentReqDto dto) {
         this.content = dto.getContent();
         this.imageUrl = dto.getImageUrl();
@@ -81,4 +84,11 @@ public class PostComment extends BaseTimeEntity {
         this.parent = postComment;
     }
 
+    public void increaseReportCount() {
+        reportCount++;
+    }
+
+    public void updateHidden() {
+        if(!hidden) hidden = true;
+    }
 }

@@ -69,6 +69,9 @@ public class UserReview extends BaseTimeEntity {
     private Boolean deleted = false;
 
     @Builder.Default
+    private int reportCount = 0;
+
+    @Builder.Default
     @OneToMany(mappedBy = "review", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @BatchSize(size = 10)
     List<UserReviewImage> images = new ArrayList<>();
@@ -83,5 +86,12 @@ public class UserReview extends BaseTimeEntity {
     @Builder.Default
     List<ReviewReport> reviewReports = new ArrayList<>();
 
+    public void increaseReportCount() {
+        reportCount++;
+    }
 
+
+    public void updateHidden() {
+        if(!hidden) hidden = true;
+    }
 }
