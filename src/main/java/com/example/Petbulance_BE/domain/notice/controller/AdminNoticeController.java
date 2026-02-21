@@ -35,4 +35,9 @@ public class AdminNoticeController {
         return noticeService.adminDetailNotice(noticeId);
     }
 
+    @DeleteMapping("/{noticeId}")
+    public AdminDeleteNotice adminDeleteNotice(@PathVariable("noticeId") Long noticeId) {
+        return noticeService.adminDeleteNotice(noticeId);
+    }
+
 }
