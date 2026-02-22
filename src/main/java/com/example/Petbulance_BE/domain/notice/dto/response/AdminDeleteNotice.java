@@ -1,0 +1,13 @@
+package com.example.Petbulance_BE.domain.notice.dto.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class AdminDeleteNotice {
+    private Long noticeId;
+    private String message;
+}

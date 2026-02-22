@@ -97,6 +97,7 @@ dependencies {
 
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'io.sentry:sentry-spring-boot-starter-jakarta:7.0.0'
 
 	implementation 'org.apache.lucene:lucene-spatial-extras:9.11.1'
 
