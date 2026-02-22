@@ -57,6 +57,9 @@ public class Post extends BaseTimeEntity {
     @Column(name = "image_num", nullable = false)
     private int imageNum;
 
+    @Builder.Default
+    private int reportCount = 0;
+
     // 양방향 연관관계
     @Builder.Default
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
@@ -69,5 +72,12 @@ public class Post extends BaseTimeEntity {
        this.imageNum = imageNum;
     }
 
+    public void increaseReportCount() {
+        reportCount++;
+    }
+
+    public void updateHidden() {
+        if(!hidden) hidden = true;
+    }
 }
 

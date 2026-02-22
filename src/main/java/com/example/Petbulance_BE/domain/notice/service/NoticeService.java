@@ -430,6 +430,16 @@ public class NoticeService {
             );
         }
 
+        List<AdminDetailNoticeResDto.ButtonDto> buttonList = notice.getButtons().stream()
+                .map(button -> new AdminDetailNoticeResDto.ButtonDto(
+                        button.getId(),
+                        button.getText(),
+                        button.getPosition(),
+                        button.getLink(),
+                        button.getTarget()
+                ))
+                .toList();
+
         // 4. 최종 DTO 조립 및 반환
         return new AdminDetailNoticeResDto(
                 notice.getPostStatus(),
@@ -437,7 +447,8 @@ public class NoticeService {
                 notice.getTitle(),
                 notice.getContent(),
                 fileList,
-                bannerDto
+                bannerDto,
+                buttonList
         );
     }
 

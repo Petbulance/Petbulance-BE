@@ -64,7 +64,8 @@ public class ReportRepositoryImpl implements ReportRepositoryCustom {
                                         post.id,
                                         post.title,
                                         postUser.nickname,
-                                        post.createdAt
+                                        post.createdAt,
+                                        post.reportCount
                                 ),
 
                                 Projections.constructor(
@@ -72,12 +73,15 @@ public class ReportRepositoryImpl implements ReportRepositoryCustom {
                                         comment.id,
                                         comment.content,
                                         commentUser.nickname,
-                                        comment.createdAt
+                                        comment.createdAt,
+                                        comment.reportCount,
+                                        comment.post.id
                                 ),
 
                                 report.createdAt,
                                 report.status,
-                                report.actionType
+                                report.actionType,
+                                report.reportReason
                         )
                 )
                 .from(report)

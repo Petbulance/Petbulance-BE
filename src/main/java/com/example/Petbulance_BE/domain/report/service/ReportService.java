@@ -59,42 +59,70 @@ public class ReportService {
                 Post post = postRepository.findById(reqDto.getPostId())
                         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
+                if (reportRepository.existsByReporterIdAndPostId(reporter.getId(), post.getId())) {
+                    throw new CustomException(ErrorCode.ALREADY_REPORTED);
+                }
+
                 report = Report.builder()
                         .reportReason(reqDto.getReportReason())
                         .targetUser(post.getUser())
                         .reporter(reporter)
                         .reportType(ReportType.POST)
-                        .status(post.isDeleted() ? ReportStatus.DELETED : ReportStatus.REPORTED)
+                        .status(post.isDeleted() ? ReportStatus.COMPLETED : ReportStatus.PENDING)
                         .postId(post.getId())
                         .build();
+                post.increaseReportCount();
+
+                // 신고가 5회이상 누적되면 숨김 처리 하기
+                if (post.getReportCount() >= 5) {
+                    post.updateHidden();
+                }
             }
 
             case COMMENT -> {
                 PostComment comment = postCommentRepository.findById(reqDto.getCommentId())
                         .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
+                if (reportRepository.existsByReporterIdAndCommentId(reporter.getId(), comment.getId())) {
+                    throw new CustomException(ErrorCode.ALREADY_REPORTED);
+                }
+
                 report = Report.builder()
                         .reportReason(reqDto.getReportReason())
                         .targetUser(comment.getUser())
                         .reporter(reporter)
                         .reportType(ReportType.COMMENT)
-                        .status(comment.getDeleted() ? ReportStatus.DELETED : ReportStatus.REPORTED)
+                        .status(comment.getDeleted() ? ReportStatus.COMPLETED : ReportStatus.PENDING)
                         .commentId(comment.getId())
                         .build();
+                comment.increaseReportCount();
+
+                if (comment.getReportCount() >= 5) {
+                    comment.updateHidden();
+                }
             }
 
             case REVIEW -> {
                 UserReview review = reviewJpaRepository.findById(reqDto.getReviewId())
                         .orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REVIEW));
 
+                if (reportRepository.existsByReporterIdAndReviewId(reporter.getId(), review.getId())) {
+                    throw new CustomException(ErrorCode.ALREADY_REPORTED);
+                }
+
                 report = Report.builder()
                         .reportReason(reqDto.getReportReason())
                         .targetUser(review.getUser())
                         .reporter(reporter)
                         .reportType(ReportType.REVIEW)
-                        .status(review.getDeleted() ? ReportStatus.DELETED : ReportStatus.REPORTED)
+                        .status(review.getDeleted() ? ReportStatus.COMPLETED : ReportStatus.PENDING)
                         .reviewId(review.getId())
                         .build();
+                review.increaseReportCount();
+
+                if (review.getReportCount() >= 5) {
+                    review.updateHidden();
+                }
             }
 
             default -> throw new IllegalStateException("잘못된 신고 타입입니다.");
@@ -115,10 +143,14 @@ public class ReportService {
     @Transactional
     public ReportActionResDto processReport(Long reportId, ReportActionReqDto reqDto) {
         Report report = reportRepository.findById(reportId).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REPORT));
+
+        if (report.getStatus() == ReportStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.ALREADY_COMPLETED);
+        }
+
         Users currentUser = UserUtil.getCurrentUser();
 
-        if (report.getReportType()!=ReportType.REVIEW) {
-
+        if (report.getReportType() != ReportType.REVIEW) {
             adminActionLogRepository.save(AdminActionLog.builder()
                     .actorType(AdminActorType.ADMIN)
                     .admin(currentUser)
@@ -129,13 +161,12 @@ public class ReportService {
                     .resultType(AdminActionResult.SUCCESS)
                     .description(
                             report.getReportType().equals(ReportType.POST) ?
-                            String.format("[제재] %d번 게시글 %s 조치", report.getPostId(), reqDto.getActionType().getDescription())
-                            : String.format("[제재] %d번 댓글 %s 조치", report.getCommentId(), reqDto.getActionType().getDescription())
-                            )
+                                    String.format("[제재] %d번 게시글 %s 조치", report.getPostId(), reqDto.getActionType().getDescription())
+                                    : String.format("[제재] %d번 댓글 %s 조치", report.getCommentId(), reqDto.getActionType().getDescription())
+                    )
                     .build()
             );
-        }else{
-
+        } else {
             adminActionLogRepository.save(AdminActionLog.builder()
                     .actorType(AdminActorType.ADMIN)
                     .admin(currentUser)
@@ -148,16 +179,15 @@ public class ReportService {
                             String.format("[제재] %d번 리뷰 %s 조치", report.getReviewId(), reqDto.getActionType().getDescription())
                     ).build()
             );
-
         }
 
         switch (reqDto.getActionType()) {
-            case PUBLISH -> {
+            case PUBLISH -> { // 게시
                 report.publish();
                 return new ReportActionResDto(ReportActionType.PUBLISH, "신고 조치가 처리되었습니다.");
             }
-            case SUSPEND -> {
-                if (report.getReportType().equals(ReportType.POST)||report.getReportType().equals(ReportType.COMMENT)) {
+            case SUSPEND -> { // 정지
+                if (report.getReportType().equals(ReportType.POST) || report.getReportType().equals(ReportType.COMMENT)) {
                     postAndCommentDelete(report);
                     report.deleteAction(ReportActionType.SUSPEND);
 
@@ -166,8 +196,8 @@ public class ReportService {
 
                     // 알림 보내기
                     sendAlarm(report);
-                }else{
-                    UserReview byId = reviewJpaRepository.findById(report.getReviewId()).orElseThrow(()-> new CustomException(ErrorCode.NOT_FOUND_REVIEW));
+                } else {
+                    UserReview byId = reviewJpaRepository.findById(report.getReviewId()).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REVIEW));
 
                     byId.setDeleted(true);
 
@@ -181,12 +211,23 @@ public class ReportService {
 
                 return new ReportActionResDto(ReportActionType.SUSPEND, "신고 조치가 처리되었습니다.");
             }
-            case WARNING -> {
+            case WARNING -> { // 경고
                 // 해당 게시글, 댓글 삭제
                 postAndCommentDelete(report);
 
                 // 알림 보내기
                 sendAlarm(report);
+
+                // 사용자 경고 횟수 누적하기
+                Users targetUser = report.getTargetUser();
+                targetUser.increaseWarningCount();
+                if(targetUser.getWarningCount() >= 3) {
+                    // 알림 보내기
+                    sendAlarm(report);
+                    communitySanctionService.applySanctionForReport(report, SanctionType.COMMUNITY_BAN);
+                }
+
+                report.deleteAction(ReportActionType.WARNING);
 
                 return new ReportActionResDto(ReportActionType.WARNING, "신고 조치가 처리되었습니다.");
             }
@@ -201,10 +242,11 @@ public class ReportService {
 
     private void postAndCommentDelete(Report report) {
         // 해당 게시글, 댓글 삭제
-        if(report.getReportType()==ReportType.POST) {
-            // 게시글 신고면 해당 게시글 삭제
-            postRepository.deleteById(report.getPostId());
-        } else if(report.getReportType()==ReportType.COMMENT) {
+        if (report.getReportType() == ReportType.POST) {
+            Post post = postRepository.findById(report.getPostId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+            postRepository.delete(post);
+        } else if (report.getReportType() == ReportType.COMMENT) {
             // 댓글 신고면 해당 댓글 삭제
             postCommentService.deletePostComment(report.getCommentId());
         }
