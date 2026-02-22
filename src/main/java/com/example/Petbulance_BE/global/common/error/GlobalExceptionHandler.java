@@ -5,6 +5,7 @@ import com.example.Petbulance_BE.domain.report.exception.CommunityBannedExceptio
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.response.GlobalResponse;
+import io.sentry.Sentry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<GlobalResponse> handleCustomException(CustomException e) {
+        Sentry.captureException(e);
         final ErrorCode errorCode = e.getErrorCode();
         final ErrorResponse errorResponse = ErrorResponse.of(errorCode.name(), e.getMessage());
         final GlobalResponse response = GlobalResponse.failure(errorCode.getStatus().value(), errorResponse);
@@ -32,6 +34,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<GlobalResponse> handleValidationException(MethodArgumentNotValidException e) {
+        Sentry.captureException(e);
         Map<String, String> errors = new HashMap<>();
         for (FieldError fieldError : e.getBindingResult().getFieldErrors()) {
             errors.put(fieldError.getField(), fieldError.getDefaultMessage());
