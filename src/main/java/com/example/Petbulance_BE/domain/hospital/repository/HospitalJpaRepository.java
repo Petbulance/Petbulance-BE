@@ -43,7 +43,7 @@ public interface HospitalJpaRepository extends JpaRepository<Hospital, Long>, Ho
     @Query("SELECT AVG(r.overallRating) FROM UserReview r WHERE r.hospital.id = :id")
     Optional<Double> getOverallRating(@Param("id") Long id);
 
-    (value = """
+    @Query(value = """
         SELECT *
         FROM hospitals
         WHERE MBRContains(
