@@ -15,6 +15,7 @@ import com.example.Petbulance_BE.domain.inquiry.type.InquiryAnswerType;
 import com.example.Petbulance_BE.domain.qna.repository.QnaRepository;
 import com.example.Petbulance_BE.domain.qna.type.QnaStatus;
 import com.example.Petbulance_BE.domain.report.repository.ReportRepository;
+import com.example.Petbulance_BE.domain.report.type.ReportStatus;
 import com.example.Petbulance_BE.domain.report.type.ReportType;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
@@ -77,7 +78,7 @@ public class DashBoardService {
         int reportTotal = reportRepository.countByReportTypeInAndCreatedAtBetween(
                 targetTypes, start, end
         );
-        int reportPending = reportRepository.countByReportTypeInAndProcessedFalse(targetTypes);
+        int reportPending = reportRepository.countByReportTypeInAndStatus(targetTypes, ReportStatus.PENDING);
 
         // 고객센터 문의 (QNA + INQUIRY)
         int qnaTotal = (int) qnaRepository.countByCreatedAtBetween(start, end) + (int) inquiryRepository.countByCreatedAtBetween(start, end);;
@@ -89,7 +90,7 @@ public class DashBoardService {
         );
 
         // 2. 전체 기간 중 미처리된 리뷰 신고 개수
-        int reviewReportPending = reportRepository.countByReportTypeAndProcessedFalse(ReportType.REVIEW);
+        int reviewReportPending = reportRepository.countByReportTypeAndStatus(ReportType.REVIEW, ReportStatus.PENDING);
 
 
         return new DashBoardSummaryResDto(

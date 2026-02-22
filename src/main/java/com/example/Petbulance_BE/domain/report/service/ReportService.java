@@ -143,6 +143,11 @@ public class ReportService {
     @Transactional
     public ReportActionResDto processReport(Long reportId, ReportActionReqDto reqDto) {
         Report report = reportRepository.findById(reportId).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REPORT));
+
+        if (report.getStatus() == ReportStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.ALREADY_COMPLETED);
+        }
+
         Users currentUser = UserUtil.getCurrentUser();
 
         if (report.getReportType() != ReportType.REVIEW) {
@@ -222,6 +227,7 @@ public class ReportService {
                     communitySanctionService.applySanctionForReport(report, SanctionType.COMMUNITY_BAN);
                 }
 
+                report.deleteAction(ReportActionType.WARNING);
 
                 return new ReportActionResDto(ReportActionType.WARNING, "신고 조치가 처리되었습니다.");
             }
@@ -237,8 +243,9 @@ public class ReportService {
     private void postAndCommentDelete(Report report) {
         // 해당 게시글, 댓글 삭제
         if (report.getReportType() == ReportType.POST) {
-            // 게시글 신고면 해당 게시글 삭제
-            postRepository.deleteById(report.getPostId());
+            Post post = postRepository.findById(report.getPostId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+            postRepository.delete(post);
         } else if (report.getReportType() == ReportType.COMMENT) {
             // 댓글 신고면 해당 댓글 삭제
             postCommentService.deletePostComment(report.getCommentId());
