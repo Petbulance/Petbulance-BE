@@ -129,8 +129,8 @@ public class ReviewService {
 //                     .doOnNext(point ->
 //                             log.info("💾 [{}] DB 조회 시작 (boundedElastic)", Thread.currentThread().getName()))
                      .flatMap(point -> { // 1. map 대신 flatMap 사용
-                         double lng = point.x();
-                         double lat = point.y();
+                         double lat = point.x();
+                         double lng = point.y();
 
                          log.info("x위도{}", lat);
                          log.info("y경도{}", lng);
