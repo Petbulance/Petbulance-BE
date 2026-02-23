@@ -40,7 +40,7 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom{
                                         .otherwise("")
                                         .as("email"),
                                 users.firstLogin.as("signUpPath"),
-                                getWarningCount().as("warnings"),
+                                users.warningCount.as("warnings"),
                                 reviewStatus().as("reviewBan"),
                                 communityStatus().as("communityBan"),
                                 users.createdAt.as("createdAt")

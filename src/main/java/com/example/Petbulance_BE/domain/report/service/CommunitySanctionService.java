@@ -34,11 +34,6 @@ public class CommunitySanctionService {
 
         Users currentUser = UserUtil.getCurrentUser();
 
-        if (report.getActionType() != ReportActionType.SUSPEND) {
-            // SUSPEND 가 아니면 제재 안 함
-            return;
-        }
-
         // 신고 대상자
         Users targetUser = report.getTargetUser();
 
