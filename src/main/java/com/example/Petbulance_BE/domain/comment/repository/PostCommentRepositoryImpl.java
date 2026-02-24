@@ -245,10 +245,9 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
     public PagingMyCommentListResDto findMyCommentList(Users currentUser, String keyword, Long lastCommentId, Pageable pageable) {
         QPostComment pc = QPostComment.postComment;
         QPost p = QPost.post;
-        QBoard b = QBoard.board;
 
         BooleanBuilder whereBuilder = new BooleanBuilder();
-        whereBuilder.and(pc.user.eq(currentUser))
+        whereBuilder.and(pc.user.id.eq(currentUser.getId()))
                 .and(pc.deleted.eq(false)); // 삭제되지 않은 것만
 
         if(lastCommentId != null) {
@@ -265,7 +264,6 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                 .select(Projections.constructor(
                         MyCommentListResDto.class,
                         pc.id,
-                        b.id,
                         p.id,
                         p.title,
                         pc.content,

@@ -266,7 +266,6 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     @Override
     public PagingMyPostListResDto findMyPostList(Users currentUser, String keyword, Long lastPostId, Pageable pageable) {
         QPost p = QPost.post;
-        QBoard b = QBoard.board;
         QPostImage pi = QPostImage.postImage;
         QPostLikeCount pl = new QPostLikeCount("postLike");
 
@@ -290,7 +289,6 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 .select(Projections.constructor(
                         MyPostListResDto.class,
                         p.id,
-                        b.id,
                         p.title,
                         p.content,
                         p.createdAt,
