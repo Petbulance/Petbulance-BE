@@ -20,6 +20,7 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import com.example.Petbulance_BE.global.common.type.Role;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import com.example.Petbulance_BE.global.util.UserUtil;
@@ -84,7 +85,6 @@ class ReportServiceTest {
     private Users reporter;
     private Users targetUser;
     private Post post;
-    private Board board;
     private PostComment comment;
 
     @BeforeEach
@@ -103,22 +103,14 @@ class ReportServiceTest {
                         .build()
         );
 
-        board = boardRepository.save(
-                Board.builder()
-                        .description("설명")
-                        .nameEn("영어이름")
-                        .nameKr("한글이름")
-                        .build()
-        );
-
         post = postRepository.save(
                 Post.builder()
                         .user(targetUser)
                         .title("문제 있는 게시글")
                         .content("욕설 포함")
                         .topic(Topic.DAILY)
+                        .animalType(AnimalType.AMPHIBIAN)
                         .imageNum(0)
-                        .board(board)
                         .build()
         );
 
