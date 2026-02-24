@@ -17,6 +17,7 @@ import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.common.s3.S3Service;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -40,6 +41,7 @@ public class PostCommentService {
     private final PostCommentCountRepository postCommentCountRepository;
     private final BoardRepository boardRepository;
     private final RecentService recentService;
+    private final S3Service s3Service;
 
     @Transactional
     @CheckCommunityAvailable
@@ -96,6 +98,11 @@ public class PostCommentService {
         PostComment postComment = findPostCommentById(commentId); // 수정하고자하는 댓글
         verifyPostCommentWriter(postComment, Objects.requireNonNull(UserUtil.getCurrentUser())); // 권한 검증
 
+        if(!dto.getImageUrl().equals(postComment.getImageUrl())) {
+            // 댓글 이미지가 새로운 것으로 교체된다면 이전 이미지는 s3상에서 삭제
+            s3Service.deleteObject(s3Service.extractKeyFromUrl(postComment.getImageUrl()));
+        }
+
         postComment.update(dto);
         postCommentRepository.save(postComment);
 
@@ -126,6 +133,7 @@ public class PostCommentService {
                 delete(postComment); // 삭제 로직
                 postCommentCountRepository.decrease(postComment.getPost().getId());
             }
+            s3Service.deleteObject(s3Service.extractKeyFromUrl(postComment.getImageUrl()));
         }
         return new DelCommentResDto("댓글이 성공적으로 삭제되었습니다.");
     }
