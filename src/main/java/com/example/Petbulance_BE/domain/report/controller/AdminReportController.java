@@ -25,7 +25,7 @@ public class AdminReportController {
     }
 
 
-    @PatchMapping
+    @PatchMapping("/{reportId}")
     public ReportActionResDto processReport(@PathVariable Long reportId,
                                             @RequestBody ReportActionReqDto reqDto) {
         return reportService.processReport(reportId, reqDto);

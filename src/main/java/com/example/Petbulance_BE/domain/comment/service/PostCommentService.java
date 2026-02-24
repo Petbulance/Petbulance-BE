@@ -42,11 +42,6 @@ public class PostCommentService {
     private final RecentService recentService;
 
     @Transactional
-    @CacheEvict(
-            value = "myComments",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
     @CheckCommunityAvailable
     public PostCommentResDto createPostComment(Long postId, CreatePostCommentReqDto dto) {
         // parentId와 mentionUserNickname 간의 관계 검증
@@ -92,11 +87,6 @@ public class PostCommentService {
         return PostCommentResDto.of(saved);
     }
 
-    @CacheEvict(
-            value = "myComments",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
     @Transactional(readOnly = true)
     @CheckCommunityAvailable
     public PostCommentResDto updatePostComment(Long commentId, UpdatePostCommentReqDto dto) {
@@ -107,15 +97,12 @@ public class PostCommentService {
         verifyPostCommentWriter(postComment, Objects.requireNonNull(UserUtil.getCurrentUser())); // 권한 검증
 
         postComment.update(dto);
+        postCommentRepository.save(postComment);
+
         return PostCommentResDto.of(postComment);
     }
 
     @Transactional
-    @CacheEvict(
-            value = "myComments",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
     @CheckCommunityAvailable
     public DelCommentResDto deletePostComment(Long commentId) {
         /* 상위 댓글을 삭제하려는 경우
@@ -144,11 +131,6 @@ public class PostCommentService {
     }
 
     @Transactional
-    @CacheEvict(
-            value = "myComments",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
     @CheckCommunityAvailable
     public BulkDeleteCommentResDto deletePostComments(List<Long> commentIds) {
 
@@ -307,12 +289,6 @@ public class PostCommentService {
 
 
     @Transactional(readOnly = true)
-    @Cacheable(
-            value = "myComments",
-            key = "#currentUser.id + '_' + #lastCommentId",
-            condition = "#keyword == null",
-            unless = "#result == null"
-    )
     @CheckCommunityAvailable
     public PagingMyCommentListResDto myCommentList(String keyword, Long lastCommentId, Pageable pageable) {
         Users currentUser = UserUtil.getCurrentUser();
