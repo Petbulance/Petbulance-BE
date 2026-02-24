@@ -25,6 +25,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -100,7 +101,9 @@ public class PostCommentService {
 
         if(!dto.getImageUrl().equals(postComment.getImageUrl())) {
             // 댓글 이미지가 새로운 것으로 교체된다면 이전 이미지는 s3상에서 삭제
-            s3Service.deleteObject(s3Service.extractKeyFromUrl(postComment.getImageUrl()));
+            if(StringUtils.hasText(postComment.getImageUrl())) {
+                s3Service.deleteObject(s3Service.extractKeyFromUrl(postComment.getImageUrl()));
+            }
         }
 
         postComment.update(dto);
@@ -133,7 +136,10 @@ public class PostCommentService {
                 delete(postComment); // 삭제 로직
                 postCommentCountRepository.decrease(postComment.getPost().getId());
             }
-            s3Service.deleteObject(s3Service.extractKeyFromUrl(postComment.getImageUrl()));
+
+            if(StringUtils.hasText(postComment.getImageUrl())) {
+                s3Service.deleteObject(s3Service.extractKeyFromUrl(postComment.getImageUrl()));
+            }
         }
         return new DelCommentResDto("댓글이 성공적으로 삭제되었습니다.");
     }
@@ -168,6 +174,10 @@ public class PostCommentService {
                 } else { // 자식 없는 상위 댓글 or 하위 댓글
                     delete(comment);
                     postCommentCountRepository.decrease(comment.getPost().getId());
+                }
+
+                if(StringUtils.hasText(comment.getImageUrl())) {
+                    s3Service.deleteObject(s3Service.extractKeyFromUrl(comment.getImageUrl()));;
                 }
             }
 
