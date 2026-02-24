@@ -304,7 +304,13 @@ public class PostService {
         Map<Long, Long> viewCountMap = postViewCountRepository.readAll(postIds);
 
         // DB에서 현재 유저의 좋아요 여부 일괄 조회
-        Set<Long> likedPostIds = postLikeRepository.findLikedPostIdsByUserAndPostIds(currentUser, postIds);
+        final Set<Long> likedPostIds =
+                (currentUser != null && !postIds.isEmpty())
+                        ? postLikeRepository.findLikedPostIdsByUserIdAndPostIds(
+                        currentUser.getId(),
+                        postIds
+                )
+                        : Collections.emptySet();
 
         // DTO에 매핑
         posts.forEach(dto -> {
@@ -394,11 +400,6 @@ public class PostService {
         }
     }
 
-    @Cacheable(
-            value = "myPosts",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
     @Transactional(readOnly = true)
     @CheckCommunityAvailable
     public PagingMyPostListResDto myPostList(String keyword, Long lastPostId, Pageable pageable) {
