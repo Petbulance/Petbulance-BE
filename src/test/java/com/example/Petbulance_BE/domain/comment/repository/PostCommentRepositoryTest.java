@@ -7,7 +7,7 @@ import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
-import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.post.type.Topic;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.type.Gender;
@@ -74,7 +74,7 @@ class PostCommentRepositoryTest {
         post1 = postRepository.save(Post.builder()
                 .title("강아지 사료 추천")
                 .content("내용1")
-                .category(Category.SUPPLIES)
+                .topic(Topic.SUPPLIES)
                 .board(board)
                 .user(user1)
                 .build());
@@ -82,7 +82,7 @@ class PostCommentRepositoryTest {
         post2 = postRepository.save(Post.builder()
                 .title("고양이 영양제 추천")
                 .content("내용2")
-                .category(Category.HEALTH)
+                .topic(Topic.HEALTH)
                 .board(board)
                 .user(user2)
                 .build());
@@ -161,7 +161,7 @@ class PostCommentRepositoryTest {
                 null,
                 null,
                 10,
-                List.of(Category.SUPPLIES),
+                List.of(Topic.SUPPLIES),
                 board.getId()
         );
 
@@ -177,7 +177,7 @@ class PostCommentRepositoryTest {
         long count = postCommentRepositoryImpl.countSearchPostComment(
                 null,
                 null,
-                List.of(Category.SUPPLIES, Category.HEALTH),
+                List.of(Topic.SUPPLIES, Topic.HEALTH),
                 board.getId()
         );
 

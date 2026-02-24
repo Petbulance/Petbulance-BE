@@ -4,11 +4,12 @@ import com.example.Petbulance_BE.domain.board.entity.QBoard;
 import com.example.Petbulance_BE.domain.comment.entity.QPostCommentCount;
 import com.example.Petbulance_BE.domain.post.dto.response.*;
 import com.example.Petbulance_BE.domain.post.entity.*;
-import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.post.type.Topic;
 import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
@@ -35,59 +36,6 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
-    @Override
-    public DetailPostResDto findInquiryPost(Post post, boolean currentUserIsPostAuthor,
-                                            Users currentUser, Long viewCount) {
-        QPost p = QPost.post;
-        QBoard b = QBoard.board;
-        QUsers u = QUsers.users;
-
-        // 게시글/작성자/게시판 정보만 가져오기
-        DetailPostResDto result = queryFactory
-                .select(Projections.constructor(
-                        DetailPostResDto.class,
-                        Projections.constructor(
-                                DetailPostResDto.BoardInfo.class,
-                                b.id,
-                                b.nameKr,
-                                p.category.stringValue()
-                        ),
-                        Projections.constructor(
-                                DetailPostResDto.PostInfo.class,
-                                p.id,
-                                p.title,
-                                u.nickname,
-                                u.profileImage,
-                                p.createdAt.stringValue(),
-                                p.content,
-                                Expressions.constant(null), // 이미지 부분은 나중에 세팅
-                                Expressions.constant(0),     // likeCount
-                                Expressions.constant(0),     // commentCount
-                                Expressions.constant(0),     // viewCount
-                                Expressions.constant(false), // likedByUser
-                                Expressions.constant(currentUserIsPostAuthor)
-                        )
-                ))
-                .from(p)
-                .join(p.board, b)
-                .join(p.user, u)
-                .where(p.eq(post), p.deleted.eq(false))
-                .fetchOne();
-
-        if (result == null) return null;
-
-        List<DetailPostResDto.ImageInfo> images = fetchImagesByPostId(post.getId());
-
-        DetailPostResDto.PostInfo updatedPostInfo =
-                result.getPost().toBuilder()
-                        .images(images)
-                        .build();
-
-        return DetailPostResDto.builder()
-                .board(result.getBoard())
-                .post(updatedPostInfo)
-                .build();
-    }
 
     private List<DetailPostResDto.ImageInfo> fetchImagesByPostId(Long postId) {
         QPostImage pi = QPostImage.postImage;
@@ -138,8 +86,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
     @Override
     public Slice<PostListResDto> findPostList(
-            Long boardId,
-            Category c,
+            AnimalType type,
+            Topic topic,
             String sort,
             Long lastPostId,
             Integer pageSize
@@ -154,9 +102,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 .select(Projections.constructor(
                         PostListResDto.class,
                         p.id,
-                        b.id,
-                        b.nameKr,
-                        p.category,
+                        p.animalType,
+                        p.topic,
                         p.createdAt,
                         img.imageUrl,
                         p.imageNum.longValue(),
@@ -168,7 +115,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         Expressions.constant(false)
                 ))
                 .from(p)
-                .leftJoin(p.board, b)
+
                 .leftJoin(like).on(like.postId.eq(p.id))
                 .leftJoin(comment).on(comment.postId.eq(p.id))
                 .leftJoin(img).on(
@@ -180,12 +127,12 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         p.hidden.isFalse()
                 );
 
-        if (boardId != null) {
-            query.where(p.board.id.eq(boardId));
+        if (type != null) {
+            query.where(p.animalType.eq(type));
         }
 
-        if (c != null) {
-            query.where(p.category.eq(c));
+        if (topic != null) {
+            query.where(p.topic.eq(topic));
         }
 
         if (lastPostId != null) {
@@ -220,7 +167,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
 
     @Override
-    public PagingPostSearchListResDto findPostSearchList(Long boardId, List<Category> category, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
+    public PagingPostSearchListResDto findPostSearchList(AnimalType type, List<Topic> topic, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
         QPost p = QPost.post;
         QPostLikeCount like = QPostLikeCount.postLikeCount1;
         QPostCommentCount comment = QPostCommentCount.postCommentCount1;
@@ -231,12 +178,12 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         BooleanBuilder condition = new BooleanBuilder();
         condition.and(p.deleted.isFalse()).and(p.hidden.isFalse()); // 목록 조회시 삭제되고 숨겨진 게시글은 제외
 
-        if (boardId != null) {
-            condition.and(p.board.id.eq(boardId));
+        if (type != null) {
+            condition.and(p.animalType.eq(type));
         }
 
-        if (category != null && !category.isEmpty()) {
-            condition.and(p.category.in(category));
+        if (topic != null && !topic.isEmpty()) {
+            condition.and(p.topic.in(topic));
         }
 
         if (searchKeyword != null && !searchKeyword.isBlank()) {
@@ -268,7 +215,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         p.id,
                         b.id,
                         b.nameKr,
-                        Expressions.list(p.category.stringValue()),
+                        Expressions.list(p.topic.stringValue()),
                         u.profileImage,
                         u.nickname,
                         p.createdAt.stringValue(),
@@ -282,7 +229,6 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         Expressions.constant(false)
                 ))
                 .from(p)
-                .leftJoin(p.board, b)
                 .leftJoin(p.user, u)
                 .leftJoin(like).on(like.postId.eq(p.id))
                 .leftJoin(comment).on(comment.postId.eq(p.id))
@@ -366,7 +312,6 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         p.hidden
                 ))
                 .from(p)
-                .leftJoin(p.board, b)
                 .where(whereBuilder)
                 .orderBy(p.id.desc())
                 .limit(pageable.getPageSize() + 1)

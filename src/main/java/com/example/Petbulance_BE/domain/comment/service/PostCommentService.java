@@ -10,7 +10,7 @@ import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
-import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.post.type.Topic;
 import com.example.Petbulance_BE.domain.recent.service.RecentService;
 import com.example.Petbulance_BE.domain.report.aop.communityBan.CheckCommunityAvailable;
 import com.example.Petbulance_BE.domain.user.entity.Users;
@@ -281,7 +281,7 @@ public class PostCommentService {
         }
         if (category != null && !category.isEmpty()) {
             for (String cat : category) {
-                if (!Category.isValidCategory(cat)) {
+                if (!Topic.isValidCategory(cat)) {
                     throw new CustomException(ErrorCode.INVALID_CATEGORY);
                 }
             }
@@ -295,7 +295,7 @@ public class PostCommentService {
             recentService.saveRecentCommunitySearch(keyword, currentUser);
         }
 
-        List<Category> categories = Category.convertToCategoryList(category);
+        List<Topic> categories = Topic.convertToCategoryList(category);
         return new SearchPostCommentListResDto(
                 postCommentRepository.findSearchPostComment(keyword, searchScope, lastCommentId, pageSize, categories, boardId),
                 postCommentRepository.countSearchPostComment(keyword, searchScope, categories, boardId));

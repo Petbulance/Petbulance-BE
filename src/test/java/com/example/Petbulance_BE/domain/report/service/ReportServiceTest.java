@@ -7,7 +7,7 @@ import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.post.service.PostService;
-import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.post.type.Topic;
 import com.example.Petbulance_BE.domain.report.dto.request.ReportActionReqDto;
 import com.example.Petbulance_BE.domain.report.dto.request.ReportCreateReqDto;
 import com.example.Petbulance_BE.domain.report.entity.Report;
@@ -30,7 +30,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cglib.core.Local;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +41,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -118,7 +116,7 @@ class ReportServiceTest {
                         .user(targetUser)
                         .title("문제 있는 게시글")
                         .content("욕설 포함")
-                        .category(Category.DAILY)
+                        .topic(Topic.DAILY)
                         .imageNum(0)
                         .board(board)
                         .build()
