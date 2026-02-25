@@ -27,9 +27,12 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -427,6 +430,16 @@ public class NoticeService {
             );
         }
 
+        List<AdminDetailNoticeResDto.ButtonDto> buttonList = notice.getButtons().stream()
+                .map(button -> new AdminDetailNoticeResDto.ButtonDto(
+                        button.getId(),
+                        button.getText(),
+                        button.getPosition(),
+                        button.getLink(),
+                        button.getTarget()
+                ))
+                .toList();
+
         // 4. 최종 DTO 조립 및 반환
         return new AdminDetailNoticeResDto(
                 notice.getPostStatus(),
@@ -434,7 +447,54 @@ public class NoticeService {
                 notice.getTitle(),
                 notice.getContent(),
                 fileList,
-                bannerDto
+                bannerDto,
+                buttonList
         );
+    }
+
+    @Transactional
+    public AdminDeleteNotice adminDeleteNotice(Long noticeId) {
+        Notice notice = getNotice(noticeId);
+
+        List<String> s3KeysToDelete = new ArrayList<>();
+
+        List<NoticeFile> files = noticeFileRepository.findAllByNoticeId(notice.getId());
+        s3KeysToDelete.addAll(
+                files.stream()
+                        .map(NoticeFile::getFileUrl)
+                        .filter(Objects::nonNull)
+                        .map(this::extractKeyFromUrl)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList())
+        );
+
+        Banner banner = notice.getBanner();
+        if (banner != null && banner.getFileUrl() != null) {
+            String bannerKey = extractKeyFromUrl(banner.getFileUrl());
+            if (bannerKey != null) s3KeysToDelete.add(bannerKey);
+        }
+        noticeRepository.delete(notice);
+
+        registerAfterCommitS3Delete(s3KeysToDelete);
+
+        return new AdminDeleteNotice(notice.getId(), "공지가 정상적으로 삭제되었습니다.");
+    }
+
+    private void registerAfterCommitS3Delete(List<String> keys) {
+        if (keys == null || keys.isEmpty()) return;
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                for (String key : keys) {
+                    if (key == null || key.isBlank()) continue;
+
+                    // 존재 확인이 꼭 필요하면 doesObjectExist 후 delete
+                    if (s3Service.doesObjectExist(key)) {
+                        s3Service.deleteObject(key);
+                    }
+                }
+            }
+        });
     }
 }

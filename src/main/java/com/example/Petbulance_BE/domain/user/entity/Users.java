@@ -76,6 +76,9 @@ public class Users {
 
     private LocalDate birth;
 
+    @Builder.Default
+    private int warningCount = 0;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<UserEmails> userEmails;
 
@@ -154,4 +157,7 @@ public class Users {
     }
 
 
+    public void increaseWarningCount() {
+        this.warningCount++;
+    }
 }

@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -27,6 +28,7 @@ import java.util.*;
 @Slf4j
 //@Component
 @RequiredArgsConstructor
+@Profile("local")
 public class ReportInitializer implements ApplicationRunner {
 
     private final PostRepository postRepository;
@@ -127,8 +129,9 @@ public class ReportInitializer implements ApplicationRunner {
                     Report.builder()
                             .reportReason(reasons.get(random.nextInt(reasons.size())))
                             .reporter(reporter)
+                            .targetUser(target.getUser())
                             .reportType(ReportType.POST)
-                            .status(ReportStatus.REPORTED)
+                            .status(ReportStatus.PENDING)
                             .actionType(randomAction())
                             .postId(target.getId())
                             .build()
@@ -144,8 +147,9 @@ public class ReportInitializer implements ApplicationRunner {
                     Report.builder()
                             .reportReason(reasons.get(random.nextInt(reasons.size())))
                             .reporter(reporter)
+                            .targetUser(target.getUser())
                             .reportType(ReportType.COMMENT)
-                            .status(ReportStatus.REPORTED)
+                            .status(ReportStatus.PENDING)
                             .actionType(randomAction())
                             .commentId(target.getId())
                             .build()
