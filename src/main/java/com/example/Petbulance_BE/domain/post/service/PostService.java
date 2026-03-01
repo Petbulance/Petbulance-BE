@@ -389,7 +389,6 @@ public class PostService {
         posts.forEach(dto -> {
             dto.setViewCount(viewCountMap.getOrDefault(dto.getPostId(), 0L));
             dto.setLikedByUser(likedPostIds.contains(dto.getPostId()));
-            dto.setCreatedAt(TimeUtil.formatCreatedAt(LocalDateTime.parse(dto.getCreatedAt())));
         });
 
         return pagingResult;

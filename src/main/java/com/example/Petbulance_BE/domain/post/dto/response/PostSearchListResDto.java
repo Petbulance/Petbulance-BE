@@ -1,5 +1,7 @@
 package com.example.Petbulance_BE.domain.post.dto.response;
 
+import com.example.Petbulance_BE.domain.post.type.Topic;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import com.example.Petbulance_BE.global.util.TimeUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,8 +15,8 @@ import java.util.List;
 @NoArgsConstructor
 public class PostSearchListResDto {
     private Long postId;
-    private String type;
-    private String topic;
+    private AnimalType type;
+    private Topic topic;
     private String writerNickname;
     private String createdAt;
     private String thumbnailUrl;
@@ -26,7 +28,8 @@ public class PostSearchListResDto {
     private Long viewCount;
     private boolean likedByUser;
 
-    public PostSearchListResDto(Long postId, String type, String topic, String writerNickname, LocalDateTime createdAt, String thumbnailUrl, Long imageCount, String title, String content, Long likeCount, Long commentCount, Long viewCount, boolean likedByUser) {
+
+    public PostSearchListResDto(Long postId, AnimalType type, Topic topic, String writerNickname, LocalDateTime createdAt, String thumbnailUrl, Long imageCount, String title, String content, Long likeCount, Long commentCount, Long viewCount, boolean likedByUser) {
         this.postId = postId;
         this.type = type;
         this.topic = topic;

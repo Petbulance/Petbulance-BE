@@ -248,6 +248,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         boolean hasNext = results.size() > pageSize;
         if (hasNext) results.remove(pageSize);
 
+
         return new PagingPostSearchListResDto(
                 new SliceImpl<>(results, PageRequest.of(0, pageSize), hasNext)
         );

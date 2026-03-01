@@ -8,6 +8,7 @@ import com.example.Petbulance_BE.domain.post.entity.QPost;
 import com.example.Petbulance_BE.domain.post.type.Topic;
 import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.example.Petbulance_BE.domain.user.entity.Users;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -146,18 +147,17 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
     }
 
     @Override
-    public Slice<SearchPostCommentResDto> findSearchPostComment(String keyword, String searchScope, Long lastCommentId, Integer pageSize, List<Topic> topic, Long boardId) {
+    public Slice<SearchPostCommentResDto> findSearchPostComment(String keyword, String searchScope, Long lastCommentId, Integer pageSize, Topic topic, AnimalType type) {
         QPostComment c = QPostComment.postComment;
         QPost p = QPost.post;
-        QBoard b = QBoard.board;
         QUsers u = QUsers.users;
 
         BooleanExpression scopeCond = scopeCondition(searchScope, keyword, c, u);
-        BooleanExpression categoryCond = (topic != null && !topic.isEmpty())
-                ? p.topic.in(topic)
+        BooleanExpression topicCond = (topic != null)
+                ? p.topic.eq(topic)
                 : null;
-        BooleanExpression boardCond = (boardId != null)
-                ? b.id.eq(boardId)
+        BooleanExpression typeCond = (type != null)
+                ? p.animalType.eq(type)
                 : null;
         BooleanExpression cursorCond = (lastCommentId != null)
                 ? c.id.lt(lastCommentId)
@@ -167,21 +167,22 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                 .select(Projections.constructor(
                         SearchPostCommentResDto.class,
                         c.id,
-                        b.id,
-                        b.nameKr,
                         p.id,
                         p.title,
-                        u.nickname,
                         c.content,
-                        c.createdAt
+                        c.imageUrl,
+                        u.nickname,
+                        c.createdAt,
+                        p.animalType,
+                        p.topic
                 ))
                 .from(c)
                 .join(c.post, p)
                 .join(c.user, u)
                 .where(
                         scopeCond,
-                        categoryCond,
-                        boardCond,
+                        topicCond,
+                        typeCond,
                         cursorCond,
                         c.deleted.eq(false),
                         c.hidden.eq(false)

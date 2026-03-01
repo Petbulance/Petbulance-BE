@@ -18,10 +18,9 @@ import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.s3.S3Service;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -272,33 +271,22 @@ public class PostCommentService {
 
     @Transactional(readOnly = true)
     @CheckCommunityAvailable
-    public SearchPostCommentListResDto searchPostCommentList(String keyword, String searchScope, Long lastCommentId, Integer pageSize, List<String> category, Long boardId) {
-        if(keyword.length() < 2) {
+    public SearchPostCommentListResDto searchPostCommentList(String searchKeyword, String searchScope, Long lastCommentId, Integer pageSize, Topic topic, AnimalType type) {
+        if(StringUtils.hasText(searchKeyword) && searchKeyword.length() < 2) {
             throw new CustomException(ErrorCode.INVALID_SEARCH_KEYWORD);
         }
         if (!isValidSearchScope(searchScope)) {
             throw new CustomException(ErrorCode.INVALID_SEARCH_SCOPE);
         }
-        if (category != null && !category.isEmpty()) {
-            for (String cat : category) {
-                if (!Topic.isValidCategory(cat)) {
-                    throw new CustomException(ErrorCode.INVALID_CATEGORY);
-                }
-            }
-        }
-        if (boardId != null && !boardRepository.existsById(boardId)) {
-            throw new CustomException(ErrorCode.BOARD_NOT_FOUND);
-        }
+
         Users currentUser = UserUtil.getCurrentUser();
 
         if(currentUser != null) {
-            recentService.saveRecentCommunitySearch(keyword, currentUser);
+            recentService.saveRecentCommunitySearch(searchKeyword, currentUser);
         }
 
-        List<Topic> categories = Topic.convertToCategoryList(category);
         return new SearchPostCommentListResDto(
-                postCommentRepository.findSearchPostComment(keyword, searchScope, lastCommentId, pageSize, categories, boardId),
-                postCommentRepository.countSearchPostComment(keyword, searchScope, categories, boardId));
+                postCommentRepository.findSearchPostComment(searchKeyword, searchScope, lastCommentId, pageSize, topic, type));
     }
 
     private boolean isValidSearchScope(String scope) {
