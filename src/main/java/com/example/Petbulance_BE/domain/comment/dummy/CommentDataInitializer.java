@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-@Component
+//@Component
 @RequiredArgsConstructor
 @Profile("local")
 public class CommentDataInitializer implements ApplicationRunner {
