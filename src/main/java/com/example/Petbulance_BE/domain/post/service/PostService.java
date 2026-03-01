@@ -350,16 +350,17 @@ public class PostService {
 
     @Transactional(readOnly = true)
     @CheckCommunityAvailable
-    public PagingPostSearchListResDto postSearchList(AnimalType type, List<Topic> topic, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
+    public PagingPostSearchListResDto postSearchList(AnimalType type, Topic topic, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
         validateSortCondition(sort);
         validateSearchScope(searchScope);
         Users currentUser = UserUtil.getCurrentUser();
 
-        if (searchKeyword.length() < 2) {
+        if (StringUtils.hasText(searchKeyword) && searchKeyword.length() < 2) {
             throw new CustomException(ErrorCode.INVALID_SEARCH_KEYWORD);
         }
 
         if (currentUser != null && StringUtils.hasText(searchKeyword)) {
+            // 현재 유저와 검색어가 존재할 때 최신 검색어 저장하기
             recentService.saveRecentCommunitySearch(searchKeyword, currentUser);
         }
 
@@ -380,7 +381,9 @@ public class PostService {
         Map<Long, Long> viewCountMap = postViewCountRepository.readAll(postIds);
 
         // 좋아요 여부 일괄 조회 (Batch Query)
-        Set<Long> likedPostIds = postLikeRepository.findLikedPostIdsByUserAndPostIds(currentUser, postIds);
+        Set<Long> likedPostIds = (currentUser == null)
+                ? Collections.emptySet()
+                : postLikeRepository.findLikedPostIdsByUserAndPostIds(currentUser, postIds);
 
         // DTO 매핑
         posts.forEach(dto -> {
@@ -392,7 +395,7 @@ public class PostService {
         return pagingResult;
     }
 
-    private void validateSearchScope(String searchScope) {
+    private void  validateSearchScope(String searchScope) {
         if (!("title_content".equalsIgnoreCase(searchScope)
                 || "title".equalsIgnoreCase(searchScope)
                 || "writer".equalsIgnoreCase(searchScope))) {

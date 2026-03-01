@@ -13,11 +13,9 @@ import java.util.List;
 public class PagingPostSearchListResDto {
     private List<PostSearchListResDto> content;
     private boolean hasNext;
-    private Long totalPostCount;
 
-    public PagingPostSearchListResDto(Slice<PostSearchListResDto> slice, Long totalPostCount) {
+    public PagingPostSearchListResDto(Slice<PostSearchListResDto> slice) {
         this.content = slice.getContent();
         this.hasNext = slice.hasNext();
-        this.totalPostCount = totalPostCount;
     }
 }

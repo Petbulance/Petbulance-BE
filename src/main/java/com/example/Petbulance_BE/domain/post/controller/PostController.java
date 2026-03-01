@@ -68,10 +68,10 @@ public class PostController {
 
     @GetMapping("/search")
     public PagingPostSearchListResDto postSearchList(@RequestParam(required = false)  AnimalType type,
-                                                     @RequestParam(required = false) List<Topic> topic,
-                                                     @RequestParam(defaultValue = "popular") String sort,
+                                                     @RequestParam(required = false) Topic topic,
+                                                     @RequestParam(required = false, defaultValue = "latest") String sort,
                                                      @RequestParam(required = false) Long lastPostId,
-                                                     @RequestParam(defaultValue = "10") Integer pageSize,
+                                                     @RequestParam(defaultValue = "20") Integer pageSize,
                                                      @RequestParam(required = false) String searchKeyword,
                                                      @RequestParam(defaultValue = "title_content") String searchScope) {
         return postService.postSearchList(type, topic, sort, lastPostId, pageSize, searchKeyword, searchScope);

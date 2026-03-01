@@ -167,11 +167,11 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
 
     @Override
-    public PagingPostSearchListResDto findPostSearchList(AnimalType type, List<Topic> topic, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
+    public PagingPostSearchListResDto findPostSearchList(AnimalType type, Topic topic, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope) {
         QPost p = QPost.post;
         QPostLikeCount like = QPostLikeCount.postLikeCount1;
         QPostCommentCount comment = QPostCommentCount.postCommentCount1;
-        QBoard b = QBoard.board;
+
         QUsers u = QUsers.users;
         QPostImage img = QPostImage.postImage;
 
@@ -182,8 +182,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             condition.and(p.animalType.eq(type));
         }
 
-        if (topic != null && !topic.isEmpty()) {
-            condition.and(p.topic.in(topic));
+        if (topic != null) {
+            condition.and(p.topic.eq(topic));
         }
 
         if (searchKeyword != null && !searchKeyword.isBlank()) {
@@ -213,12 +213,10 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 .select(Projections.constructor(
                         PostSearchListResDto.class,
                         p.id,
-                        b.id,
-                        b.nameKr,
-                        Expressions.list(p.topic.stringValue()),
-                        u.profileImage,
+                        p.animalType,
+                        p.topic,
                         u.nickname,
-                        p.createdAt.stringValue(),
+                        p.createdAt,
                         img.imageUrl,
                         p.imageNum.longValue(),
                         p.title,
@@ -250,16 +248,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         boolean hasNext = results.size() > pageSize;
         if (hasNext) results.remove(pageSize);
 
-        Long totalCount = queryFactory
-                .select(p.count())
-                .from(p)
-                .leftJoin(p.user, u)
-                .where(condition)
-                .fetchOne();
-
         return new PagingPostSearchListResDto(
-                new SliceImpl<>(results, PageRequest.of(0, pageSize), hasNext),
-                totalCount != null ? totalCount : 0L
+                new SliceImpl<>(results, PageRequest.of(0, pageSize), hasNext)
         );
     }
 

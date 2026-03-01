@@ -18,6 +18,6 @@ public interface PostRepositoryCustom {
     int fetchCommentCount(Long postId);
     boolean fetchLikedByUser(Users currentUser, Long postId);
     Slice<PostListResDto> findPostList(AnimalType type, Topic topic, String sort, Long lastPostId, Integer pageSize);
-    PagingPostSearchListResDto findPostSearchList(AnimalType type, List<Topic> topic, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope);
+    PagingPostSearchListResDto findPostSearchList(AnimalType type, Topic topic, String sort, Long lastPostId, Integer pageSize, String searchKeyword, String searchScope);
     PagingMyPostListResDto findMyPostList(Users currentUser, String keyword, Long lastPostId, Pageable pageable);
 }
