@@ -3,13 +3,12 @@ package com.example.Petbulance_BE.domain.comment.repository;
 import com.example.Petbulance_BE.domain.board.entity.QBoard;
 import com.example.Petbulance_BE.domain.comment.dto.response.*;
 import com.example.Petbulance_BE.domain.comment.entity.QPostComment;
-import com.example.Petbulance_BE.domain.post.dto.response.PagingMyPostListResDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.entity.QPost;
-import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.post.type.Topic;
 import com.example.Petbulance_BE.domain.user.entity.QUsers;
 import com.example.Petbulance_BE.domain.user.entity.Users;
-import com.example.Petbulance_BE.global.util.TimeUtil;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -148,18 +147,17 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
     }
 
     @Override
-    public Slice<SearchPostCommentResDto> findSearchPostComment(String keyword,String searchScope,Long lastCommentId,Integer pageSize,List<Category> category,Long boardId) {
+    public Slice<SearchPostCommentResDto> findSearchPostComment(String keyword, String searchScope, Long lastCommentId, Integer pageSize, Topic topic, AnimalType type) {
         QPostComment c = QPostComment.postComment;
         QPost p = QPost.post;
-        QBoard b = QBoard.board;
         QUsers u = QUsers.users;
 
         BooleanExpression scopeCond = scopeCondition(searchScope, keyword, c, u);
-        BooleanExpression categoryCond = (category != null && !category.isEmpty())
-                ? p.category.in(category)
+        BooleanExpression topicCond = (topic != null)
+                ? p.topic.eq(topic)
                 : null;
-        BooleanExpression boardCond = (boardId != null)
-                ? b.id.eq(boardId)
+        BooleanExpression typeCond = (type != null)
+                ? p.animalType.eq(type)
                 : null;
         BooleanExpression cursorCond = (lastCommentId != null)
                 ? c.id.lt(lastCommentId)
@@ -169,22 +167,22 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                 .select(Projections.constructor(
                         SearchPostCommentResDto.class,
                         c.id,
-                        b.id,
-                        b.nameKr,
                         p.id,
                         p.title,
-                        u.nickname,
                         c.content,
-                        c.createdAt
+                        c.imageUrl,
+                        u.nickname,
+                        c.createdAt,
+                        p.animalType,
+                        p.topic
                 ))
                 .from(c)
                 .join(c.post, p)
-                .join(p.board, b)
                 .join(c.user, u)
                 .where(
                         scopeCond,
-                        categoryCond,
-                        boardCond,
+                        topicCond,
+                        typeCond,
                         cursorCond,
                         c.deleted.eq(false),
                         c.hidden.eq(false)
@@ -213,7 +211,7 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
     public long countSearchPostComment(
             String keyword,
             String searchScope,
-            List<Category> category,
+            List<Topic> topic,
             Long boardId
     ) {
         QPostComment c = QPostComment.postComment;
@@ -222,8 +220,8 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
         QUsers u = QUsers.users;
 
         BooleanExpression scopeCond = scopeCondition(searchScope, keyword, c, u);
-        BooleanExpression categoryCond = (category != null && !category.isEmpty())
-                ? p.category.in(category)
+        BooleanExpression categoryCond = (topic != null && !topic.isEmpty())
+                ? p.topic.in(topic)
                 : null;
         BooleanExpression boardCond = (boardId != null)
                 ? b.id.eq(boardId)
@@ -233,7 +231,6 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                 .select(c.count())
                 .from(c)
                 .join(c.post, p)
-                .join(p.board, b)
                 .join(c.user, u)
                 .where(
                         scopeCond,
@@ -249,10 +246,9 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
     public PagingMyCommentListResDto findMyCommentList(Users currentUser, String keyword, Long lastCommentId, Pageable pageable) {
         QPostComment pc = QPostComment.postComment;
         QPost p = QPost.post;
-        QBoard b = QBoard.board;
 
         BooleanBuilder whereBuilder = new BooleanBuilder();
-        whereBuilder.and(pc.user.eq(currentUser))
+        whereBuilder.and(pc.user.id.eq(currentUser.getId()))
                 .and(pc.deleted.eq(false)); // 삭제되지 않은 것만
 
         if(lastCommentId != null) {
@@ -269,7 +265,6 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                 .select(Projections.constructor(
                         MyCommentListResDto.class,
                         pc.id,
-                        b.id,
                         p.id,
                         p.title,
                         pc.content,
@@ -279,7 +274,6 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom{
                 ))
                 .from(pc)
                 .leftJoin(pc.post, p)
-                .leftJoin(pc.post.board, b)
                 .where(whereBuilder)
                 .orderBy(pc.createdAt.desc(), pc.id.desc())
                 .limit(pageable.getPageSize() + 1)

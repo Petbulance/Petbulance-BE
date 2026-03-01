@@ -1,9 +1,13 @@
 package com.example.Petbulance_BE.domain.post.dto.response;
 
+import com.example.Petbulance_BE.domain.post.type.Topic;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
+import com.example.Petbulance_BE.global.util.TimeUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -11,10 +15,8 @@ import java.util.List;
 @NoArgsConstructor
 public class PostSearchListResDto {
     private Long postId;
-    private Long boardId;
-    private String boardName;
-    private List<String> category;
-    private String writerProfileUrl;
+    private AnimalType type;
+    private Topic topic;
     private String writerNickname;
     private String createdAt;
     private String thumbnailUrl;
@@ -25,4 +27,21 @@ public class PostSearchListResDto {
     private Long commentCount;
     private Long viewCount;
     private boolean likedByUser;
+
+
+    public PostSearchListResDto(Long postId, AnimalType type, Topic topic, String writerNickname, LocalDateTime createdAt, String thumbnailUrl, Long imageCount, String title, String content, Long likeCount, Long commentCount, Long viewCount, boolean likedByUser) {
+        this.postId = postId;
+        this.type = type;
+        this.topic = topic;
+        this.writerNickname = writerNickname;
+        this.createdAt = TimeUtil.formatCreatedAt(createdAt);
+        this.thumbnailUrl = thumbnailUrl;
+        this.imageCount = imageCount;
+        this.title = title;
+        this.content = content;
+        this.likeCount = likeCount;
+        this.commentCount = commentCount;
+        this.viewCount = viewCount;
+        this.likedByUser = likedByUser;
+    }
 }

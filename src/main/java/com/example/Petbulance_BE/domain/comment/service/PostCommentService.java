@@ -10,20 +10,21 @@ import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
-import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.post.type.Topic;
 import com.example.Petbulance_BE.domain.recent.service.RecentService;
 import com.example.Petbulance_BE.domain.report.aop.communityBan.CheckCommunityAvailable;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.common.s3.S3Service;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -40,13 +41,9 @@ public class PostCommentService {
     private final PostCommentCountRepository postCommentCountRepository;
     private final BoardRepository boardRepository;
     private final RecentService recentService;
+    private final S3Service s3Service;
 
     @Transactional
-    @CacheEvict(
-            value = "myComments",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
     @CheckCommunityAvailable
     public PostCommentResDto createPostComment(Long postId, CreatePostCommentReqDto dto) {
         // parentId와 mentionUserNickname 간의 관계 검증
@@ -92,11 +89,6 @@ public class PostCommentService {
         return PostCommentResDto.of(saved);
     }
 
-    @CacheEvict(
-            value = "myComments",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
     @Transactional(readOnly = true)
     @CheckCommunityAvailable
     public PostCommentResDto updatePostComment(Long commentId, UpdatePostCommentReqDto dto) {
@@ -106,16 +98,20 @@ public class PostCommentService {
         PostComment postComment = findPostCommentById(commentId); // 수정하고자하는 댓글
         verifyPostCommentWriter(postComment, Objects.requireNonNull(UserUtil.getCurrentUser())); // 권한 검증
 
+        if(!dto.getImageUrl().equals(postComment.getImageUrl())) {
+            // 댓글 이미지가 새로운 것으로 교체된다면 이전 이미지는 s3상에서 삭제
+            if(StringUtils.hasText(postComment.getImageUrl())) {
+                s3Service.deleteObject(s3Service.extractKeyFromUrl(postComment.getImageUrl()));
+            }
+        }
+
         postComment.update(dto);
+        postCommentRepository.save(postComment);
+
         return PostCommentResDto.of(postComment);
     }
 
     @Transactional
-    @CacheEvict(
-            value = "myComments",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
     @CheckCommunityAvailable
     public DelCommentResDto deletePostComment(Long commentId) {
         /* 상위 댓글을 삭제하려는 경우
@@ -139,16 +135,15 @@ public class PostCommentService {
                 delete(postComment); // 삭제 로직
                 postCommentCountRepository.decrease(postComment.getPost().getId());
             }
+
+            if(StringUtils.hasText(postComment.getImageUrl())) {
+                s3Service.deleteObject(s3Service.extractKeyFromUrl(postComment.getImageUrl()));
+            }
         }
         return new DelCommentResDto("댓글이 성공적으로 삭제되었습니다.");
     }
 
     @Transactional
-    @CacheEvict(
-            value = "myComments",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
     @CheckCommunityAvailable
     public BulkDeleteCommentResDto deletePostComments(List<Long> commentIds) {
 
@@ -178,6 +173,10 @@ public class PostCommentService {
                 } else { // 자식 없는 상위 댓글 or 하위 댓글
                     delete(comment);
                     postCommentCountRepository.decrease(comment.getPost().getId());
+                }
+
+                if(StringUtils.hasText(comment.getImageUrl())) {
+                    s3Service.deleteObject(s3Service.extractKeyFromUrl(comment.getImageUrl()));;
                 }
             }
 
@@ -272,33 +271,22 @@ public class PostCommentService {
 
     @Transactional(readOnly = true)
     @CheckCommunityAvailable
-    public SearchPostCommentListResDto searchPostCommentList(String keyword, String searchScope, Long lastCommentId, Integer pageSize, List<String> category, Long boardId) {
-        if(keyword.length() < 2) {
+    public SearchPostCommentListResDto searchPostCommentList(String searchKeyword, String searchScope, Long lastCommentId, Integer pageSize, Topic topic, AnimalType type) {
+        if(StringUtils.hasText(searchKeyword) && searchKeyword.length() < 2) {
             throw new CustomException(ErrorCode.INVALID_SEARCH_KEYWORD);
         }
         if (!isValidSearchScope(searchScope)) {
             throw new CustomException(ErrorCode.INVALID_SEARCH_SCOPE);
         }
-        if (category != null && !category.isEmpty()) {
-            for (String cat : category) {
-                if (!Category.isValidCategory(cat)) {
-                    throw new CustomException(ErrorCode.INVALID_CATEGORY);
-                }
-            }
-        }
-        if (boardId != null && !boardRepository.existsById(boardId)) {
-            throw new CustomException(ErrorCode.BOARD_NOT_FOUND);
-        }
+
         Users currentUser = UserUtil.getCurrentUser();
 
         if(currentUser != null) {
-            recentService.saveRecentCommunitySearch(keyword, currentUser);
+            recentService.saveRecentCommunitySearch(searchKeyword, currentUser);
         }
 
-        List<Category> categories = Category.convertToCategoryList(category);
         return new SearchPostCommentListResDto(
-                postCommentRepository.findSearchPostComment(keyword, searchScope, lastCommentId, pageSize, categories, boardId),
-                postCommentRepository.countSearchPostComment(keyword, searchScope, categories, boardId));
+                postCommentRepository.findSearchPostComment(searchKeyword, searchScope, lastCommentId, pageSize, topic, type));
     }
 
     private boolean isValidSearchScope(String scope) {
@@ -307,12 +295,6 @@ public class PostCommentService {
 
 
     @Transactional(readOnly = true)
-    @Cacheable(
-            value = "myComments",
-            key = "#currentUser.id + '_' + #lastCommentId",
-            condition = "#keyword == null",
-            unless = "#result == null"
-    )
     @CheckCommunityAvailable
     public PagingMyCommentListResDto myCommentList(String keyword, Long lastCommentId, Pageable pageable) {
         Users currentUser = UserUtil.getCurrentUser();

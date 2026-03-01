@@ -1,16 +1,15 @@
 package com.example.Petbulance_BE.domain.post.entity;
 
-import com.example.Petbulance_BE.domain.board.entity.Board;
-import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.post.type.Topic;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.common.mapped.BaseTimeEntity;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,13 +30,13 @@ public class Post extends BaseTimeEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "board_id", nullable = false)
-    private Board board;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Topic topic;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Category category;
+    private AnimalType animalType;
 
     @Column(nullable = false, length = 255)
     private String title;
@@ -65,10 +64,11 @@ public class Post extends BaseTimeEntity {
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<PostImage> postImages = new ArrayList<>();
 
-    public void update(String title, String content, Category category, int imageNum) {
+    public void update(String title, String content, Topic topic, AnimalType type, int imageNum) {
        this.title = title;
        this.content = content;
-       this.category = category;
+       this.topic = topic;
+       this.animalType = type;
        this.imageNum = imageNum;
     }
 

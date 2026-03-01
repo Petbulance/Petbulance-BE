@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MyCommentListResDto {
     private Long commentId;
-    private Long boardId;
     private Long postId;
     private String postTitle;
     private String commentContent;
@@ -22,9 +21,8 @@ public class MyCommentListResDto {
     private boolean hidden;
     private boolean isSecret;
 
-    public MyCommentListResDto(Long commentId, Long boardId, Long postId, String postTitle, String commentContent, LocalDateTime createdAt, boolean hidden, boolean isSecret) {
+    public MyCommentListResDto(Long commentId, Long postId, String postTitle, String commentContent, LocalDateTime createdAt, boolean hidden, boolean isSecret) {
         this.commentId = commentId;
-        this.boardId = boardId;
         this.postId = postId;
         this.postTitle = postTitle;
         this.commentContent = commentContent;
