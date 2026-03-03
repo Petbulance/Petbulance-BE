@@ -1,5 +1,6 @@
 package com.example.Petbulance_BE.domain.notification.service;
 
+import com.example.Petbulance_BE.domain.notification.dto.response.NotificationListResDto;
 import com.example.Petbulance_BE.domain.notification.dto.response.PagingNotificationListResDto;
 import com.example.Petbulance_BE.domain.notification.entity.Notification;
 import com.example.Petbulance_BE.domain.notification.repository.NotificationRepository;
@@ -8,6 +9,7 @@ import com.example.Petbulance_BE.domain.notification.type.NotificationType;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,8 +21,9 @@ public class NotificationService {
     @Transactional(readOnly = true)
     public PagingNotificationListResDto notificationList(Long lastNotificationId, Integer pageSize) {
         Users currentUser = UserUtil.getCurrentUser();
-        notificationRepository.fetchMyNotificationSlice(currentUser.getId(), lastNotificationId, pageSize);
-        return null;
+        Slice<NotificationListResDto> resDtos = notificationRepository.fetchMyNotificationSlice(currentUser.getId(), lastNotificationId, pageSize);
+
+        return new PagingNotificationListResDto(resDtos);
     }
 
     @Transactional

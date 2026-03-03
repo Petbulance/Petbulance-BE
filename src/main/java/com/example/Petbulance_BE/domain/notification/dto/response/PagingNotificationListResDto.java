@@ -1,6 +1,5 @@
 package com.example.Petbulance_BE.domain.notification.dto.response;
 
-import com.example.Petbulance_BE.domain.post.dto.response.PostSearchListResDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
