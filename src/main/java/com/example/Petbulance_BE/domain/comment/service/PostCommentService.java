@@ -101,12 +101,33 @@ public class PostCommentService {
         return PostCommentResDto.of(saved);
     }
 
-    private void sendCommentWriterPushAlram(Post post, PostComment postComment, Users currentUser) {
-        // 답글 대상자에게의 푸시 알림
-        String message = post.getTitle() + "글에 내 댓글에" + currentUser.getNickname() + "님이 댓글을 달았어요.";
-        // 푸시 알림 전송
+    private void sendCommentWriterPushAlram(Post post, PostComment parentComment, Users currentUser) {
+        Device device = deviceJpaRepository.findByUserId(parentComment.getUser().getId());
+        if (parentComment.getUser().getId().equals(currentUser.getId())) {
+            return;
+        }
+        String message = "“" + post.getTitle() + "” 글 내 댓글에 " + currentUser.getNickname() + "님이 답글을 달았어요.";
 
-        notificationService.createNotification(post.getUser(), currentUser, NotificationType.POST_COMMENT, NotificationTargetType.COMMENT, post.getId(), message);
+        if (device != null && device.getFcm_token() != null) {
+            String fcmToken = device.getFcm_token();
+
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "POST");                           // 여전히 게시글 상세로 이동
+            data.put("targetId", String.valueOf(post.getId())); // 이동할 게시글 ID
+
+            String title = "새로운 답글";
+
+            fcmService.sendPushNotification(fcmToken, title, message, data);
+        }
+
+        notificationService.createNotification(
+                parentComment.getUser(),
+                currentUser,
+                NotificationType.POST_COMMENT,
+                NotificationTargetType.COMMENT,
+                post.getId(),
+                message
+        );
     }
 
     private void sendPostWriterPushAlram(Post post, Users currentUser) {
