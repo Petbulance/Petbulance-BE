@@ -91,7 +91,7 @@ public class PostLikeService {
 
         String message = "“" + post.getTitle() + "” 글에 좋아요가 도착했습니다.";
 
-        if (device != null) {
+        if (device != null && device.getFcm_token() != null) {
             String fcmToken = device.getFcm_token();
 
             // 좋아요 푸시 알림 전송
