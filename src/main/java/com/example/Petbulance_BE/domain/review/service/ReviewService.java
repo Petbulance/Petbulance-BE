@@ -4,6 +4,9 @@ import com.example.Petbulance_BE.domain.dashboard.service.DashboardMetricRedisSe
 import com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto;
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
+import com.example.Petbulance_BE.domain.notification.service.NotificationService;
+import com.example.Petbulance_BE.domain.notification.type.NotificationTargetType;
+import com.example.Petbulance_BE.domain.notification.type.NotificationType;
 import com.example.Petbulance_BE.domain.review.aop.CheckReviewAvailable;
 import com.example.Petbulance_BE.domain.review.aop.DailyLimit;
 import com.example.Petbulance_BE.domain.review.dto.*;
@@ -73,6 +76,7 @@ public class ReviewService {
     private final ReviewLikeJpaRepository reviewLikeJpaRepository;
     private final DashboardMetricRedisService dashboardMetricRedisService;
     private final UsersJpaRepository usersJpaRepository;
+    private final NotificationService notificationService;
 
     @Value("${gemini.api.url-with-key}")
     private String genimiApiUrl;
@@ -630,7 +634,17 @@ public class ReviewService {
         userReviewLike.setReview(reviewProxy);
         reviewLikeJpaRepository.save(userReviewLike);
 
+
+        sendReviewPushAlram(reviewProxy, currentUser);
+
         return Map.of("message", "success");
+    }
+
+    private void sendReviewPushAlram(UserReview reviewProxy, Users currentUser) {
+        String message = reviewProxy.getHospital().getName() + "병원에 남긴 후기가 다른 보호자에게 도움이 되었어요.";
+        // 푸시 알림 전송
+
+        notificationService.createNotification(reviewProxy.getUser(), currentUser, NotificationType.REVIEW_HELPFUL, NotificationTargetType.REVIEW, reviewProxy.getId(), message);
     }
 
     public Map<String, String> reviewLikeCancelProcess(Long reviewId) {

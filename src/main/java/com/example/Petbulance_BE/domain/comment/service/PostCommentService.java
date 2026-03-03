@@ -7,6 +7,9 @@ import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
+import com.example.Petbulance_BE.domain.notification.service.NotificationService;
+import com.example.Petbulance_BE.domain.notification.type.NotificationTargetType;
+import com.example.Petbulance_BE.domain.notification.type.NotificationType;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
@@ -42,6 +45,7 @@ public class PostCommentService {
     private final BoardRepository boardRepository;
     private final RecentService recentService;
     private final S3Service s3Service;
+    private final NotificationService notificationService;
 
     @Transactional
     @CheckCommunityAvailable
@@ -86,7 +90,28 @@ public class PostCommentService {
                 );
             } catch (Exception ignored) {}
         }
+
+        if(currentUser != null) sendPostWriterPushAlram(post, currentUser);
+
+        if(currentUser!= null && StringUtils.hasText(dto.getMentionUserNickname()) && parentComment != null) sendCommentWriterPushAlram(post, parentComment, currentUser);
+
         return PostCommentResDto.of(saved);
+    }
+
+    private void sendCommentWriterPushAlram(Post post, PostComment postComment, Users currentUser) {
+        // 답글 대상자에게의 푸시 알림
+        String message = post.getTitle() + "글에 내 댓글에" + currentUser.getNickname() + "님이 댓글을 달았어요.";
+        // 푸시 알림 전송
+
+        notificationService.createNotification(post.getUser(), currentUser, NotificationType.POST_COMMENT, NotificationTargetType.COMMENT, post.getId(), message);
+    }
+
+    private void sendPostWriterPushAlram(Post post, Users currentUser) {
+        // 게시글 작성자에게의 푸시 알림
+        String message = post.getTitle() + "글에 " + currentUser.getNickname() + "님이 댓글을 달았어요.";
+        // 푸시 알림 전송
+
+        notificationService.createNotification(post.getUser(), currentUser, NotificationType.POST_COMMENT, NotificationTargetType.COMMENT, post.getId(), message);
     }
 
     @Transactional(readOnly = true)

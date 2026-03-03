@@ -22,8 +22,8 @@ public class SearchPostCommentResDto {
     private String commentImageUrl;
     private String writerNickname;
     private String createdAt;
-    private AnimalType type;
-    private Topic topic;
+    private String type;
+    private String topic;
 
     public SearchPostCommentResDto(Long commentId, Long postId, String postTitle, String commentContent, String commentImageUrl, String writerNickname, LocalDateTime createdAt, AnimalType type, Topic topic) {
         this.commentId = commentId;
@@ -33,7 +33,7 @@ public class SearchPostCommentResDto {
         this.commentImageUrl = commentImageUrl;
         this.writerNickname = writerNickname;
         this.createdAt = TimeUtil.formatCreatedAt(createdAt);
-        this.type = type;
-        this.topic = topic;
+        this.type = type.getDescription();
+        this.topic = topic.getDescription();
     }
 }

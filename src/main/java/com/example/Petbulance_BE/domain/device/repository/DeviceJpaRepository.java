@@ -18,4 +18,6 @@ public interface DeviceJpaRepository extends JpaRepository<Device, Long> {
     void deleteByFcmTokenAndUserId(@Param("fcmToken") String fcmToken, @Param("userId") String userId);
 
     List<Device> findByUser(Users users);
+
+    Device findByUserId(String userId);
 }
