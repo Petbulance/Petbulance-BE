@@ -37,11 +37,28 @@ public class CommunitySanctionService {
         // 신고 대상자
         Users targetUser = report.getTargetUser();
 
+        // 신고 대상자가 '커뮤니티 7일 정지' 리겨 횟수 조회 (활성화된 것)
+        long sanctionCount = userSanctionRepository.countByUserAndSanctionTypeAndActiveTrue(targetUser, SanctionType.COMMUNITY_BAN);
+
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime until = now.plusDays(DEFAULT_SUSPEND_DAYS);
+        String reasonPrefix;
+
+        // 영구 정지 로직 추가: 기존 이력이 2개 이상이면 3회차에서 영구 정지
+        if (sanctionCount >= 2) {
+            until = now.plusYears(100); // 사실상 영구 정지
+            reasonPrefix = "[영구 정지/누적 3회차] ";
+        } else {
+            until = now.plusDays(DEFAULT_SUSPEND_DAYS); // 기존 7일 정지
+            reasonPrefix = String.format("[%d회차 정지] ", sanctionCount + 1);
+        }
 
         // 유저 상태 업데이트
-        targetUser.banCommunityUntil(until);
+        if (sanctionType == SanctionType.COMMUNITY_BAN) {
+            targetUser.banCommunityUntil(until);
+        } else if (sanctionType == SanctionType.REVIEW_BAN) {
+            targetUser.banReviewUntil(until);
+        }
 
         // 제재 이력 저장
         UserSanction sanction = UserSanction.builder()

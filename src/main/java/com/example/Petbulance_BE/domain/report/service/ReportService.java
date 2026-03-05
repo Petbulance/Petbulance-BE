@@ -215,15 +215,10 @@ public class ReportService {
                 // 해당 게시글, 댓글 삭제
                 postAndCommentDelete(report);
 
-                // 알림 보내기
-                sendAlarm(report);
-
                 // 사용자 경고 횟수 누적하기
                 Users targetUser = report.getTargetUser();
                 targetUser.increaseWarningCount();
                 if(targetUser.getWarningCount() >= 3) {
-                    // 알림 보내기
-                    sendAlarm(report);
                     communitySanctionService.applySanctionForReport(report, SanctionType.COMMUNITY_BAN);
                 }
 
