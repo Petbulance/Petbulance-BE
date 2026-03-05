@@ -25,8 +25,8 @@ public class NotificationListResDto {
 
     public NotificationListResDto(Long notificationId, AnimalType type, Topic topic, LocalDateTime createdAt, String message, boolean read, NotificationTargetType targetType, Long targetId) {
         this.notificationId = notificationId;
-        this.type = type.getDescription();
-        this.topic = topic.getDescription();
+        this.type = (type != null) ? type.getDescription() : "전체";
+        this.topic = (topic != null) ? topic.getDescription() : "알림";
         this.createdAt = TimeUtil.formatCreatedAt(createdAt);
         this.message = message;
         this.read = read;

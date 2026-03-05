@@ -27,7 +27,7 @@ public class NotificationController {
         return notificationService.readAllNotification();
     }
 
-    @GetMapping
+    @DeleteMapping
     public DeleteAllNotificationResDto deleteAllNotification() {
         return notificationService.deleteAllNotification();
     }
