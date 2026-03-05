@@ -26,7 +26,6 @@ import com.example.Petbulance_BE.domain.report.type.ReportType;
 import com.example.Petbulance_BE.domain.review.entity.UserReview;
 import com.example.Petbulance_BE.domain.review.repository.ReviewJpaRepository;
 import com.example.Petbulance_BE.domain.user.entity.Users;
-import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.user.type.SanctionType;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
@@ -200,7 +199,7 @@ public class ReportService {
                 if (report.getReportType().equals(ReportType.POST) || report.getReportType().equals(ReportType.COMMENT)) {
                     postAndCommentDelete(report);
                     report.deleteAction(ReportActionType.SUSPEND);
-                    checkDeletedAlram(report);
+                    checkDeletedAlram(report, currentUser);
 
                     // 커뮤니티 기능 접근 정지
                     communitySanctionService.applySanctionForReport(report, SanctionType.COMMUNITY_BAN);
@@ -220,7 +219,7 @@ public class ReportService {
             case WARNING -> { // 경고
                 // 해당 게시글, 댓글 삭제
                 postAndCommentDelete(report);
-                checkDeletedAlram(report);
+                checkDeletedAlram(report, currentUser);
 
                 // 사용자 경고 횟수 누적하기
                 Users targetUser = report.getTargetUser();
@@ -238,21 +237,21 @@ public class ReportService {
         }
     }
 
-    private void checkDeletedAlram(Report report) {
+    private void checkDeletedAlram(Report report, Users currentUser) {
         if(report.getReportType().equals(ReportType.POST)) {
             Optional<Post> reportedPost = postRepository.findById(report.getPostId());
 
             // 게시글 삭제 알림
-            reportedPost.ifPresent(this::sendPostDeletedAlram);
+            reportedPost.ifPresent(post -> sendPostDeletedAlram(post, currentUser));
 
         } else if (report.getReportType().equals(ReportType.COMMENT)) {
             Optional<PostComment> reportedComment = postCommentRepository.findById(report.getCommentId());
 
-            reportedComment.ifPresent(this::sendCommentDeletedAlram);
+            reportedComment.ifPresent(postComment -> sendCommentDeletedAlram(postComment, currentUser));
         }
     }
 
-    private void sendPostDeletedAlram(Post post) {
+    private void sendPostDeletedAlram(Post post, Users currentUser) {
         Users targetUser = post.getUser();
         Device device = deviceJpaRepository.findByUserId(targetUser.getId());
 
@@ -265,10 +264,10 @@ public class ReportService {
             fcmService.sendPushNotification(device.getFcm_token(), title, message, data);
         }
 
-        notificationService.createNotification(targetUser, null, NotificationType.POST_DELETED, NotificationTargetType.POST, post.getId(), message);
+        notificationService.createNotification(targetUser, currentUser, NotificationType.POST_DELETED, NotificationTargetType.POST, post.getId(), message);
     }
 
-    private void sendCommentDeletedAlram(PostComment postComment) {
+    private void sendCommentDeletedAlram(PostComment postComment, Users currentUser) {
         Users targetUser = postComment.getUser();
         Device device = deviceJpaRepository.findByUserId(targetUser.getId());
 
@@ -281,7 +280,7 @@ public class ReportService {
             fcmService.sendPushNotification(device.getFcm_token(), title, message, data);
         }
 
-        notificationService.createNotification(targetUser, null, NotificationType.COMMENT_DELETED, NotificationTargetType.COMMENT, postComment.getId(), message);
+        notificationService.createNotification(targetUser, currentUser, NotificationType.COMMENT_DELETED, NotificationTargetType.COMMENT, postComment.getId(), message);
     }
 
     private void postAndCommentDelete(Report report) {

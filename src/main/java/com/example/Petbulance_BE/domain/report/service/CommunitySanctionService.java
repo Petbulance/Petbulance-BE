@@ -7,7 +7,6 @@ import com.example.Petbulance_BE.domain.notification.type.NotificationTargetType
 import com.example.Petbulance_BE.domain.notification.type.NotificationType;
 import com.example.Petbulance_BE.domain.report.entity.Report;
 import com.example.Petbulance_BE.domain.report.exception.CommunityBannedException;
-import com.example.Petbulance_BE.domain.report.type.ReportActionType;
 import com.example.Petbulance_BE.domain.user.entity.UserSanction;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UserSanctionRepository;
@@ -60,12 +59,12 @@ public class CommunitySanctionService {
             until = now.plusYears(100); // 사실상 영구 정지
             reasonPrefix = "[영구 정지/누적 3회차] ";
 
-            sendPermanentBanAlarm(targetUser);
+            sendPermanentBanAlarm(targetUser, currentUser);
         } else {
             until = now.plusDays(DEFAULT_SUSPEND_DAYS); // 기존 7일 정지
             reasonPrefix = String.format("[%d회차 정지] ", sanctionCount + 1);
 
-            send7DaysBanAlarm(targetUser);
+            send7DaysBanAlarm(targetUser, currentUser);
         }
 
         // 유저 상태 업데이트
@@ -122,7 +121,7 @@ public class CommunitySanctionService {
                 .forEach(sanction -> sanction.deactivate());
     }
 
-    private void send7DaysBanAlarm(Users targetUser) {
+    private void send7DaysBanAlarm(Users targetUser, Users currentUser) {
         Device device = deviceJpaRepository.findByUserId(targetUser.getId());
 
         String title = "커뮤니티 이용 제한 안내";
@@ -134,10 +133,10 @@ public class CommunitySanctionService {
             fcmService.sendPushNotification(device.getFcm_token(), title, message, data);
         }
 
-        notificationService.createNotification(targetUser, null, NotificationType.TEMP_BAN_7D, NotificationTargetType.SANCTION, null, message);
+        notificationService.createNotification(targetUser, currentUser, NotificationType.TEMP_BAN_7D, NotificationTargetType.SANCTION, null, message);
     }
 
-    private void sendPermanentBanAlarm(Users targetUser) {
+    private void sendPermanentBanAlarm(Users targetUser, Users currentUser) {
         Device device = deviceJpaRepository.findByUserId(targetUser.getId());
 
         String title = "커뮤니티 이용 제한 안내";
@@ -149,6 +148,6 @@ public class CommunitySanctionService {
             fcmService.sendPushNotification(device.getFcm_token(), title, message, data);
         }
 
-        notificationService.createNotification(targetUser, null, NotificationType.PERMANENT_BAN, NotificationTargetType.SANCTION, null, message);
+        notificationService.createNotification(targetUser, currentUser, NotificationType.PERMANENT_BAN, NotificationTargetType.SANCTION, null, message);
     }
 }
