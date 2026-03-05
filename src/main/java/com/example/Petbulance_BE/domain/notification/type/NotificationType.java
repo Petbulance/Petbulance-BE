@@ -11,6 +11,7 @@ public enum NotificationType {
 
     // <신고/제재>
     POST_DELETED,     // 경고: 게시글 삭제
+    COMMENT_DELETED,
     TEMP_BAN_7D,      // 7일 정지
     PERMANENT_BAN     // 영구 정지
 }

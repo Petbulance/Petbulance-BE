@@ -6,6 +6,11 @@ import com.example.Petbulance_BE.domain.adminlog.type.*;
 import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
 import com.example.Petbulance_BE.domain.comment.service.PostCommentService;
+import com.example.Petbulance_BE.domain.device.entity.Device;
+import com.example.Petbulance_BE.domain.device.repository.DeviceJpaRepository;
+import com.example.Petbulance_BE.domain.notification.service.NotificationService;
+import com.example.Petbulance_BE.domain.notification.type.NotificationTargetType;
+import com.example.Petbulance_BE.domain.notification.type.NotificationType;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
 import com.example.Petbulance_BE.domain.report.dto.request.ReportActionReqDto;
@@ -25,6 +30,7 @@ import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.user.type.SanctionType;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.firebase.FcmService;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -41,11 +49,13 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final PostRepository postRepository;
     private final PostCommentRepository postCommentRepository;
-    private final UsersJpaRepository usersJpaRepository;
     private final PostCommentService postCommentService;
     private final CommunitySanctionService communitySanctionService;
     private final ReviewJpaRepository reviewJpaRepository;
     private final AdminActionLogRepository adminActionLogRepository;
+    private final DeviceJpaRepository deviceJpaRepository;
+    private final FcmService fcmService;
+    private final NotificationService notificationService;
 
     @Transactional
     public ReportCreateResDto createReport(@Valid ReportCreateReqDto reqDto) {
@@ -190,12 +200,10 @@ public class ReportService {
                 if (report.getReportType().equals(ReportType.POST) || report.getReportType().equals(ReportType.COMMENT)) {
                     postAndCommentDelete(report);
                     report.deleteAction(ReportActionType.SUSPEND);
+                    checkDeletedAlram(report);
 
                     // 커뮤니티 기능 접근 정지
                     communitySanctionService.applySanctionForReport(report, SanctionType.COMMUNITY_BAN);
-
-                    // 알림 보내기
-                    sendAlarm(report);
                 } else {
                     UserReview byId = reviewJpaRepository.findById(report.getReviewId()).orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_REVIEW));
 
@@ -205,8 +213,6 @@ public class ReportService {
 
                     //리뷰 기능 접근 정지
                     communitySanctionService.applySanctionForReport(report, SanctionType.REVIEW_BAN);
-
-                    sendAlarm(report);
                 }
 
                 return new ReportActionResDto(ReportActionType.SUSPEND, "신고 조치가 처리되었습니다.");
@@ -214,6 +220,7 @@ public class ReportService {
             case WARNING -> { // 경고
                 // 해당 게시글, 댓글 삭제
                 postAndCommentDelete(report);
+                checkDeletedAlram(report);
 
                 // 사용자 경고 횟수 누적하기
                 Users targetUser = report.getTargetUser();
@@ -231,8 +238,50 @@ public class ReportService {
         }
     }
 
-    private void sendAlarm(Report report) {
+    private void checkDeletedAlram(Report report) {
+        if(report.getReportType().equals(ReportType.POST)) {
+            Optional<Post> reportedPost = postRepository.findById(report.getPostId());
 
+            // 게시글 삭제 알림
+            reportedPost.ifPresent(this::sendPostDeletedAlram);
+
+        } else if (report.getReportType().equals(ReportType.COMMENT)) {
+            Optional<PostComment> reportedComment = postCommentRepository.findById(report.getCommentId());
+
+            reportedComment.ifPresent(this::sendCommentDeletedAlram);
+        }
+    }
+
+    private void sendPostDeletedAlram(Post post) {
+        Users targetUser = post.getUser();
+        Device device = deviceJpaRepository.findByUserId(targetUser.getId());
+
+        String title = "게시글 삭제 안내";
+        String message = "경고 누적으로 인해 작성하신 게시글(“" + post.getTitle() + "”)가 삭제되었습니다.";
+
+        if (device != null && device.getFcm_token() != null) {
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "POST_DELETED ");
+            fcmService.sendPushNotification(device.getFcm_token(), title, message, data);
+        }
+
+        notificationService.createNotification(targetUser, null, NotificationType.POST_DELETED, NotificationTargetType.POST, post.getId(), message);
+    }
+
+    private void sendCommentDeletedAlram(PostComment postComment) {
+        Users targetUser = postComment.getUser();
+        Device device = deviceJpaRepository.findByUserId(targetUser.getId());
+
+        String title = "댓글 삭제 안내";
+        String message = "경고 누적으로 인해 작성하신 댓글(“" + postComment.getContent().substring(0, 10) + "”)가 삭제되었습니다.";
+
+        if (device != null && device.getFcm_token() != null) {
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "COMMENT_DELETED ");
+            fcmService.sendPushNotification(device.getFcm_token(), title, message, data);
+        }
+
+        notificationService.createNotification(targetUser, null, NotificationType.COMMENT_DELETED, NotificationTargetType.COMMENT, postComment.getId(), message);
     }
 
     private void postAndCommentDelete(Report report) {

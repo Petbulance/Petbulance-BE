@@ -1,5 +1,10 @@
 package com.example.Petbulance_BE.domain.report.service;
 
+import com.example.Petbulance_BE.domain.device.entity.Device;
+import com.example.Petbulance_BE.domain.device.repository.DeviceJpaRepository;
+import com.example.Petbulance_BE.domain.notification.service.NotificationService;
+import com.example.Petbulance_BE.domain.notification.type.NotificationTargetType;
+import com.example.Petbulance_BE.domain.notification.type.NotificationType;
 import com.example.Petbulance_BE.domain.report.entity.Report;
 import com.example.Petbulance_BE.domain.report.exception.CommunityBannedException;
 import com.example.Petbulance_BE.domain.report.type.ReportActionType;
@@ -10,12 +15,15 @@ import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.domain.user.type.SanctionType;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.firebase.FcmService;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +34,9 @@ public class CommunitySanctionService {
 
     private final UserSanctionRepository userSanctionRepository;
     private final UsersJpaRepository userRepository;
+    private final FcmService fcmService;
+    private final DeviceJpaRepository deviceJpaRepository;
+    private final NotificationService notificationService;
 
     /**
      * 관리자 페이지에서 report actionType 을 SUSPEND 로 변경했을 때 호출
@@ -48,9 +59,13 @@ public class CommunitySanctionService {
         if (sanctionCount >= 2) {
             until = now.plusYears(100); // 사실상 영구 정지
             reasonPrefix = "[영구 정지/누적 3회차] ";
+
+            sendPermanentBanAlarm(targetUser);
         } else {
             until = now.plusDays(DEFAULT_SUSPEND_DAYS); // 기존 7일 정지
             reasonPrefix = String.format("[%d회차 정지] ", sanctionCount + 1);
+
+            send7DaysBanAlarm(targetUser);
         }
 
         // 유저 상태 업데이트
@@ -105,5 +120,35 @@ public class CommunitySanctionService {
         userSanctionRepository
                 .findAllByUserAndActiveTrueAndSanctionType(user, SanctionType.COMMUNITY_BAN)
                 .forEach(sanction -> sanction.deactivate());
+    }
+
+    private void send7DaysBanAlarm(Users targetUser) {
+        Device device = deviceJpaRepository.findByUserId(targetUser.getId());
+
+        String title = "커뮤니티 이용 제한 안내";
+        String message = "경고 누적으로 인해 커뮤니티 이용이 7일간 정지되었습니다.";
+
+        if (device != null && device.getFcm_token() != null) {
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "BAN_7_DAYS");
+            fcmService.sendPushNotification(device.getFcm_token(), title, message, data);
+        }
+
+        notificationService.createNotification(targetUser, null, NotificationType.TEMP_BAN_7D, NotificationTargetType.SANCTION, null, message);
+    }
+
+    private void sendPermanentBanAlarm(Users targetUser) {
+        Device device = deviceJpaRepository.findByUserId(targetUser.getId());
+
+        String title = "커뮤니티 이용 제한 안내";
+        String message = "경고 누적으로 인해 커뮤니티 이용이 영구적으로 정지되었습니다.";
+
+        if (device != null && device.getFcm_token() != null) {
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "BAN_PERMANENT");
+            fcmService.sendPushNotification(device.getFcm_token(), title, message, data);
+        }
+
+        notificationService.createNotification(targetUser, null, NotificationType.PERMANENT_BAN, NotificationTargetType.SANCTION, null, message);
     }
 }
