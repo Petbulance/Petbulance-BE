@@ -7,6 +7,11 @@ import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
+import com.example.Petbulance_BE.domain.device.entity.Device;
+import com.example.Petbulance_BE.domain.device.repository.DeviceJpaRepository;
+import com.example.Petbulance_BE.domain.notification.service.NotificationService;
+import com.example.Petbulance_BE.domain.notification.type.NotificationTargetType;
+import com.example.Petbulance_BE.domain.notification.type.NotificationType;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
@@ -19,6 +24,7 @@ import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.s3.S3Service;
 import com.example.Petbulance_BE.global.common.type.AnimalType;
+import com.example.Petbulance_BE.global.firebase.FcmService;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -27,9 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Predicate;
 
 @Service
@@ -42,6 +46,9 @@ public class PostCommentService {
     private final BoardRepository boardRepository;
     private final RecentService recentService;
     private final S3Service s3Service;
+    private final NotificationService notificationService;
+    private final DeviceJpaRepository deviceJpaRepository;
+    private final FcmService fcmService;
 
     @Transactional
     @CheckCommunityAvailable
@@ -86,7 +93,67 @@ public class PostCommentService {
                 );
             } catch (Exception ignored) {}
         }
+
+        if(currentUser != null) sendPostWriterPushAlram(post, currentUser);
+
+        if(currentUser!= null && StringUtils.hasText(dto.getMentionUserNickname()) && parentComment != null) sendCommentWriterPushAlram(post, parentComment, currentUser);
+
         return PostCommentResDto.of(saved);
+    }
+
+    private void sendCommentWriterPushAlram(Post post, PostComment parentComment, Users currentUser) {
+        Device device = deviceJpaRepository.findByUserId(parentComment.getUser().getId());
+        if (parentComment.getUser().getId().equals(currentUser.getId())) {
+            return;
+        }
+        String message = "“" + post.getTitle() + "” 글 내 댓글에 " + currentUser.getNickname() + "님이 답글을 달았어요.";
+
+        if (device != null && device.getFcm_token() != null) {
+            String fcmToken = device.getFcm_token();
+
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "POST");                           // 여전히 게시글 상세로 이동
+            data.put("targetId", String.valueOf(post.getId())); // 이동할 게시글 ID
+
+            String title = "새로운 답글";
+
+            fcmService.sendPushNotification(fcmToken, title, message, data);
+        }
+
+        notificationService.createNotification(
+                parentComment.getUser(),
+                currentUser,
+                NotificationType.POST_COMMENT,
+                NotificationTargetType.COMMENT,
+                post.getId(),
+                message
+        );
+    }
+
+    private void sendPostWriterPushAlram(Post post, Users currentUser) {
+        Device device = deviceJpaRepository.findByUserId(post.getUser().getId());
+        String message = "“" + post.getTitle() + "” 글에 " + currentUser.getNickname() + "님이 댓글을 달았어요.";
+
+        if (device != null && device.getFcm_token() != null) {
+            String fcmToken = device.getFcm_token();
+            // 앱 내 이동 및 처리를 위한 데이터 구성
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "POST");                           // 이동할 페이지 타입 (커뮤니티 게시글)
+            data.put("targetId", String.valueOf(post.getId())); // 해당 게시글의 PK
+
+            String title = "새로운 댓글";
+
+            fcmService.sendPushNotification(fcmToken, title, message, data);
+        }
+
+        notificationService.createNotification(
+                post.getUser(),
+                currentUser,
+                NotificationType.POST_COMMENT,
+                NotificationTargetType.COMMENT,
+                post.getId(),
+                message
+        );
     }
 
     @Transactional(readOnly = true)

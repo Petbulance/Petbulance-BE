@@ -4,6 +4,7 @@ import com.example.Petbulance_BE.domain.adminlog.repository.AdminActionLogReposi
 import com.example.Petbulance_BE.domain.board.repository.BoardRepository;
 import com.example.Petbulance_BE.domain.dashboard.service.DashboardMetricRedisService;
 import com.example.Petbulance_BE.domain.notice.repository.NoticeRepository;
+import com.example.Petbulance_BE.domain.notification.repository.NotificationRepository;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.request.UpdatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.*;
@@ -54,6 +55,7 @@ public class PostService {
     private final AdminActionLogRepository adminActionLogRepository;
     private final NoticeRepository noticeRepository;
     private final S3Service s3Service;
+    private final NotificationRepository notificationRepository;
 
     private static final String CACHE_KEY_FORMAT = "post::inquiry::%d";
 
@@ -235,11 +237,22 @@ public class PostService {
     @Transactional(readOnly = true)
     @CheckCommunityAvailable
     public DetailPostResDto detailPost(Long postId) {
-        Post post = validateVisiblePost(postId); // 숨김 게시글이나 삭제된 게시글 볼 수 없음
-
         // 현재 로그인 유저 (게시글 작성자인지 확인하기 위함)
         Users currentUser = UserUtil.getCurrentUser();
+
+        if (currentUser != null) {
+            notificationRepository.markAsReadByPostId(
+                    currentUser.getId(),
+                    postId,
+                    LocalDateTime.now()
+            );
+        }
+
+        Post post = validateVisiblePost(postId); // 숨김 게시글이나 삭제된 게시글 볼 수 없음
+
         boolean currentUserIsPostAuthor = currentUserIsPostAuthor(post.getUser(), currentUser); // 현재 유저가 게시글 작성자인지
+
+        // 상세 조회시 관련 알림 읽음 처리
 
         // Redis 기반 조회수 증가
         long viewCount = postViewCountRepository.increaseIfNotViewed(postId, currentUser == null ? null : currentUser.getId()); // 해당 게시글을 조회한 적 없는 사용자에 대해서만 카윤트 집계
@@ -275,6 +288,7 @@ public class PostService {
                 .likedByUser(postRepository.fetchLikedByUser(currentUser, postId))
                 .isCurrentUserPost(currentUserIsPostAuthor)
                 .build();
+
 
         return DetailPostResDto.builder()
                 .post(updated)

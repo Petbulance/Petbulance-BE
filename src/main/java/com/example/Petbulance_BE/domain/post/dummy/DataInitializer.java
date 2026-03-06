@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-@Component
+//@Component
 @RequiredArgsConstructor
 @Profile("local")
 public class DataInitializer implements CommandLineRunner {

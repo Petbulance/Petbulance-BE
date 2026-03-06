@@ -15,8 +15,8 @@ import java.util.List;
 @NoArgsConstructor
 public class PostSearchListResDto {
     private Long postId;
-    private AnimalType type;
-    private Topic topic;
+    private String type;
+    private String topic;
     private String writerNickname;
     private String createdAt;
     private String thumbnailUrl;
@@ -31,8 +31,8 @@ public class PostSearchListResDto {
 
     public PostSearchListResDto(Long postId, AnimalType type, Topic topic, String writerNickname, LocalDateTime createdAt, String thumbnailUrl, Long imageCount, String title, String content, Long likeCount, Long commentCount, Long viewCount, boolean likedByUser) {
         this.postId = postId;
-        this.type = type;
-        this.topic = topic;
+        this.type = type.getDescription();
+        this.topic = topic.getDescription();
         this.writerNickname = writerNickname;
         this.createdAt = TimeUtil.formatCreatedAt(createdAt);
         this.thumbnailUrl = thumbnailUrl;
