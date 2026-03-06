@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
         // ErrorResponse 객체를 생성 (메시지에 정지 시간 포함)
         ErrorResponse errorResponse = ErrorResponse.of(
                 "COMMUNITY_BANNED",
-                e.getMessage() // 이미 "커뮤니티 이용이 ...까지 정지되었습니다"라는 문구가 포함되어 있다면 그대로 사용
+                e.getMessage()
         );
 
         // 정의된 failure 메서드 형식에 맞게 호출
