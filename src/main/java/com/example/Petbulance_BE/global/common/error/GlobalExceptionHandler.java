@@ -46,14 +46,19 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CommunityBannedException.class)
-    public ResponseEntity<?> handleCommunityBanned(CommunityBannedException e) {
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(Map.of(
-                        "error", "COMMUNITY_BANNED",
-                        "message", e.getMessage(),
-                        "bannedUntil", e.getBannedUntil()
-                ));
+    public ResponseEntity<GlobalResponse> handleCommunityBanned(CommunityBannedException e) {
+        Sentry.captureException(e);
+
+        // ErrorResponse 객체를 생성 (메시지에 정지 시간 포함)
+        ErrorResponse errorResponse = ErrorResponse.of(
+                "COMMUNITY_BANNED",
+                e.getMessage()
+        );
+
+        // 정의된 failure 메서드 형식에 맞게 호출
+        GlobalResponse response = GlobalResponse.failure(HttpStatus.FORBIDDEN.value(), errorResponse);
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     @ExceptionHandler(ReviewBannedException.class)

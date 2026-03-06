@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class DeletePostResDto {
     private Long postId;
-    private Long boardId;
     private boolean deleted;
     private boolean hidden;
     private LocalDateTime deletedAt;

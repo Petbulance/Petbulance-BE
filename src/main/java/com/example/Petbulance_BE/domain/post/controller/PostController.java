@@ -12,7 +12,8 @@ import com.example.Petbulance_BE.domain.post.dto.request.UpdatePostReqDto;
 import com.example.Petbulance_BE.domain.post.dto.response.*;
 import com.example.Petbulance_BE.domain.post.service.PostLikeService;
 import com.example.Petbulance_BE.domain.post.service.PostService;
-import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.post.type.Topic;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -57,23 +58,23 @@ public class PostController {
     }
 
     @GetMapping
-    public PagingPostListResDto postList(@RequestParam(required = false) Long boardId,
-                                         @RequestParam(required = false) Category category,
-                                         @RequestParam(defaultValue = "popular") String sort,
+    public PagingPostListResDto postList(@RequestParam(required = false) AnimalType type,
+                                         @RequestParam(required = false) Topic topic,
+                                         @RequestParam(defaultValue = "latest") String sort,
                                          @RequestParam(required = false) Long lastPostId,
                                          @RequestParam(defaultValue = "10") Integer pageSize) {
-        return postService.postList(boardId, category, sort, lastPostId, pageSize);
+        return postService.postList(type, topic, sort, lastPostId, pageSize);
     }
 
     @GetMapping("/search")
-    public PagingPostSearchListResDto postSearchList(@RequestParam(required = false) Long boardId,
-                                                     @RequestParam(required = false) List<Category> category,
-                                                     @RequestParam(defaultValue = "popular") String sort,
+    public PagingPostSearchListResDto postSearchList(@RequestParam(required = false)  AnimalType type,
+                                                     @RequestParam(required = false) Topic topic,
+                                                     @RequestParam(defaultValue = "latest") String sort,
                                                      @RequestParam(required = false) Long lastPostId,
-                                                     @RequestParam(defaultValue = "10") Integer pageSize,
-                                                     @RequestParam(required = false) String searchKeyword,
+                                                     @RequestParam(defaultValue = "20") Integer pageSize,
+                                                     @RequestParam String searchKeyword,
                                                      @RequestParam(defaultValue = "title_content") String searchScope) {
-        return postService.postSearchList(boardId, category, sort, lastPostId, pageSize, searchKeyword, searchScope);
+        return postService.postSearchList(type, topic, sort, lastPostId, pageSize, searchKeyword, searchScope);
     }
 
     @GetMapping("/me")
@@ -85,12 +86,12 @@ public class PostController {
     }
 
     @PostMapping("/{postId}/likes")
-    public PostLikeDto postLike(@PathVariable("postId") Long postId){
+    public PostLikeDto postLike(@PathVariable("postId") Long postId) {
         return postLikeService.postLike(postId);
     }
 
     @DeleteMapping("/{postId}/likes")
-    public PostLikeDto postUnlike(@PathVariable("postId") Long postId){
+    public PostLikeDto postUnlike(@PathVariable("postId") Long postId) {
         return postLikeService.postUnlike(postId);
     }
 

@@ -13,11 +13,14 @@ import java.util.List;
 public class SearchPostCommentListResDto {
     private List<SearchPostCommentResDto> content;
     private boolean hasNext;
-    private long totalCount;
+    private Long lastCommentId;
 
-    public SearchPostCommentListResDto(Slice<SearchPostCommentResDto> slice, long totalCount) {
+    public SearchPostCommentListResDto(Slice<SearchPostCommentResDto> slice ) {
         this.content = slice.getContent();
         this.hasNext = slice.hasNext();
-        this.totalCount = totalCount;
+
+        if (!content.isEmpty()) {
+            this.lastCommentId = content.get(content.size() - 1).getCommentId();
+        }
     }
 }

@@ -33,4 +33,6 @@ public interface UsersJpaRepository extends JpaRepository<Users, String>, UserRe
 
 
     List<Users> findByRole(Role role);
+
+    Optional<Users> findFirstByRole(Role role);
 }

@@ -15,7 +15,7 @@ public class PostCommentResDto {
     private String content;
     private Long parentId;
     private String mentionUserNickname;
-    private boolean isSecret;
+    private boolean secret;
     private String imageUrl;
     private LocalDateTime createdAt;
 
@@ -29,7 +29,7 @@ public class PostCommentResDto {
         dto.mentionUserNickname = (postComment.getMentionUser() != null)
                 ? postComment.getMentionUser().getNickname()
                 : null;
-        dto.isSecret = postComment.getIsSecret();
+        dto.secret = postComment.getIsSecret();
         dto.imageUrl = postComment.getImageUrl();
         dto.createdAt = postComment.getCreatedAt();
         return dto;

@@ -11,7 +11,7 @@ import java.util.List;
 
 @Getter
 @RequiredArgsConstructor
-public enum Category {
+public enum Topic {
 
     HEALTH("건강/질병"),
     SUPPLIES("용품/사료"),
@@ -20,15 +20,15 @@ public enum Category {
 
     private final String description;
 
-    public static List<Category> convertToCategoryList(List<String> categoryStrings) {
+    public static List<Topic> convertToCategoryList(List<String> categoryStrings) {
         if (categoryStrings == null || categoryStrings.isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<Category> categories = new ArrayList<>();
+        List<Topic> categories = new ArrayList<>();
         for (String cat : categoryStrings) {
             try {
-                categories.add(Category.valueOf(cat.toUpperCase()));
+                categories.add(Topic.valueOf(cat.toUpperCase()));
             } catch (IllegalArgumentException e) {
                 throw new CustomException(ErrorCode.INVALID_CATEGORY);
             }
@@ -38,19 +38,19 @@ public enum Category {
 
     public static boolean isValidCategory(String category) {
         try {
-            Category.valueOf(category.toUpperCase());
+            Topic.valueOf(category.toUpperCase());
             return true;
         } catch (IllegalArgumentException e) {
             throw new CustomException(ErrorCode.INVALID_CATEGORY);
         }
     }
 
-    public static Category fromString(String categoryString) {
+    public static Topic fromString(String categoryString) {
         if (categoryString == null || categoryString.isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_BOARD_OR_CATEGORY);
         }
         try {
-            return Category.valueOf(categoryString.toUpperCase());
+            return Topic.valueOf(categoryString.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new CustomException(ErrorCode.INVALID_BOARD_OR_CATEGORY);
         }

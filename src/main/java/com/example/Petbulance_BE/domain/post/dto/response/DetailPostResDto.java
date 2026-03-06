@@ -12,26 +12,16 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class DetailPostResDto {
-
-    private BoardInfo board;
     private PostInfo post;
 
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class BoardInfo {
-        private Long boardId;
-        private String boardName;
-        private String category;
-    }
-
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder(toBuilder = true)
     public static class PostInfo {
         private Long postId;
+        private String type;
+        private String topic;
         private String title;
         private String writerNickname;
         private String writerProfileUrl;

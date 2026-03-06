@@ -1,9 +1,14 @@
 package com.example.Petbulance_BE.domain.review.service;
 
 import com.example.Petbulance_BE.domain.dashboard.service.DashboardMetricRedisService;
+import com.example.Petbulance_BE.domain.device.entity.Device;
+import com.example.Petbulance_BE.domain.device.repository.DeviceJpaRepository;
 import com.example.Petbulance_BE.domain.hospital.dto.UserReviewSearchDto;
 import com.example.Petbulance_BE.domain.hospital.entity.Hospital;
 import com.example.Petbulance_BE.domain.hospital.repository.HospitalJpaRepository;
+import com.example.Petbulance_BE.domain.notification.service.NotificationService;
+import com.example.Petbulance_BE.domain.notification.type.NotificationTargetType;
+import com.example.Petbulance_BE.domain.notification.type.NotificationType;
 import com.example.Petbulance_BE.domain.review.aop.CheckReviewAvailable;
 import com.example.Petbulance_BE.domain.review.aop.DailyLimit;
 import com.example.Petbulance_BE.domain.review.dto.*;
@@ -25,6 +30,7 @@ import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
 import com.example.Petbulance_BE.global.common.s3.S3Service;
+import com.example.Petbulance_BE.global.firebase.FcmService;
 import com.example.Petbulance_BE.global.util.JWTUtil;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,6 +79,9 @@ public class ReviewService {
     private final ReviewLikeJpaRepository reviewLikeJpaRepository;
     private final DashboardMetricRedisService dashboardMetricRedisService;
     private final UsersJpaRepository usersJpaRepository;
+    private final NotificationService notificationService;
+    private final DeviceJpaRepository deviceJpaRepository;
+    private final FcmService fcmService;
 
     @Value("${gemini.api.url-with-key}")
     private String genimiApiUrl;
@@ -630,7 +639,36 @@ public class ReviewService {
         userReviewLike.setReview(reviewProxy);
         reviewLikeJpaRepository.save(userReviewLike);
 
+
+        sendReviewPushAlram(reviewProxy, currentUser);
+
         return Map.of("message", "success");
+    }
+
+    private void sendReviewPushAlram(UserReview reviewProxy, Users currentUser) {
+        Device device = deviceJpaRepository.findByUserId(reviewProxy.getUser().getId());
+
+        String message = reviewProxy.getHospital().getName() + "병원에 남긴 후기가 다른 보호자에게 도움이 되었어요.";
+
+        if (device != null && device.getFcm_token() != null) {
+            String fcmToken = device.getFcm_token();
+
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "REVIEW");                          // 이동할 페이지 타입 (병원 후기)
+            data.put("targetId", String.valueOf(reviewProxy.getId())); // 해당 후기의 PK
+
+            String title = "후기 도움 알림";
+            fcmService.sendPushNotification(fcmToken, title, message, data);
+        }
+
+        notificationService.createNotification(
+                reviewProxy.getUser(),
+                currentUser,
+                NotificationType.REVIEW_HELPFUL,
+                NotificationTargetType.REVIEW,
+                reviewProxy.getId(),
+                message
+        );
     }
 
     public Map<String, String> reviewLikeCancelProcess(Long reviewId) {

@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface PostImageRepository extends JpaRepository<PostImage, Long> {
     List<PostImage> findByPost(Post post);
+    List<PostImage> findByPostIdOrderByImageOrderAsc(Long postId);
 }

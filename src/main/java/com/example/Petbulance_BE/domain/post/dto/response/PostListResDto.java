@@ -1,6 +1,7 @@
 package com.example.Petbulance_BE.domain.post.dto.response;
 
-import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.post.type.Topic;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import com.example.Petbulance_BE.global.util.TimeUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,9 +14,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class PostListResDto {
     private Long postId;
-    private Long boardId;
-    private String boardName;
-    private Category category;
+    private String type;
+    private String topic;
     private String createdAt;
     private String thumbnailUrl;
     private Long imageCount;
@@ -26,11 +26,10 @@ public class PostListResDto {
     private Long viewCount;
     private boolean likedByUser;
 
-    public PostListResDto(Long postId, Long boardId, String boardName, Category category, LocalDateTime createdAt, String thumbnailUrl, Long imageCount, String title, String content, Long likeCount, Long commentCount, Long viewCount, boolean likedByUser) {
+    public PostListResDto(Long postId, AnimalType type, Topic topic, LocalDateTime createdAt, String thumbnailUrl, Long imageCount, String title, String content, Long likeCount, Long commentCount, Long viewCount, boolean likedByUser) {
         this.postId = postId;
-        this.boardId = boardId;
-        this.boardName = boardName;
-        this.category = category;
+        this.type = type.getDescription();
+        this.topic = topic.getDescription();
         this.createdAt = TimeUtil.formatCreatedAt(createdAt);
         this.thumbnailUrl = thumbnailUrl;
         this.imageCount = imageCount;

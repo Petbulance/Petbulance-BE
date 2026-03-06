@@ -4,6 +4,8 @@ import com.example.Petbulance_BE.domain.comment.dto.request.BulkDeleteCommentReq
 import com.example.Petbulance_BE.domain.comment.dto.request.UpdatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.comment.dto.response.*;
 import com.example.Petbulance_BE.domain.comment.service.PostCommentService;
+import com.example.Petbulance_BE.domain.post.type.Topic;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -36,13 +38,13 @@ public class PostCommentController {
 
 
     @GetMapping("/search")
-    public SearchPostCommentListResDto searchPostCommentList(@RequestParam(name = "keyword", required = true) String keyword,
-                                                         @RequestParam(name = "searchScope", required = true, defaultValue = "content") String searchScope,
-                                                         @RequestParam(name = "lastCommentId", required = false) Long lastCommentId,
-                                                         @RequestParam(name = "pageSize", required = false, defaultValue = "10") Integer pageSize,
-                                                         @RequestParam(name = "category", required = false) List<String> category,
-                                                         @RequestParam(name = "boardId", required = false) Long boardId) {
-        return postCommentService.searchPostCommentList(keyword, searchScope, lastCommentId, pageSize, category, boardId);
+    public SearchPostCommentListResDto searchPostCommentList(@RequestParam(name = "searchKeyword") String searchKeyword,
+                                                             @RequestParam(name = "searchScope", defaultValue = "content") String searchScope,
+                                                             @RequestParam(name = "lastCommentId", required = false) Long lastCommentId,
+                                                             @RequestParam(name = "pageSize", required = false, defaultValue = "20") Integer pageSize,
+                                                             @RequestParam(name = "topic", required = false) Topic topic,
+                                                             @RequestParam(name = "type", required = false) AnimalType type) {
+        return postCommentService.searchPostCommentList(searchKeyword, searchScope, lastCommentId, pageSize, topic, type);
     }
 
     @GetMapping("/me")

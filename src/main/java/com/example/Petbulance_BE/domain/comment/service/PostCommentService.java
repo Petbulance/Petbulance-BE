@@ -7,28 +7,33 @@ import com.example.Petbulance_BE.domain.comment.entity.PostComment;
 import com.example.Petbulance_BE.domain.comment.entity.PostCommentCount;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentCountRepository;
 import com.example.Petbulance_BE.domain.comment.repository.PostCommentRepository;
+import com.example.Petbulance_BE.domain.device.entity.Device;
+import com.example.Petbulance_BE.domain.device.repository.DeviceJpaRepository;
+import com.example.Petbulance_BE.domain.notification.service.NotificationService;
+import com.example.Petbulance_BE.domain.notification.type.NotificationTargetType;
+import com.example.Petbulance_BE.domain.notification.type.NotificationType;
 import com.example.Petbulance_BE.domain.post.dto.request.CreatePostCommentReqDto;
 import com.example.Petbulance_BE.domain.post.entity.Post;
 import com.example.Petbulance_BE.domain.post.repository.PostRepository;
-import com.example.Petbulance_BE.domain.post.type.Category;
+import com.example.Petbulance_BE.domain.post.type.Topic;
 import com.example.Petbulance_BE.domain.recent.service.RecentService;
 import com.example.Petbulance_BE.domain.report.aop.communityBan.CheckCommunityAvailable;
 import com.example.Petbulance_BE.domain.user.entity.Users;
 import com.example.Petbulance_BE.domain.user.repository.UsersJpaRepository;
 import com.example.Petbulance_BE.global.common.error.exception.CustomException;
 import com.example.Petbulance_BE.global.common.error.exception.ErrorCode;
+import com.example.Petbulance_BE.global.common.s3.S3Service;
+import com.example.Petbulance_BE.global.common.type.AnimalType;
+import com.example.Petbulance_BE.global.firebase.FcmService;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Predicate;
 
 @Service
@@ -40,13 +45,12 @@ public class PostCommentService {
     private final PostCommentCountRepository postCommentCountRepository;
     private final BoardRepository boardRepository;
     private final RecentService recentService;
+    private final S3Service s3Service;
+    private final NotificationService notificationService;
+    private final DeviceJpaRepository deviceJpaRepository;
+    private final FcmService fcmService;
 
     @Transactional
-    @CacheEvict(
-            value = "myComments",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
     @CheckCommunityAvailable
     public PostCommentResDto createPostComment(Long postId, CreatePostCommentReqDto dto) {
         // parentId와 mentionUserNickname 간의 관계 검증
@@ -89,14 +93,69 @@ public class PostCommentService {
                 );
             } catch (Exception ignored) {}
         }
+
+        if(currentUser != null) sendPostWriterPushAlram(post, currentUser);
+
+        if(currentUser!= null && StringUtils.hasText(dto.getMentionUserNickname()) && parentComment != null) sendCommentWriterPushAlram(post, parentComment, currentUser);
+
         return PostCommentResDto.of(saved);
     }
 
-    @CacheEvict(
-            value = "myComments",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
+    private void sendCommentWriterPushAlram(Post post, PostComment parentComment, Users currentUser) {
+        Device device = deviceJpaRepository.findByUserId(parentComment.getUser().getId());
+        if (parentComment.getUser().getId().equals(currentUser.getId())) {
+            return;
+        }
+        String message = "“" + post.getTitle() + "” 글 내 댓글에 " + currentUser.getNickname() + "님이 답글을 달았어요.";
+
+        if (device != null && device.getFcm_token() != null) {
+            String fcmToken = device.getFcm_token();
+
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "POST");                           // 여전히 게시글 상세로 이동
+            data.put("targetId", String.valueOf(post.getId())); // 이동할 게시글 ID
+
+            String title = "새로운 답글";
+
+            fcmService.sendPushNotification(fcmToken, title, message, data);
+        }
+
+        notificationService.createNotification(
+                parentComment.getUser(),
+                currentUser,
+                NotificationType.POST_COMMENT,
+                NotificationTargetType.COMMENT,
+                post.getId(),
+                message
+        );
+    }
+
+    private void sendPostWriterPushAlram(Post post, Users currentUser) {
+        Device device = deviceJpaRepository.findByUserId(post.getUser().getId());
+        String message = "“" + post.getTitle() + "” 글에 " + currentUser.getNickname() + "님이 댓글을 달았어요.";
+
+        if (device != null && device.getFcm_token() != null) {
+            String fcmToken = device.getFcm_token();
+            // 앱 내 이동 및 처리를 위한 데이터 구성
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "POST");                           // 이동할 페이지 타입 (커뮤니티 게시글)
+            data.put("targetId", String.valueOf(post.getId())); // 해당 게시글의 PK
+
+            String title = "새로운 댓글";
+
+            fcmService.sendPushNotification(fcmToken, title, message, data);
+        }
+
+        notificationService.createNotification(
+                post.getUser(),
+                currentUser,
+                NotificationType.POST_COMMENT,
+                NotificationTargetType.COMMENT,
+                post.getId(),
+                message
+        );
+    }
+
     @Transactional(readOnly = true)
     @CheckCommunityAvailable
     public PostCommentResDto updatePostComment(Long commentId, UpdatePostCommentReqDto dto) {
@@ -106,16 +165,20 @@ public class PostCommentService {
         PostComment postComment = findPostCommentById(commentId); // 수정하고자하는 댓글
         verifyPostCommentWriter(postComment, Objects.requireNonNull(UserUtil.getCurrentUser())); // 권한 검증
 
+        if(!dto.getImageUrl().equals(postComment.getImageUrl())) {
+            // 댓글 이미지가 새로운 것으로 교체된다면 이전 이미지는 s3상에서 삭제
+            if(StringUtils.hasText(postComment.getImageUrl())) {
+                s3Service.deleteObject(s3Service.extractKeyFromUrl(postComment.getImageUrl()));
+            }
+        }
+
         postComment.update(dto);
+        postCommentRepository.save(postComment);
+
         return PostCommentResDto.of(postComment);
     }
 
     @Transactional
-    @CacheEvict(
-            value = "myComments",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
     @CheckCommunityAvailable
     public DelCommentResDto deletePostComment(Long commentId) {
         /* 상위 댓글을 삭제하려는 경우
@@ -139,16 +202,15 @@ public class PostCommentService {
                 delete(postComment); // 삭제 로직
                 postCommentCountRepository.decrease(postComment.getPost().getId());
             }
+
+            if(StringUtils.hasText(postComment.getImageUrl())) {
+                s3Service.deleteObject(s3Service.extractKeyFromUrl(postComment.getImageUrl()));
+            }
         }
         return new DelCommentResDto("댓글이 성공적으로 삭제되었습니다.");
     }
 
     @Transactional
-    @CacheEvict(
-            value = "myComments",
-            key = "#currentUser.id + '_0'",
-            condition = "#keyword == null"
-    )
     @CheckCommunityAvailable
     public BulkDeleteCommentResDto deletePostComments(List<Long> commentIds) {
 
@@ -178,6 +240,10 @@ public class PostCommentService {
                 } else { // 자식 없는 상위 댓글 or 하위 댓글
                     delete(comment);
                     postCommentCountRepository.decrease(comment.getPost().getId());
+                }
+
+                if(StringUtils.hasText(comment.getImageUrl())) {
+                    s3Service.deleteObject(s3Service.extractKeyFromUrl(comment.getImageUrl()));;
                 }
             }
 
@@ -272,33 +338,22 @@ public class PostCommentService {
 
     @Transactional(readOnly = true)
     @CheckCommunityAvailable
-    public SearchPostCommentListResDto searchPostCommentList(String keyword, String searchScope, Long lastCommentId, Integer pageSize, List<String> category, Long boardId) {
-        if(keyword.length() < 2) {
+    public SearchPostCommentListResDto searchPostCommentList(String searchKeyword, String searchScope, Long lastCommentId, Integer pageSize, Topic topic, AnimalType type) {
+        if(StringUtils.hasText(searchKeyword) && searchKeyword.length() < 2) {
             throw new CustomException(ErrorCode.INVALID_SEARCH_KEYWORD);
         }
         if (!isValidSearchScope(searchScope)) {
             throw new CustomException(ErrorCode.INVALID_SEARCH_SCOPE);
         }
-        if (category != null && !category.isEmpty()) {
-            for (String cat : category) {
-                if (!Category.isValidCategory(cat)) {
-                    throw new CustomException(ErrorCode.INVALID_CATEGORY);
-                }
-            }
-        }
-        if (boardId != null && !boardRepository.existsById(boardId)) {
-            throw new CustomException(ErrorCode.BOARD_NOT_FOUND);
-        }
+
         Users currentUser = UserUtil.getCurrentUser();
 
         if(currentUser != null) {
-            recentService.saveRecentCommunitySearch(keyword, currentUser);
+            recentService.saveRecentCommunitySearch(searchKeyword, currentUser);
         }
 
-        List<Category> categories = Category.convertToCategoryList(category);
         return new SearchPostCommentListResDto(
-                postCommentRepository.findSearchPostComment(keyword, searchScope, lastCommentId, pageSize, categories, boardId),
-                postCommentRepository.countSearchPostComment(keyword, searchScope, categories, boardId));
+                postCommentRepository.findSearchPostComment(searchKeyword, searchScope, lastCommentId, pageSize, topic, type));
     }
 
     private boolean isValidSearchScope(String scope) {
@@ -307,12 +362,6 @@ public class PostCommentService {
 
 
     @Transactional(readOnly = true)
-    @Cacheable(
-            value = "myComments",
-            key = "#currentUser.id + '_' + #lastCommentId",
-            condition = "#keyword == null",
-            unless = "#result == null"
-    )
     @CheckCommunityAvailable
     public PagingMyCommentListResDto myCommentList(String keyword, Long lastCommentId, Pageable pageable) {
         Users currentUser = UserUtil.getCurrentUser();
