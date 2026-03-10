@@ -234,7 +234,7 @@ public class PostService {
     }
 
 
-    @Transactional(readOnly = true)
+    @Transactional
     @CheckCommunityAvailable
     public DetailPostResDto detailPost(Long postId) {
         // 현재 로그인 유저 (게시글 작성자인지 확인하기 위함)
