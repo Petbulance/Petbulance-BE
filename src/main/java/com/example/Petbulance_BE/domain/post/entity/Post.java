@@ -68,6 +68,9 @@ public class Post extends BaseTimeEntity {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostComment> comments = new ArrayList<>();
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostLike> postLikes = new ArrayList<>();
+
     public void update(String title, String content, Topic topic, AnimalType type, int imageNum) {
        this.title = title;
        this.content = content;
