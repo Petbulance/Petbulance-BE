@@ -45,7 +45,7 @@ public class HospitalDetailResDto {
 
     private String notes;
 
-    private AtomicReference<Boolean> openNow;
+    private Boolean openNow;
 
     private String description;
 

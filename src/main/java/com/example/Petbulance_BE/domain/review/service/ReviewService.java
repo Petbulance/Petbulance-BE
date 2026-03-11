@@ -37,6 +37,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.Before;
+import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -195,90 +196,64 @@ public class ReviewService {
     }
 
     private Mono<ExtractedData> getExtractedDataMono(MultipartFile image) {
-        String base64Image;
-        try{
-            base64Image = Base64.getEncoder().encodeToString(image.getBytes());
-        } catch (IOException e) {
-            log.error("이미지 변환 실패");
-            throw new RuntimeException(e);
-        }
-
-        String prompt = "당신은 영수증 분석 전문가입니다."
-                + "1. 이 이미지가 '동물병원' 영수증인지 판단하세요."
-                + "2. 동물병원 영수증이 아니면, `{\"status\": \"fail\", \"message\": \"동물병원 영수증이 아닙니다.\"}` 를 반환하세요."
-                + "3. 동물병원 영수증이 맞다면, 아래 6개 항목을 추출하여 JSON 형식으로 반환하세요."
-                + "   - `{\"status\": \"success\", \"data\": {\"storeName\": \"...\", \"totalAmount\": ..., \"address\": \"...\", \"paymentTime\": \"...\"}}`"
-                + "   - storeName: 매장명 (String)"
-                + "   - items: 영수증에 포함된 개별 구매/진료 항목 리스트 (Array)"
-                + "       - name: 품목명 또는 진료명 (String, 괄호나 대괄호가 있다면 포함해서 전체 이름 추출)"
-                + "       - price: 해당 항목의 가격 (Integer, 숫자만, 콤마 제거)"
-                + "   - totalAmount: 총 결제 금액 (Integer, 숫자만)"
-                + "   - address: 지오코딩 API를 위한 '표준 도로명 주소'를 추출하세요.\n"
-                + "               1. 시/도, 시/군/구, 도로명, 건물번호까지만 포함하세요. (예: 경기도 성남시 분당구 내정로 58)\n"
-                + "               2. **[필수] '도로명'과 '건물번호(숫자)'는 절대 누락하지 마세요.**\n"
-                + "               3. 건물 이름, 상가 호수, 층수 등 상세 위치 정보는 제거하세요. (예: '위브더스테이트 2층 213호' 같은 정보는 삭제)\n"
-                + "               4. 만약 도로명 주소가 없다면 '동/읍/면/리 + 번지수'까지만 포함된 지번 주소를 추출하세요.\""
-                + "   - addressType: 'address필드이 값이 도로명 주소라면 (\"road\"), 지번 주소라면 (\"parcel\")을 출력하세요.'"
-                + "   - paymentTime: 결제 시간 ('YYYY-MM-DD HH:MM:SS' 형식. 날짜만 있으면 'YYYY-MM-DD')"
-                + "4. 동물병원 영수증이 맞지만, 위 5개 항목을 추출할 수 없다면 `{\"status\": \"fail\", \"message\": \"데이터 추출에 실패하였습니다.\"}` 를 반환하세요."
-                + "5. 다른 설명 없이 오직 요청한 JSON 형식의 텍스트만 반환하세요.";
-
-        Part textPart = new Part(prompt, null);
-        Part imagePart = new Part(null, new InlineData(image.getContentType(), base64Image));
-
-        Content content = new Content(List.of(textPart, imagePart));
-        GeminiRequest requestBody = new GeminiRequest(List.of(content));
+        GeminiRequest requestBody = createGeminiRequest(image);
 
         return webClient.post()
                 .uri(genimiApiUrl)
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(GeminiResponse.class)
+                .flatMap(this::extractRawText)        // 1. 텍스트 추출 및 정제
+                .flatMap(this::parseAndValidateJson)  // 2. JSON 파싱 및 검증
+                .onErrorResume(this::handleError);    // 3. 에러 핸들링
+    }
 
-                // (응답 Mono를 String Mono로 변환 - 기존과 동일)
-                .flatMap(geminiResponse -> {
-                    try {
-                        String rawText = geminiResponse.candidates().get(0)
-                                .content().parts().get(0)
-                                .text();
-                        return Mono.just(rawText.replace("```json", "").replace("```", "").trim());
-                    } catch (Exception e) {
-                        // 이 경우 Gemini가 아예 잘못된 응답을 준 것
-                        return Mono.error(new CustomException(ErrorCode.FAIL_RECEIPT_EXTRACT));
+    private GeminiRequest createGeminiRequest(MultipartFile image) {
+        try {
+            String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
+            String prompt = GeminiApiDto.RECEIPT_EXTRACTION_PROMPT;
+
+            Part textPart = new Part(prompt, null);
+            Part imagePart = new Part(null, new InlineData(image.getContentType(), base64Image));
+
+            return new GeminiRequest(List.of(new Content(List.of(textPart, imagePart))));
+        } catch (IOException e) {
+            log.error("이미지 변환 실패");
+            throw new CustomException(ErrorCode.FAIL_RECEIPT_EXTRACT); // 런타임 예외보다 커스텀 예외 권장
+        }
+    }
+
+    private Mono<String> extractRawText(GeminiResponse response) {
+        return Mono.fromCallable(() -> {
+            String rawText = response.candidates().get(0).content().parts().get(0).text();
+            return rawText.replace("```json", "").replace("```", "").trim();
+        }).onErrorResume(e -> Mono.error(new CustomException(ErrorCode.FAIL_RECEIPT_EXTRACT)));
+    }
+
+    private Mono<ExtractedData> parseAndValidateJson(String jsonString) {
+        return Mono.fromCallable(() -> objectMapper.readValue(jsonString, GeminiJsonOutput.class))
+                .flatMap(output -> {
+                    if ("success".equals(output.status())) {
+                        return Mono.just(output.data());
                     }
-                })
-
-                //평탄화의 기능도 제공 Mono.just, Mono.error는 Mono<T>을 반환하기 때문
-                .flatMap(jsonString -> {
-                    try {
-                        // Gemini가 만든 JSON을 DTO로 파싱
-                        GeminiJsonOutput output = objectMapper.readValue(jsonString, GeminiJsonOutput.class);
-
-                        if ("success".equals(output.status())) {
-                            // 1. 성공: 'data' 객체를 담은 Mono 반환
-                            return Mono.just(output.data());
-                        } else {
-                            // 2. 실패 (Gemini가 fail이라 응답):
-                            // 'message'를 담은 Custom Exception을 Mono.error로 반환
-                            return Mono.error(new CustomException(ErrorCode.FAIL_RECEIPT_EXTRACT));
-                        }
-                    } catch (Exception e) {
-                        log.error("아예 반환 형식이 잘못됨");
-                        return Mono.error(new RuntimeException("Gemini가 반환한 JSON 파싱 중 오류 발생", e));
-                    }
+                    return Mono.error(new CustomException(ErrorCode.FAIL_RECEIPT_EXTRACT));
                 })
                 .onErrorResume(e -> {
-                    if (e instanceof CustomException ce) {
-                        // 이미 처리한 비즈니스 예외면 다시 던지기
-                        return Mono.error(ce);
-                    } else if (e instanceof WebClientResponseException wcre) {
-                        log.error("외부 API 호출 실패: {}", wcre.getResponseBodyAsString());
-                        return Mono.error(new CustomException(ErrorCode.FAIL_API_CONNECT));
-                    } else {
-                        log.error("예상치 못한 오류 발생", e);
-                        return Mono.error(new CustomException(ErrorCode.FAIL_WHILE_API));
-                    }
+                    if (e instanceof CustomException) return Mono.error(e);
+                    log.error("Gemini JSON 파싱 오류: {}", e.getMessage());
+                    return Mono.error(new RuntimeException("JSON 파싱 오류", e));
                 });
+    }
+
+    private Mono<ExtractedData> handleError(Throwable e) {
+        if (e instanceof CustomException ce) {
+            return Mono.error(ce);
+        } else if (e instanceof WebClientResponseException wcre) {
+            log.error("외부 API 호출 실패: {}", wcre.getResponseBodyAsString());
+            return Mono.error(new CustomException(ErrorCode.FAIL_API_CONNECT));
+        }
+        log.error("예상치 못한 오류 발생", e);
+        return Mono.error(new CustomException(ErrorCode.FAIL_WHILE_API));
     }
 
     public FindHospitalResDto findHospitalProcess(String hospitalName) {
@@ -688,74 +663,51 @@ public class ReviewService {
 
     //서비스 코드
     public Mono<ReceiptResDto> receiptExtractProcessMock(MultipartFile image) {
+        log.info("[MOCK TEST] 요청 시작");
 
-        String base64Image;
-        try{
-            base64Image = Base64.getEncoder().encodeToString(image.getBytes());
-        } catch (IOException e) {
-            log.error("이미지 변환 실패");
-            throw new RuntimeException(e);
-        }
-
-        log.info("[MOCK TEST] 요청 시작 - Gemini 호출 없이 진행");
-
-
-        // getExtractedDataMono 대신 Mock 메서드 호출
+        // 메서드의 시작이 곧 return이며, 세미콜론(;)은 마지막에 딱 한 번 나옵니다.
         return getMockExtractedData()
-                .flatMap(extractedData -> {
+                .flatMap(this::enrichWithHospitalData);
+    }
 
-                    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                    DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private Mono<ReceiptResDto> enrichWithHospitalData(ExtractedData data) {
+        // 흐름: 시간 파싱 -> 주소 검증 -> 지오코딩 -> DB 조회 -> DTO 생성
+        return parseTimeMono(data.paymentTime())
+                .flatMap(time -> validateAndGeocode(data.address(), data.addressType())
+                        .publishOn(Schedulers.boundedElastic())
+                        .map(point -> findNearestHospital(point.y(), point.x()))
+                        .map(hospital -> ReceiptResDto.builder()
+                                .hospitalId(hospital.getId())
+                                .hospitalName(hospital.getName())
+                                .visitDateTime(time)
+                                .price(data.totalAmount())
+                                .build())
+                );
+    }
 
-                    LocalDateTime paymentDateTime;
+    private Mono<GeoDto.PointDTO> validateAndGeocode(String address, String addressType) {
+        return Mono.justOrEmpty(address)
+                .filter(addr -> !addr.isBlank())
+                // 주소가 비어있으면 바로 에러 Mono를 반환하여 흐름 중단
+                .switchIfEmpty(Mono.error(new CustomException(ErrorCode.NO_ADDRESS_FOUND)))
+                .flatMap(addr -> geocodeAddress(addr, addressType));
+    }
 
-                    String address = extractedData.address();
-                    String addressType = extractedData.addressType();
-                    String time = extractedData.paymentTime();
-                    Long price = extractedData.totalAmount();
+    private Mono<LocalDateTime> parseTimeMono(String time) {
+        return Mono.fromCallable(() -> {
+            try {
+                return LocalDateTime.parse(time, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            } catch (Exception e) {
+                return LocalDate.parse(time, DateTimeFormatter.ofPattern("yyyy-MM-dd")).atStartOfDay();
+            }
+        }).onErrorReturn(LocalDateTime.now()); // 에러 발생 시 기본값 반환으로 흐름 유지
+    }
 
-                    try {
-                        paymentDateTime = LocalDateTime.parse(time, dtf);
-                    } catch (DateTimeParseException e) {
-                        LocalDate dateOnly = LocalDate.parse(time, df);
-                        paymentDateTime = dateOnly.atStartOfDay();
-                    }
-
-                    if(address == null || address.isEmpty()) {
-                        return Mono.error(new CustomException(ErrorCode.NO_ADDRESS_FOUND));
-                    }
-
-                    LocalDateTime finalPaymentDateTime = paymentDateTime;
-
-                    // 지오코딩 및 DB 조회 로직은 실제 서비스와 똑같이 수행
-                    return geocodeAddress(address, addressType)
-                            .doOnSubscribe(s ->
-                                    //[parallel-8] Gemini API 호출 시작
-                                    log.info("[{}] Gemini API 호출 시작", Thread.currentThread().getName()))
-                            .publishOn(Schedulers.boundedElastic())
-                            .map(point ->{
-                                //[5. DB 조회 직전] 스레드: boundedElastic-29
-                                log.info("[5. DB 조회 직전] 스레드: {}", Thread.currentThread().getName());
-                                double lng = point.x();
-                                double lat = point.y();
-
-                                log.info("x위도{}", lat);
-                                log.info("y경도{}", lng);
-
-                                List<Hospital> nearestHospitals = hospitalJpaRepository.findNearestHospitals(lat, lng,3000);
-                                if(nearestHospitals.isEmpty()) {
-                                    throw new CustomException(ErrorCode.NOT_FOUND_RECEIPT_HOSPITAL);
-                                }
-                                Hospital hospital = nearestHospitals.get(0);
-
-                                return ReceiptResDto.builder()
-                                        .hospitalId(hospital.getId())
-                                        .hospitalName(hospital.getName())
-                                        .visitDateTime(finalPaymentDateTime)
-                                        .price(price)
-                                        .build();
-                            });
-                });
+    private Hospital findNearestHospital(double lat, double lng) {
+        return hospitalJpaRepository.findNearestHospitals(lat, lng, 3000)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_RECEIPT_HOSPITAL));
     }
 
 
