@@ -156,7 +156,7 @@ public class PostCommentService {
         );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     @CheckCommunityAvailable
     public PostCommentResDto updatePostComment(Long commentId, UpdatePostCommentReqDto dto) {
         if (dto.getContent() == null || dto.getContent().isBlank()) {
@@ -165,7 +165,7 @@ public class PostCommentService {
         PostComment postComment = findPostCommentById(commentId); // 수정하고자하는 댓글
         verifyPostCommentWriter(postComment, Objects.requireNonNull(UserUtil.getCurrentUser())); // 권한 검증
 
-        if(!dto.getImageUrl().equals(postComment.getImageUrl())) {
+        if(!Objects.equals(dto.getImageUrl(), postComment.getImageUrl())) {
             // 댓글 이미지가 새로운 것으로 교체된다면 이전 이미지는 s3상에서 삭제
             if(StringUtils.hasText(postComment.getImageUrl())) {
                 s3Service.deleteObject(s3Service.extractKeyFromUrl(postComment.getImageUrl()));
