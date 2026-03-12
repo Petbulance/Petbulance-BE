@@ -28,6 +28,7 @@ import com.example.Petbulance_BE.global.firebase.FcmService;
 import com.example.Petbulance_BE.global.util.UserUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -156,7 +157,7 @@ public class PostCommentService {
         );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     @CheckCommunityAvailable
     public PostCommentResDto updatePostComment(Long commentId, UpdatePostCommentReqDto dto) {
         if (dto.getContent() == null || dto.getContent().isBlank()) {
@@ -165,7 +166,7 @@ public class PostCommentService {
         PostComment postComment = findPostCommentById(commentId); // 수정하고자하는 댓글
         verifyPostCommentWriter(postComment, Objects.requireNonNull(UserUtil.getCurrentUser())); // 권한 검증
 
-        if(!dto.getImageUrl().equals(postComment.getImageUrl())) {
+        if(!Objects.equals(dto.getImageUrl(), postComment.getImageUrl())) {
             // 댓글 이미지가 새로운 것으로 교체된다면 이전 이미지는 s3상에서 삭제
             if(StringUtils.hasText(postComment.getImageUrl())) {
                 s3Service.deleteObject(s3Service.extractKeyFromUrl(postComment.getImageUrl()));
@@ -315,18 +316,27 @@ public class PostCommentService {
         Users currentUser = UserUtil.getCurrentUser(); // 현재 댓글을 조회하는 사용자
         Post post = findPostById(postId); // 현재 조회하는 댓글이 달린 게시글
 
-        if(currentUser == null) {
-            // 비회원이 게시글 댓글 조회시
-            return new PagingPostCommentListResDto(
-                    postCommentRepository.findPostCommentByPostForGuest(post, null, null, pageable),
-                    getTotalPostCommentCount(postId)
-            );
+        if (currentUser == null) {
+            Slice<PostCommentListResDto> slice = postCommentRepository.findPostCommentByPostForGuest(post, null, null, pageable);
+
+            slice.getContent().forEach(dto -> {
+                if (dto.getWriterProfileUrl() != null) {
+                    dto.setWriterProfileUrl(s3Service.getObject(dto.getWriterProfileUrl()));
+                }
+            });
+
+            return new PagingPostCommentListResDto(slice, getTotalPostCommentCount(postId));
         } else {
-            boolean currentUserIsPostAuthor = Objects.equals(currentUser.getId(), post.getUser().getId()); // 현재 사용자가 게시글 작성자인지 -> 이에 따라 조회 가능한 댓글 범위가 달라짐
-            return new PagingPostCommentListResDto(
-                    postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, currentUserIsPostAuthor, currentUser),
-                    getTotalPostCommentCount(postId)
-            );
+            boolean currentUserIsPostAuthor = Objects.equals(currentUser.getId(), post.getUser().getId());
+            Slice<PostCommentListResDto> slice = postCommentRepository.findPostCommentByPost(post, lastParentCommentId, lastCommentId, pageable, currentUserIsPostAuthor, currentUser);
+
+            slice.getContent().forEach(dto -> {
+                if (dto.getWriterProfileUrl() != null) {
+                    dto.setWriterProfileUrl(s3Service.getObject(dto.getWriterProfileUrl()));
+                }
+            });
+
+            return new PagingPostCommentListResDto(slice, getTotalPostCommentCount(postId));
         }
     }
 
