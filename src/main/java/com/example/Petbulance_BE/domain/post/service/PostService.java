@@ -280,7 +280,7 @@ public class PostService {
                 .content(post.getContent())
                 .images(imageInfos)
                 .writerNickname(post.getUser().getNickname())
-                .writerProfileUrl(post.getUser().getProfileImage())
+                .writerProfileUrl(s3Service.getObject(post.getUser().getProfileImage()))
                 .createdAt(TimeUtil.formatCreatedAt(post.getCreatedAt())) // 시간 형식 변경
                 .likeCount(postRepository.fetchLikeCount(postId))
                 .commentCount(postRepository.fetchCommentCount(postId))
