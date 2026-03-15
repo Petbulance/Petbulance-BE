@@ -112,7 +112,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         like.postLikeCount.coalesce(0L),
                         comment.postCommentCount.coalesce(0L),
                         Expressions.constant(0L),
-                        Expressions.constant(false)
+                        Expressions.constant(false),
+                        p.user.nickname
                 ))
                 .from(p)
 
