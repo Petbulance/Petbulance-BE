@@ -25,11 +25,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-/**
- * 게시글 상세 조회 (정적 + 실시간 데이터 분리)
- * 정적 데이터: 게시판/작성자/이미지 등 자주 변하지 않는 정보
- * 실시간 데이터: 좋아요수, 댓글수, 조회수, 사용자 좋아요 여부
- */
 @Repository
 @RequiredArgsConstructor
 public class PostRepositoryImpl implements PostRepositoryCustom {
@@ -112,7 +107,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         like.postLikeCount.coalesce(0L),
                         comment.postCommentCount.coalesce(0L),
                         Expressions.constant(0L),
-                        Expressions.constant(false)
+                        Expressions.constant(false),
+                        p.user.nickname
                 ))
                 .from(p)
 

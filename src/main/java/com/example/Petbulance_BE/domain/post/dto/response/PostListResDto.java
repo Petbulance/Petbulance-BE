@@ -25,8 +25,9 @@ public class PostListResDto {
     private Long commentCount;
     private Long viewCount;
     private boolean likedByUser;
+    private String nickname;
 
-    public PostListResDto(Long postId, AnimalType type, Topic topic, LocalDateTime createdAt, String thumbnailUrl, Long imageCount, String title, String content, Long likeCount, Long commentCount, Long viewCount, boolean likedByUser) {
+    public PostListResDto(Long postId, AnimalType type, Topic topic, LocalDateTime createdAt, String thumbnailUrl, Long imageCount, String title, String content, Long likeCount, Long commentCount, Long viewCount, boolean likedByUser, String nickname) {
         this.postId = postId;
         this.type = type.getDescription();
         this.topic = topic.getDescription();
@@ -39,5 +40,6 @@ public class PostListResDto {
         this.commentCount = commentCount;
         this.viewCount = viewCount;
         this.likedByUser = likedByUser;
+        this.nickname = nickname;
     }
 }
