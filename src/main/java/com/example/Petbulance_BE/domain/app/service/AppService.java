@@ -79,8 +79,8 @@ public class AppService {
                     : usageName;
 
             String folderPath = (isTest ? "test/" : "") + baseFolder.toLowerCase();
-
-            String key = folderPath + "/" + UUID.randomUUID() + "_" + fileDto.getFilename();
+            String sanitizedFilename = sanitizeFilename(fileDto.getFilename());
+            String key = folderPath + "/" + UUID.randomUUID() + "_" + sanitizedFilename;
 
             URL presignedUrl = s3Service.createPresignedPutUrl(key, fileDto.getContentType(), 300);
 
@@ -99,5 +99,32 @@ public class AppService {
         String url = presignedUrl.toString();
         // "?" 가 시작되는 지점 앞부분만 잘라서 반환
         return url.contains("?") ? url.split("\\?")[0] : url;
+    }
+
+    private String sanitizeFilename(String filename) {
+        if (filename == null) return UUID.randomUUID().toString();
+
+        // 확장자 분리
+        String extension = "";
+        String name = filename;
+        int dotIndex = filename.lastIndexOf(".");
+        if (dotIndex >= 0) {
+            extension = filename.substring(dotIndex).toLowerCase();
+            name = filename.substring(0, dotIndex);
+        }
+
+        // 한글 포함 여부 확인
+        boolean hasKorean = name.chars()
+                .anyMatch(c -> (c >= 0xAC00 && c <= 0xD7A3)  // 완성형 한글
+                        || (c >= 0x1100 && c <= 0x11FF)        // 한글 자모
+                        || (c >= 0x3130 && c <= 0x318F));       // 한글 호환 자모
+
+        if (hasKorean) {
+            // 한글이 있으면 UUID로 대체
+            return UUID.randomUUID() + extension;
+        }
+
+        // 한글 없으면 원본 파일명 유지 (공백만 _ 로 교체)
+        return name.replaceAll("\\s+", "_") + extension;
     }
 }
